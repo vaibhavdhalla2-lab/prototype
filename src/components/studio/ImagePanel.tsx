@@ -22,7 +22,7 @@ export default function ImagePanel() {
     reader.onload = () => {
       setStaged(reader.result as string);
       setAnalysis(null);
-      track("uploaded_image", { name: file.name });
+      track("image_uploaded", { name: file.name });
     };
     reader.readAsDataURL(file);
   };
@@ -36,7 +36,7 @@ export default function ImagePanel() {
 
   const useAsInspiration = () => {
     setAnalysis({ fit: "oversized", color: "black", material: "heavyweight-cotton", graphic: "Front Print" });
-    track("opened_muse", { context: "inspiration" });
+    track("muse_opened", { context: "inspiration" });
   };
 
   const applyRecommendations = () => {
@@ -44,6 +44,7 @@ export default function ImagePanel() {
     design.setFit(analysis.fit);
     design.setColor(analysis.color);
     design.setMaterial(analysis.material);
+    track("muse_recommendation_used", { context: "inspiration" });
     setAnalysis(null);
     setStaged(null);
   };

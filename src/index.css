@@ -77,6 +77,12 @@
   ::-webkit-scrollbar-thumb:hover { background: var(--color-ink-faint); }
 }
 
+@media (max-width: 1023px) {
+  .studio-active [data-mobile-chrome] {
+    display: none !important;
+  }
+}
+
 @layer utilities {
   .font-display { font-family: var(--font-display); }
   .scrollbar-none { scrollbar-width: none; -ms-overflow-style: none; }

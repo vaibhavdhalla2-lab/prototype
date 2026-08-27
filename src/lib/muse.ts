@@ -136,3 +136,49 @@ export const MUSE_PROMPT_CHIPS = [
   "I want something for winter.",
   "I want an oversized streetwear look.",
 ];
+
+interface DesignSnapshot {
+  garment: GarmentType;
+  material: MaterialId;
+  fit: FitId;
+  finish: "print" | "embroidery";
+}
+
+/** Small, non-interrupting contextual tips based on the current combination of choices. */
+export function contextualTip(d: DesignSnapshot): string | null {
+  if (d.fit === "oversized" && d.material === "heavyweight-cotton") {
+    return "Nice combination. The heavier fabric will help this silhouette hold its shape.";
+  }
+  if (d.fit === "oversized" && (d.material === "lightweight-cotton" || d.material === "organic-jersey")) {
+    return "This will create a softer, more fluid silhouette.";
+  }
+  if (d.fit === "cropped" && d.material === "heavyweight-cotton") {
+    return "Heavyweight cotton on a cropped cut reads structured rather than casual — a deliberate look.";
+  }
+  if (d.garment === "hoodie" && d.material === "french-terry" && d.fit === "relaxed") {
+    return "French terry and a relaxed fit is the easiest everyday hoodie combination there is.";
+  }
+  if (d.finish === "embroidery" && d.fit === "oversized") {
+    return "Keep embroidery simple on an oversized fit — fine detail can get lost across the extra fabric.";
+  }
+  return null;
+}
+
+export interface ManufacturabilityIssue {
+  message: string;
+  fixLabel: string;
+  fixMaterial: MaterialId;
+}
+
+/** Illustrative manufacturing constraints — FORMÉ's current production universe is defined, not infinite. */
+export function checkManufacturability(d: DesignSnapshot): ManufacturabilityIssue | null {
+  if (d.finish === "embroidery" && (d.material === "lightweight-cotton" || d.material === "organic-jersey")) {
+    const fixMaterial: MaterialId = d.garment === "hoodie" ? "french-terry" : "heavyweight-cotton";
+    return {
+      message: "Fine embroidery can pucker a lighter fabric like this — it isn't currently supported in production.",
+      fixLabel: d.garment === "hoodie" ? "Switch to French Terry" : "Switch to Heavyweight Cotton",
+      fixMaterial,
+    };
+  }
+  return null;
+}

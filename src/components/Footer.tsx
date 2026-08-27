@@ -8,6 +8,7 @@ export default function Footer() {
       <div className="mx-auto max-w-[1400px] px-5 sm:px-8">
         <div className="mb-14">
           <p className="mb-2 text-[11px] uppercase tracking-[0.3em] text-ink-faint">Coming soon</p>
+          <p className="mb-4 font-display text-lg italic text-ink-soft">Today, you design what you wear. Tomorrow, you might design anything.</p>
           <div className="flex flex-wrap gap-3">
             {COMING_SOON.map((item) => (
               <div

@@ -37,6 +37,7 @@ export interface DrawStroke {
 }
 
 export type SourceMode = "scratch" | "upload" | "prompt" | "remix" | null;
+export type Finish = "print" | "embroidery";
 
 export interface DesignState {
   name: string;
@@ -52,6 +53,8 @@ export interface DesignState {
   sourceMode: SourceMode;
   remixOf: string | null;
   accentTrim: boolean;
+  finish: Finish;
+  pocketVisible: boolean;
 }
 
 const DEFAULT_STATE: DesignState = {
@@ -68,6 +71,8 @@ const DEFAULT_STATE: DesignState = {
   sourceMode: null,
   remixOf: null,
   accentTrim: false,
+  finish: "print",
+  pocketVisible: true,
 };
 
 interface DesignStore extends DesignState {
@@ -87,6 +92,8 @@ interface DesignStore extends DesignState {
   setName: (n: string) => void;
   setSourceMode: (m: SourceMode) => void;
   setAccentTrim: (v: boolean) => void;
+  setFinish: (f: Finish) => void;
+  setPocketVisible: (v: boolean) => void;
   startFresh: () => void;
   loadFromMarketDesign: (d: MarketDesign) => void;
   applyPartial: (p: Partial<DesignState>) => void;
@@ -121,6 +128,8 @@ export function DesignProvider({ children }: { children: ReactNode }) {
   const setName = useCallback((n: string) => setState((s) => ({ ...s, name: n })), []);
   const setSourceMode = useCallback((m: SourceMode) => setState((s) => ({ ...s, sourceMode: m })), []);
   const setAccentTrim = useCallback((v: boolean) => setState((s) => ({ ...s, accentTrim: v })), []);
+  const setFinish = useCallback((f: Finish) => setState((s) => ({ ...s, finish: f })), []);
+  const setPocketVisible = useCallback((v: boolean) => setState((s) => ({ ...s, pocketVisible: v })), []);
 
   const addStroke = useCallback((side: GarmentSide, stroke: DrawStroke) => {
     setState((s) => (side === "front" ? { ...s, strokesFront: [...s.strokesFront, stroke] } : { ...s, strokesBack: [...s.strokesBack, stroke] }));
@@ -209,11 +218,13 @@ export function DesignProvider({ children }: { children: ReactNode }) {
       setName,
       setSourceMode,
       setAccentTrim,
+      setFinish,
+      setPocketVisible,
       startFresh,
       loadFromMarketDesign,
       applyPartial,
     }),
-    [state, setGarment, setView, setColor, setMaterial, setFit, setArtwork, setText, addStroke, undoStroke, redoStroke, clearStrokes, canUndo, canRedo, setName, setSourceMode, setAccentTrim, startFresh, loadFromMarketDesign, applyPartial],
+    [state, setGarment, setView, setColor, setMaterial, setFit, setArtwork, setText, addStroke, undoStroke, redoStroke, clearStrokes, canUndo, canRedo, setName, setSourceMode, setAccentTrim, setFinish, setPocketVisible, startFresh, loadFromMarketDesign, applyPartial],
   );
 
   return <DesignContext.Provider value={value}>{children}</DesignContext.Provider>;

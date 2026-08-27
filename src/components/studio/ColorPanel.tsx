@@ -11,7 +11,7 @@ export default function ColorPanel() {
     <div className="animate-fade-in">
       <p className="text-[11px] uppercase tracking-[0.25em] text-ink-faint">Choose your colour</p>
 
-      <div className="mt-4 grid grid-cols-4 gap-3.5 sm:grid-cols-5">
+      <div className="mt-4 grid grid-cols-3 gap-3">
         {COLORS.map((c) => {
           const isActive = c.id === design.color;
           return (
@@ -19,13 +19,13 @@ export default function ColorPanel() {
               key={c.id}
               onClick={() => {
                 design.setColor(c.id);
-                track("changed_color", { color: c.id });
+                track("color_changed", { color: c.id });
               }}
               className="group flex flex-col items-center gap-2"
               aria-label={c.label}
             >
               <span
-                className={`relative flex h-12 w-12 items-center justify-center rounded-full border transition-all duration-300 ${
+                className={`relative flex h-11 w-11 items-center justify-center rounded-full border transition-all duration-300 ${
                   isActive ? "scale-110 border-ink shadow-[0_6px_18px_-6px_rgba(26,23,18,0.5)]" : "border-line-soft hover:scale-105 hover:border-ink-soft"
                 }`}
                 style={{ background: c.hex }}

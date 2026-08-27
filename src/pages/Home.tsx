@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, type PointerEvent as ReactPointerEvent } from "react";
+import { useRef, useState, useCallback, useEffect, type PointerEvent as ReactPointerEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { GarmentStage } from "../components/Garment";
 import { MARKET_DESIGNS } from "../data/marketplace";
@@ -123,6 +123,10 @@ export default function Home() {
   const navigate = useNavigate();
   const featured = MARKET_DESIGNS.slice(0, 4);
 
+  useEffect(() => {
+    track("landing_view");
+  }, []);
+
   return (
     <div>
       {/* HERO */}
@@ -176,7 +180,7 @@ export default function Home() {
               <button
                 key={mode}
                 onClick={() => {
-                  track("started_creation", { mode });
+                  track("start_creating", { mode });
                   navigate("/create", { state: { mode } });
                 }}
                 className="group relative flex flex-col items-start overflow-hidden rounded-3xl border border-line bg-ivory p-8 text-left transition-all duration-300 hover:-translate-y-1.5 hover:border-ink/40 hover:shadow-[0_24px_60px_-24px_rgba(26,23,18,0.35)] sm:p-9"

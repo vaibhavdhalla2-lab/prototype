@@ -1,18 +1,26 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MARKET_DESIGNS, type MarketDesign } from "../data/marketplace";
-import { garmentById, colorById, materialById, fitById } from "../data/catalog";
+import { garmentById, colorById, materialById, fitById, GARMENTS } from "../data/catalog";
+import type { GarmentType } from "../data/catalog";
 import { useDesign } from "../lib/store";
 import { track } from "../lib/analytics";
 import { GarmentStage } from "../components/Garment";
 import { IconRemix, IconEye, IconClose } from "../components/icons";
 import MicroPrompt from "../components/MicroPrompt";
 
-const SECTIONS: { id: MarketDesign["section"]; label: string; sub: string }[] = [
+type Tab = "foryou" | "trending" | "new" | "most-remixed";
+
+const TABS: { id: Tab; label: string; sub: string }[] = [
+  { id: "foryou", label: "For You", sub: "A broad mix of what's out there right now" },
   { id: "trending", label: "Trending", sub: "What's getting attention right now" },
   { id: "new", label: "New", sub: "Fresh off the canvas" },
   { id: "most-remixed", label: "Most Remixed", sub: "Designs the community keeps building on" },
-  { id: "community", label: "From The Community", sub: "A wider look at what people are making" },
+];
+
+const GARMENT_FILTERS: { id: GarmentType | "all"; label: string }[] = [
+  { id: "all", label: "All" },
+  ...GARMENTS.map((g) => ({ id: g.id, label: `${g.label}s` })),
 ];
 
 function DesignCard({ d, onOpen, onRemix }: { d: MarketDesign; onOpen: () => void; onRemix: () => void }) {
@@ -61,6 +69,7 @@ function QuickView({ d, onClose, onRemix }: { d: MarketDesign; onClose: () => vo
           <p className="text-xs uppercase tracking-[0.16em] text-ink-faint">by @{d.creator}</p>
           <h2 className="mt-1 font-display text-3xl text-ink">{d.name}</h2>
           <p className="mt-1 text-lg text-ink-soft">₹{d.price.toLocaleString("en-IN")}</p>
+          <p className="mt-3 text-sm leading-relaxed text-ink-soft">{d.story}</p>
 
           <div className="mt-6 grid grid-cols-2 gap-4 rounded-2xl border border-line-soft bg-ivory-dim p-4 text-[13px]">
             <div><p className="text-[11px] uppercase tracking-[0.08em] text-ink-faint">Product</p><p className="text-ink">{garmentById(d.garment).label}</p></div>
@@ -84,16 +93,29 @@ function QuickView({ d, onClose, onRemix }: { d: MarketDesign; onClose: () => vo
   );
 }
 
+// A fixed shuffle so "For You" doesn't feel like a literal re-sort of the catalog.
+const FOR_YOU_ORDER = [3, 11, 0, 15, 7, 18, 4, 9, 2, 16, 20, 12, 6, 19, 1, 14, 8, 17, 5, 13, 10];
+
 export default function Marketplace() {
   const navigate = useNavigate();
   const design = useDesign();
   const [active, setActive] = useState<MarketDesign | null>(null);
+  const [tab, setTab] = useState<Tab>("foryou");
+  const [garmentFilter, setGarmentFilter] = useState<GarmentType | "all">("all");
 
   const goRemix = (d: MarketDesign) => {
     design.loadFromMarketDesign(d);
-    track("clicked_remix", { design: d.id });
+    track("remix_clicked", { design: d.id });
     navigate("/create", { state: { mode: "remix" } });
   };
+
+  const base =
+    tab === "foryou"
+      ? FOR_YOU_ORDER.filter((i) => i < MARKET_DESIGNS.length).map((i) => MARKET_DESIGNS[i])
+      : MARKET_DESIGNS.filter((d) => d.section === tab);
+
+  const items = garmentFilter === "all" ? base : base.filter((d) => d.garment === garmentFilter);
+  const activeTab = TABS.find((t) => t.id === tab)!;
 
   return (
     <div className="mx-auto max-w-[1400px] px-5 pb-24 pt-12 sm:px-8 sm:pt-16">
@@ -105,31 +127,56 @@ export default function Marketplace() {
         </p>
       </div>
 
-      {SECTIONS.map((s, i) => {
-        const items = MARKET_DESIGNS.filter((d) => d.section === s.id);
-        if (items.length === 0) return null;
-        return (
-          <section key={s.id} className={i === 0 ? "mt-14" : "mt-16"}>
-            <div className="mb-6 flex items-end justify-between">
-              <div>
-                <h2 className="font-display text-2xl text-ink sm:text-3xl">{s.label}</h2>
-                <p className="mt-1 text-sm text-ink-faint">{s.sub}</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              {items.map((d) => (
-                <DesignCard key={d.id} d={d} onOpen={() => setActive(d)} onRemix={() => goRemix(d)} />
-              ))}
-            </div>
+      <div className="mt-10 flex flex-wrap gap-2">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`rounded-full border px-4 py-2 text-[12px] font-medium uppercase tracking-[0.1em] transition-colors ${
+              tab === t.id ? "border-ink bg-ink text-ivory" : "border-line text-ink-soft hover:border-ink-soft"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-            {i === 0 && (
-              <div className="mt-8">
-                <MicroPrompt question="Would you buy from a marketplace like this?" eventName="marketplace_browse" />
-              </div>
-            )}
-          </section>
-        );
-      })}
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {GARMENT_FILTERS.map((g) => (
+          <button
+            key={g.id}
+            onClick={() => setGarmentFilter(g.id)}
+            className={`rounded-full px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.08em] transition-colors ${
+              garmentFilter === g.id ? "text-ink underline underline-offset-4" : "text-ink-faint hover:text-ink-soft"
+            }`}
+          >
+            {g.label}
+          </button>
+        ))}
+      </div>
+
+      <section className="mt-8">
+        <div className="mb-6">
+          <h2 className="font-display text-2xl text-ink sm:text-3xl">{activeTab.label}</h2>
+          <p className="mt-1 text-sm text-ink-faint">{activeTab.sub}</p>
+        </div>
+
+        {items.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-line-soft py-16 text-center text-ink-faint">
+            Nothing here yet — try a different category.
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            {items.map((d) => (
+              <DesignCard key={d.id} d={d} onOpen={() => setActive(d)} onRemix={() => goRemix(d)} />
+            ))}
+          </div>
+        )}
+
+        <div className="mt-8">
+          <MicroPrompt question="Would you buy from a marketplace like this?" eventName="marketplace_browse" />
+        </div>
+      </section>
 
       {active && <QuickView d={active} onClose={() => setActive(null)} onRemix={() => goRemix(active)} />}
     </div>

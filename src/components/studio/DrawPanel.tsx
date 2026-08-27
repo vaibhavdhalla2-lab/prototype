@@ -46,7 +46,7 @@ export default function DrawPanel({ tool, setTool, color, setColor }: DrawPanelP
         </button>
       </div>
 
-      <div className="mt-5 grid grid-cols-4 gap-2">
+      <div className="mt-5 grid grid-cols-2 gap-2">
         {TOOLS.map((t) => (
           <button
             key={t.id}
@@ -91,7 +91,7 @@ export default function DrawPanel({ tool, setTool, color, setColor }: DrawPanelP
         <button
           onClick={() => {
             design.clearStrokes(side);
-            track("used_drawing", { action: "clear", side });
+            track("drawing_started", { action: "clear", side });
           }}
           className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-line py-2.5 text-[12px] text-ink-soft transition-colors hover:border-ink-soft"
         >

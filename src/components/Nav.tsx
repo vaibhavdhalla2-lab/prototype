@@ -24,6 +24,7 @@ export default function Nav() {
   return (
     <>
       <header
+        data-mobile-chrome
         className={`sticky top-0 z-40 w-full transition-all duration-300 ${
           scrolled ? "bg-paper/90 backdrop-blur-md border-b border-line-soft" : "bg-transparent border-b border-transparent"
         }`}
@@ -84,7 +85,7 @@ export default function Nav() {
       </header>
 
       {/* Mobile bottom tab bar */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-line-soft bg-paper/95 px-4 pb-[max(10px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md md:hidden">
+      <nav data-mobile-chrome className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-line-soft bg-paper/95 px-4 pb-[max(10px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md md:hidden">
         <NavLink to="/marketplace" className="flex flex-col items-center gap-1 px-4 py-1 text-ink-soft [&.active]:text-ink">
           {({ isActive }) => (
             <>

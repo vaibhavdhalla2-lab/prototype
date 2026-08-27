@@ -6,11 +6,11 @@ import { IconClose, IconCheck } from "./icons";
 const EXCITEMENT_OPTIONS = [
   "Creating from scratch",
   "Uploading an image",
-  "AI recommendations",
+  "MUSE recommendations",
+  "Material guidance",
   "Marketplace",
-  "Remixing designs",
-  "Material choices",
-  "Seeing the final garment",
+  "Remixing",
+  "Seeing the realistic garment",
   "Other",
 ];
 
@@ -56,7 +56,7 @@ export default function FeedbackWidget() {
 
   const handleSubmit = () => {
     if (!canSubmit) return;
-    track("submitted_feedback", { likelihood, excitement, wouldBuy, blockers, openText });
+    track("feedback_submitted", { likelihood, excitement, wouldBuy, blockers, openText });
     setSubmitted(true);
   };
 
@@ -74,6 +74,7 @@ export default function FeedbackWidget() {
 
       {!isOpen && (
         <button
+          data-mobile-chrome
           onClick={open}
           aria-label="Give feedback"
           className="fixed bottom-24 right-4 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-line bg-paper text-ink shadow-[0_8px_20px_-10px_rgba(26,23,18,0.4)] md:hidden"

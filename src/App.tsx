@@ -36,7 +36,7 @@ function Layout() {
       </main>
       {!isStudio && <Footer />}
       <FeedbackWidget />
-      <div className="h-16 md:hidden" />
+      <div data-mobile-chrome className="h-16 md:hidden" />
     </div>
   );
 }

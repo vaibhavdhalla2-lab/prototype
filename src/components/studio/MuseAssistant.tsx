@@ -1,15 +1,22 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDesign } from "../../lib/store";
 import { museMaterialRecommendation, MUSE_PROMPT_CHIPS } from "../../lib/muse";
 import { materialById } from "../../data/catalog";
 import { track } from "../../lib/analytics";
 import { IconClose, IconSparkle, IconCheck } from "../icons";
+import MicroPrompt from "../MicroPrompt";
 
 export default function MuseAssistant({ open, onClose }: { open: boolean; onClose: () => void }) {
   const design = useDesign();
   const [goal, setGoal] = useState("");
   const [result, setResult] = useState<{ material: string; reason: string } | null>(null);
   const [thinking, setThinking] = useState(false);
+  const [applied, setApplied] = useState(false);
+
+  useEffect(() => {
+    if (open) track("muse_opened", { context: "studio" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   if (!open) return null;
   if (!design.garment) return null;
@@ -18,6 +25,7 @@ export default function MuseAssistant({ open, onClose }: { open: boolean; onClos
     setGoal(text);
     setThinking(true);
     setResult(null);
+    setApplied(false);
     window.setTimeout(() => {
       const rec = museMaterialRecommendation(text, design.garment!, design.fit);
       setResult(rec);
@@ -28,14 +36,15 @@ export default function MuseAssistant({ open, onClose }: { open: boolean; onClos
   const useThis = () => {
     if (!result) return;
     design.setMaterial(result.material as never);
-    track("opened_muse", { context: "material", applied: result.material });
-    handleClose();
+    track("muse_recommendation_used", { context: "material", applied: result.material });
+    setApplied(true);
   };
 
   const handleClose = () => {
     setGoal("");
     setResult(null);
     setThinking(false);
+    setApplied(false);
     onClose();
   };
 
@@ -102,20 +111,32 @@ export default function MuseAssistant({ open, onClose }: { open: boolean; onClos
               </p>
               <p className="mt-2 font-display text-xl text-ink">{materialById(result.material as never).label}</p>
               <p className="mt-2 text-sm leading-relaxed text-ink-soft">{result.reason}</p>
-              <div className="mt-5 flex gap-2">
-                <button onClick={useThis} className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-ink py-2.5 text-[12px] uppercase tracking-[0.1em] text-ivory">
-                  <IconCheck className="h-3.5 w-3.5" /> Use This
-                </button>
-                <button
-                  onClick={() => {
-                    setResult(null);
-                    setGoal("");
-                  }}
-                  className="flex-1 rounded-full border border-line py-2.5 text-[12px] uppercase tracking-[0.1em] text-ink-soft"
-                >
-                  See Other Options
-                </button>
-              </div>
+              {!applied ? (
+                <div className="mt-5 flex gap-2">
+                  <button onClick={useThis} className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-ink py-2.5 text-[12px] uppercase tracking-[0.1em] text-ivory">
+                    <IconCheck className="h-3.5 w-3.5" /> Use This
+                  </button>
+                  <button
+                    onClick={() => {
+                      setResult(null);
+                      setGoal("");
+                    }}
+                    className="flex-1 rounded-full border border-line py-2.5 text-[12px] uppercase tracking-[0.1em] text-ink-soft"
+                  >
+                    See Other Options
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-5 animate-fade-in space-y-3">
+                  <p className="flex items-center gap-1.5 text-[13px] text-ink">
+                    <IconCheck className="h-4 w-4 text-clay-deep" /> Applied to your design.
+                  </p>
+                  <MicroPrompt question="Did MUSE actually help?" options={["Yes", "No"]} eventName="muse_helpfulness" />
+                  <button onClick={handleClose} className="w-full rounded-full border border-line py-2.5 text-[12px] uppercase tracking-[0.1em] text-ink-soft">
+                    Done
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

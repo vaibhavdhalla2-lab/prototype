@@ -19,7 +19,7 @@ export default function FitPanel() {
               key={f.id}
               onClick={() => {
                 design.setFit(f.id);
-                track("changed_fit", { fit: f.id });
+                track("fit_changed", { fit: f.id });
               }}
               className={`w-full rounded-2xl border p-4 text-left transition-all ${
                 isActive ? "border-ink bg-ivory-dim" : "border-line hover:border-ink-soft"

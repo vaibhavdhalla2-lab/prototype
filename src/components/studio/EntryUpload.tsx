@@ -23,7 +23,7 @@ export default function EntryUpload({ onEnterStudio }: { onEnterStudio: (tab: st
     const reader = new FileReader();
     reader.onload = () => {
       setStaged(reader.result as string);
-      track("uploaded_image", { name: file.name });
+      track("image_uploaded", { name: file.name });
     };
     reader.readAsDataURL(file);
   };
@@ -38,7 +38,7 @@ export default function EntryUpload({ onEnterStudio }: { onEnterStudio: (tab: st
 
   const useAsInspiration = () => {
     setAnalysis({ fit: "oversized", color: "black", material: "heavyweight-cotton", graphic: "Front Print" });
-    track("opened_muse", { context: "inspiration" });
+    track("muse_opened", { context: "inspiration" });
   };
 
   const applyRecommendations = () => {
@@ -48,6 +48,7 @@ export default function EntryUpload({ onEnterStudio }: { onEnterStudio: (tab: st
     design.setColor(analysis.color);
     design.setMaterial(analysis.material);
     design.setSourceMode("upload");
+    track("muse_recommendation_used", { context: "inspiration" });
     onEnterStudio("design");
   };
 

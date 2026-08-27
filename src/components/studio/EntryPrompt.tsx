@@ -16,7 +16,7 @@ export default function EntryPrompt({ onEnterStudio }: { onEnterStudio: (tab: st
   const create = () => {
     if (!text.trim()) return;
     setThinking(true);
-    track("used_prompt", { text });
+    track("prompt_submitted", { text });
     window.setTimeout(() => {
       setConcept(interpretPrompt(text));
       setThinking(false);

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDesign } from "../../lib/store";
 import { colorById, materialById, fitById, garmentById, estimatePrice, DELIVERY_ESTIMATE } from "../../data/catalog";
@@ -6,7 +6,7 @@ import { track } from "../../lib/analytics";
 import { IconCheck, IconSparkle } from "../icons";
 import MicroPrompt from "../MicroPrompt";
 
-export default function SummaryPanel({ onJump }: { onJump: (tab: string) => void }) {
+export default function SummaryPanel({ onJump }: { onJump: (category: string, sub?: string) => void }) {
   const design = useDesign();
   const navigate = useNavigate();
   const [saved, setSaved] = useState(false);
@@ -14,6 +14,12 @@ export default function SummaryPanel({ onJump }: { onJump: (tab: string) => void
   const [publishOpen, setPublishOpen] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [published, setPublished] = useState(false);
+
+  useEffect(() => {
+    track("price_viewed", { garment: design.garment });
+    track("delivery_viewed", { garment: design.garment });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!design.garment) return null;
   const garment = garmentById(design.garment);
@@ -23,13 +29,13 @@ export default function SummaryPanel({ onJump }: { onJump: (tab: string) => void
   const hasGraphic = !!design.artwork || design.strokesFront.length > 0 || design.strokesBack.length > 0;
   const price = estimatePrice({ garment: design.garment, material: design.material, hasGraphic, hasText: !!design.text });
 
-  const rows = [
-    { label: "Product", value: garment.label, tab: null },
-    { label: "Colour", value: color.label, tab: "color" },
-    { label: "Material", value: material.label, tab: "material" },
-    { label: "Fit", value: fit.label, tab: "fit" },
-    { label: "Design", value: hasGraphic ? "Custom graphic" : design.text ? "Text only" : "Plain", tab: "draw" },
-    { label: "Details", value: design.accentTrim ? "Contrast trim" : "Tonal trim", tab: "details" },
+  const rows: { label: string; value: string; category: string | null; sub?: string }[] = [
+    { label: "Product", value: garment.label, category: null },
+    { label: "Colour", value: color.label, category: "color" },
+    { label: "Material", value: material.label, category: "material" },
+    { label: "Fit", value: fit.label, category: "fit" },
+    { label: "Design", value: hasGraphic ? "Custom graphic" : design.text ? "Text only" : "Plain", category: "design", sub: "draw" },
+    { label: "Details", value: design.accentTrim ? "Contrast trim" : "Tonal trim", category: "details" },
   ];
 
   return (
@@ -45,9 +51,9 @@ export default function SummaryPanel({ onJump }: { onJump: (tab: string) => void
         {rows.map((r) => (
           <button
             key={r.label}
-            onClick={() => r.tab && onJump(r.tab)}
+            onClick={() => r.category && onJump(r.category, r.sub)}
             className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-ivory-dim disabled:cursor-default"
-            disabled={!r.tab}
+            disabled={!r.category}
           >
             <span className="text-[12.5px] uppercase tracking-[0.06em] text-ink-faint">{r.label}</span>
             <span className="text-sm text-ink">{r.value}</span>
@@ -71,7 +77,7 @@ export default function SummaryPanel({ onJump }: { onJump: (tab: string) => void
         <button
           onClick={() => {
             setMadeReal(true);
-            track("clicked_make_it_real", { garment: design.garment, price });
+            track("make_it_real_clicked", { garment: design.garment, price });
           }}
           className="mt-5 w-full rounded-full bg-ink py-3.5 text-[12.5px] font-medium uppercase tracking-[0.16em] text-ivory transition-transform hover:-translate-y-0.5"
         >
@@ -83,7 +89,10 @@ export default function SummaryPanel({ onJump }: { onJump: (tab: string) => void
             <IconCheck className="h-5 w-5" />
           </div>
           <p className="mt-3 font-display text-xl text-ink">You made this.</p>
-          <p className="mt-1 text-[13px] text-ink-soft">Added to My Creations as an order-ready design. This prototype doesn't process real payments yet.</p>
+          <p className="mt-1 text-[13px] text-ink-soft">From an idea in your head to something you can actually wear.</p>
+          <p className="mt-3 text-[12px] uppercase tracking-[0.08em] text-ink-faint">
+            Added to My Creations as an order-ready design. This prototype doesn't process real payments yet.
+          </p>
           <div className="mt-4">
             <MicroPrompt question="Would you actually wear this?" eventName="post_creation" />
           </div>
@@ -93,7 +102,7 @@ export default function SummaryPanel({ onJump }: { onJump: (tab: string) => void
       <button
         onClick={() => {
           setSaved(true);
-          track("completed_design", { garment: design.garment });
+          track("design_completed", { garment: design.garment });
           window.setTimeout(() => setSaved(false), 2400);
         }}
         className="mt-3 w-full rounded-full border border-line py-3 text-[12px] uppercase tracking-[0.14em] text-ink-soft transition-colors hover:border-ink hover:text-ink"
@@ -146,7 +155,7 @@ export default function SummaryPanel({ onJump }: { onJump: (tab: string) => void
                 disabled={!agreed}
                 onClick={() => {
                   setPublished(true);
-                  track("clicked_publish", { garment: design.garment });
+                  track("publish_clicked", { garment: design.garment });
                 }}
                 className="flex-1 rounded-full bg-ink py-3 text-[12px] uppercase tracking-[0.12em] text-ivory disabled:opacity-30"
               >

@@ -46,7 +46,7 @@ export default function MaterialPanel({ onOpenMuse }: { onOpenMuse: () => void }
               key={m.id}
               onClick={() => {
                 design.setMaterial(m.id);
-                track("changed_material", { material: m.id });
+                track("material_changed", { material: m.id });
               }}
               className={`w-full rounded-2xl border p-4 text-left transition-all ${
                 isActive ? "border-ink bg-ivory-dim shadow-[0_10px_26px_-18px_rgba(26,23,18,0.5)]" : "border-line hover:border-ink-soft"
@@ -58,20 +58,20 @@ export default function MaterialPanel({ onOpenMuse }: { onOpenMuse: () => void }
               </div>
               <p className="mt-1 text-[13px] text-ink-soft">{m.tagline}</p>
 
-              <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[11.5px] text-ink-faint">
-                <div>
+              <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2.5 text-[11.5px] text-ink-faint">
+                <div className="min-w-0">
                   <p className="uppercase tracking-[0.08em]">Best for</p>
                   <p className="mt-0.5 text-ink-soft">{m.bestFor}</p>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="uppercase tracking-[0.08em]">Feel</p>
                   <p className="mt-0.5 text-ink-soft">{m.feel}</p>
                 </div>
-                <div>
+                <div className="col-span-2 min-w-0">
                   <p className="mb-1 uppercase tracking-[0.08em]">Breathability</p>
                   <Bars value={m.breathability} />
                 </div>
-                <div>
+                <div className="col-span-2 min-w-0">
                   <p className="mb-1 uppercase tracking-[0.08em]">Durability</p>
                   <Bars value={m.durability} />
                 </div>

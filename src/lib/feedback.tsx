@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { track } from "./analytics";
 
 interface FeedbackContextValue {
   isOpen: boolean;
@@ -10,7 +11,10 @@ const FeedbackContext = createContext<FeedbackContextValue | null>(null);
 
 export function FeedbackProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
-  const open = useCallback(() => setIsOpen(true), []);
+  const open = useCallback(() => {
+    setIsOpen(true);
+    track("feedback_opened");
+  }, []);
   const close = useCallback(() => setIsOpen(false), []);
   const value = useMemo(() => ({ isOpen, open, close }), [isOpen, open, close]);
   return <FeedbackContext.Provider value={value}>{children}</FeedbackContext.Provider>;
