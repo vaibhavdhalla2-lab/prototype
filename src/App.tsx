@@ -3,8 +3,10 @@ import { useEffect } from "react";
 import Nav from "./components/Nav";
 import Footer from "./components/Footer";
 import FeedbackWidget from "./components/FeedbackWidget";
+import Onboarding from "./components/onboarding/Onboarding";
 import { DesignProvider } from "./lib/store";
 import { FeedbackProvider } from "./lib/feedback";
+import { OnboardingProvider } from "./lib/onboarding";
 import Home from "./pages/Home";
 import Create from "./pages/Create";
 import Marketplace from "./pages/Marketplace";
@@ -36,6 +38,7 @@ function Layout() {
       </main>
       {!isStudio && <Footer />}
       <FeedbackWidget />
+      <Onboarding />
       <div data-mobile-chrome className="h-16 md:hidden" />
     </div>
   );
@@ -46,8 +49,10 @@ export default function App() {
     <BrowserRouter>
       <DesignProvider>
         <FeedbackProvider>
-          <ScrollToTop />
-          <Layout />
+          <OnboardingProvider>
+            <ScrollToTop />
+            <Layout />
+          </OnboardingProvider>
         </FeedbackProvider>
       </DesignProvider>
     </BrowserRouter>

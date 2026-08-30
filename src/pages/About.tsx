@@ -1,8 +1,10 @@
 import { useNavigate } from "react-router-dom";
-import { IconArrowRight } from "../components/icons";
+import { IconArrowRight, IconSparkle } from "../components/icons";
+import { useOnboarding } from "../lib/onboarding";
 
 export default function About() {
   const navigate = useNavigate();
+  const { open: replayOnboarding } = useOnboarding();
   return (
     <div className="mx-auto max-w-2xl px-5 py-20 sm:px-8 sm:py-28">
       <p className="mb-4 text-center text-[12px] uppercase tracking-[0.3em] text-ink-faint">About</p>
@@ -40,6 +42,15 @@ export default function About() {
         >
           Start Creating
           <IconArrowRight className="h-4 w-4" />
+        </button>
+      </div>
+
+      <div className="mt-6 flex justify-center">
+        <button
+          onClick={replayOnboarding}
+          className="inline-flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.12em] text-ink-faint transition-colors hover:text-ink-soft"
+        >
+          <IconSparkle className="h-3.5 w-3.5" /> How FORMÉ Works
         </button>
       </div>
     </div>

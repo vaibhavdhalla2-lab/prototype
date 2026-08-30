@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { MY_DESIGNS, type MyDesign } from "../data/profile";
 import { colorById } from "../data/catalog";
 import { GarmentStage } from "../components/Garment";
-import { IconEye, IconRemix, IconStore } from "../components/icons";
+import { IconEye, IconRemix, IconStore, IconSparkle } from "../components/icons";
+import { useOnboarding } from "../lib/onboarding";
 
 type TabId = "all" | "draft" | "published" | "ordered";
 
@@ -52,6 +53,7 @@ function DesignRow({ d }: { d: MyDesign }) {
 export default function Profile() {
   const [tab, setTab] = useState<TabId>("all");
   const navigate = useNavigate();
+  const { open: replayOnboarding } = useOnboarding();
 
   const filtered = tab === "all" ? MY_DESIGNS : MY_DESIGNS.filter((d) => d.status === tab);
   const counts = {
@@ -70,6 +72,12 @@ export default function Profile() {
         <div>
           <h1 className="font-display text-3xl text-ink">Your Studio</h1>
           <p className="text-sm text-ink-soft">{MY_DESIGNS.length} creations · ₹{totalEarnings.toLocaleString("en-IN")} in creator earnings</p>
+          <button
+            onClick={replayOnboarding}
+            className="mt-1.5 inline-flex items-center gap-1.5 text-[12px] font-medium uppercase tracking-[0.1em] text-ink-faint transition-colors hover:text-ink-soft"
+          >
+            <IconSparkle className="h-3.5 w-3.5" /> How FORMÉ Works
+          </button>
         </div>
         <button
           onClick={() => navigate("/create", { state: { mode: "scratch" } })}

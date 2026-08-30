@@ -236,7 +236,7 @@ function Face({ garment, colorHex, side, overlay, printArea, showPrintHint, acce
   const blobs = FOLD_BLOBS[garment][side];
 
   return (
-    <svg viewBox={VIEW_BOX} className="h-full w-full overflow-visible" style={{ color: colorHex }}>
+    <svg viewBox={VIEW_BOX} className="h-full w-full overflow-visible" style={{ color: colorHex, transition: "color 0.6s ease" }}>
       <defs>
         <clipPath id={clipId}>
           {garment === "tshirt" && <TeeBody neckDepth={side === "front" ? 38 : 20} />}

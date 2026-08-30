@@ -3,9 +3,24 @@ import { useNavigate, Link } from "react-router-dom";
 import { GarmentStage } from "../components/Garment";
 import { MARKET_DESIGNS } from "../data/marketplace";
 import { COLORS } from "../data/catalog";
-import { IconArrowRight, IconUpload, IconSparkle, IconPencil, IconRemix } from "../components/icons";
+import { IconArrowRight, IconUpload, IconSparkle, IconPencil, IconRemix, IconStore } from "../components/icons";
 import MicroPrompt from "../components/MicroPrompt";
 import { track } from "../lib/analytics";
+
+function ChipStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-line-soft bg-ivory px-3 py-2.5">
+      <p className="text-[9.5px] uppercase tracking-[0.14em] text-ink-faint">{label}</p>
+      <p className="mt-1 text-[12px] font-medium leading-tight text-ink">{value}</p>
+    </div>
+  );
+}
+
+const EARN_STEPS = [
+  { n: "01", title: "Create", body: "Design something only you would make — from scratch, an image, or a prompt.", icon: IconPencil },
+  { n: "02", title: "Share", body: "Publish it to the FORMÉ marketplace for the community to discover and remix.", icon: IconStore },
+  { n: "03", title: "Earn", body: "Every purchase or remix of your design earns you a creator reward.", icon: IconArrowRight },
+];
 
 function HeroReveal() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -209,13 +224,74 @@ export default function Home() {
         </div>
       </section>
 
+      {/* MUSE GUIDANCE */}
+      <section className="border-t border-line-soft bg-ivory-dim py-20 sm:py-28">
+        <div className="mx-auto grid max-w-[1400px] grid-cols-1 items-center gap-12 px-5 sm:px-8 lg:grid-cols-2 lg:gap-16">
+          <div>
+            <p className="mb-3 text-[12px] uppercase tracking-[0.3em] text-ink-faint">Guided, not overwhelmed</p>
+            <h2 className="font-display text-4xl text-ink sm:text-5xl">MUSE will help you shape it.</h2>
+            <p className="mt-5 max-w-md text-[15px] leading-relaxed text-ink-soft">
+              Upload a photo, describe a vibe, or just start drawing — MUSE reads what you're going for and
+              suggests the material, fit and colour to match.
+            </p>
+            <Link
+              to="/create"
+              className="mt-7 inline-flex items-center gap-2 border-b border-ink/30 pb-1 text-[12.5px] font-medium uppercase tracking-[0.16em] text-ink transition-colors hover:border-ink"
+            >
+              Try It Yourself
+              <IconArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+
+          <div className="rounded-3xl border border-line-soft bg-paper p-6 shadow-[0_30px_80px_-40px_rgba(26,23,18,0.3)] sm:p-8">
+            <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.14em] text-clay-deep">
+              <IconSparkle className="h-3.5 w-3.5" /> Muse
+            </div>
+            <p className="mt-4 text-balance font-display text-xl italic leading-snug text-ink">
+              "I see an oversized silhouette, heavyweight fabric and a minimal graphic."
+            </p>
+            <div className="mt-6 grid grid-cols-3 gap-2.5">
+              <ChipStat label="Material" value="Heavyweight Cotton" />
+              <ChipStat label="Fit" value="Oversized" />
+              <ChipStat label="Colour" value="Washed Black" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CREATE → SHARE → EARN */}
+      <section className="border-t border-line-soft py-20 sm:py-28">
+        <div className="mx-auto max-w-[1400px] px-5 sm:px-8">
+          <div className="mb-14 max-w-xl">
+            <p className="mb-3 text-[12px] uppercase tracking-[0.3em] text-ink-faint">From idea to income</p>
+            <h2 className="font-display text-4xl text-ink sm:text-5xl">Create. Share. Earn.</h2>
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+            {EARN_STEPS.map(({ n, title, body, icon: Icon }) => (
+              <div key={n} className="rounded-3xl border border-line bg-paper p-8">
+                <span className="font-display text-sm text-ink-faint">{n}</span>
+                <div className="mt-6 flex h-12 w-12 items-center justify-center rounded-full border border-line-soft text-ink">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="mt-6 font-display text-2xl text-ink">{title}</h3>
+                <p className="mt-2 text-sm text-ink-soft">{body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* MARKETPLACE TEASER */}
-      <section className="py-20 sm:py-28">
+      <section className="border-t border-line-soft py-20 sm:py-28">
         <div className="mx-auto max-w-[1400px] px-5 sm:px-8">
           <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="mb-3 text-[12px] uppercase tracking-[0.3em] text-ink-faint">Discover</p>
-              <h2 className="font-display text-4xl text-ink sm:text-5xl">What people are creating</h2>
+              <h2 className="font-display text-4xl text-ink sm:text-5xl">Don't just shop. Discover.</h2>
+              <p className="mt-3 flex items-center gap-2 text-[11.5px] uppercase tracking-[0.12em] text-ink-faint">
+                Discover <IconArrowRight className="h-3 w-3" /> Remix <IconArrowRight className="h-3 w-3" /> Make it yours
+              </p>
             </div>
             <Link
               to="/marketplace"
@@ -233,8 +309,11 @@ export default function Home() {
                 to="/marketplace"
                 className="group block overflow-hidden rounded-2xl border border-line bg-paper transition-all hover:-translate-y-1 hover:shadow-[0_20px_50px_-24px_rgba(26,23,18,0.35)]"
               >
-                <div className="flex aspect-[4/5] items-center justify-center p-6" style={{ background: `${d.accent}14` }}>
+                <div className="relative flex aspect-[4/5] items-center justify-center p-6" style={{ background: `${d.accent}14` }}>
                   <GarmentStage garment={d.garment} colorHex={COLORS.find((c) => c.id === d.color)!.hex} view="front" className="h-full w-full" />
+                  <span className="absolute right-2.5 top-2.5 flex items-center gap-1 rounded-full bg-ink/85 px-2 py-1 text-[9.5px] font-medium uppercase tracking-[0.1em] text-ivory opacity-0 backdrop-blur transition-opacity group-hover:opacity-100">
+                    <IconRemix className="h-3 w-3" /> Remix
+                  </span>
                 </div>
                 <div className="p-4">
                   <p className="font-display text-lg text-ink">{d.name}</p>
