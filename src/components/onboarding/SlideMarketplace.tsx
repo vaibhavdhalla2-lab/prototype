@@ -9,7 +9,7 @@ const CARDS = [
   { name: "VOID / 01", creator: "aarav", price: "₹2,499", garment: "hoodie" as const, hex: "#232d3f" },
 ];
 
-export default function SlideMarket({ active }: { active: boolean }) {
+export default function SlideMarketplace({ active }: { active: boolean }) {
   const [phase, setPhase] = useState<Phase>("creation");
 
   useEffect(() => {
@@ -17,33 +17,30 @@ export default function SlideMarket({ active }: { active: boolean }) {
       setPhase("creation");
       return;
     }
-    const timers = [window.setTimeout(() => setPhase("publishing"), 700), window.setTimeout(() => setPhase("live"), 1600)];
+    const timers = [window.setTimeout(() => setPhase("publishing"), 650), window.setTimeout(() => setPhase("live"), 1500)];
     return () => timers.forEach(window.clearTimeout);
   }, [active]);
 
+  const live = phase === "live";
+
   return (
-    <div className="flex h-full flex-col items-center justify-center px-6 pb-24 pt-20 sm:px-10">
+    <div className="flex h-full flex-col items-center justify-center px-6 py-14 sm:px-14 sm:py-16">
       <p className="animate-fade-up mb-1 text-center text-[11px] uppercase tracking-[0.3em] text-ink-faint [animation-delay:80ms]">
         Create. Share. Earn.
       </p>
       <h1 className="animate-fade-up text-center font-display text-[clamp(1.9rem,6.5vw,3.1rem)] leading-[1.02] tracking-tight text-ink [animation-delay:140ms]">
-        You made it.
+        Create something.
         <br />
-        Now let the world see it.
+        Put it out there.
       </h1>
-      <p className="animate-fade-up mt-2 max-w-xs text-center text-[14px] text-ink-soft [animation-delay:200ms]">
-        Turn your creations into something other people can discover, remix and buy.
+      <p className="animate-fade-up mt-2 max-w-xs text-center text-[13.5px] text-ink-soft [animation-delay:200ms]">
+        Share your creation with the world. If people love it, they can wear it too.
       </p>
 
-      <div className="relative mt-7 flex h-[168px] w-full max-w-sm items-center justify-center">
-        {/* single creation, publishing state */}
+      <div className="relative mt-6 flex h-[150px] w-full max-w-sm items-center justify-center">
         <div
           className="absolute flex flex-col items-center transition-all duration-500"
-          style={{
-            opacity: phase === "live" ? 0 : 1,
-            transform: phase === "publishing" ? "scale(0.85) translateY(-6px)" : "scale(1)",
-            pointerEvents: "none",
-          }}
+          style={{ opacity: live ? 0 : 1, transform: phase === "publishing" ? "scale(0.85) translateY(-6px)" : "scale(1)", pointerEvents: "none" }}
         >
           <div className="aspect-square w-24 rounded-2xl border border-line-soft bg-paper p-3 shadow-[0_16px_40px_-24px_rgba(26,23,18,0.4)]">
             <GarmentStage garment="hoodie" colorHex="#17140f" view="front" className="h-full w-full" />
@@ -56,11 +53,7 @@ export default function SlideMarket({ active }: { active: boolean }) {
           )}
         </div>
 
-        {/* marketplace cards */}
-        <div
-          className="grid grid-cols-2 gap-3 transition-all duration-500"
-          style={{ opacity: phase === "live" ? 1 : 0, transform: phase === "live" ? "translateY(0)" : "translateY(10px)" }}
-        >
+        <div className="grid grid-cols-2 gap-3 transition-all duration-500" style={{ opacity: live ? 1 : 0, transform: live ? "translateY(0)" : "translateY(10px)" }}>
           {CARDS.map((c) => (
             <div key={c.name} className="w-32 overflow-hidden rounded-2xl border border-line bg-paper shadow-[0_16px_40px_-26px_rgba(26,23,18,0.4)]">
               <div className="flex aspect-square items-center justify-center p-3" style={{ background: `${c.hex}12` }}>
@@ -81,17 +74,19 @@ export default function SlideMarket({ active }: { active: boolean }) {
         </div>
       </div>
 
-      <div
-        className="mt-6 flex items-center gap-4 rounded-2xl border border-clay/30 bg-clay/[0.07] px-5 py-3.5 transition-opacity duration-500"
-        style={{ opacity: phase === "live" ? 1 : 0 }}
-      >
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.14em] text-clay-deep">Your creator reward</p>
-          <p className="font-display text-2xl text-ink">10%</p>
+      <div className={`mt-3 flex flex-wrap items-center justify-center gap-2.5 transition-opacity duration-500 ${live ? "opacity-100" : "opacity-0"}`}>
+        <div className="flex items-center gap-3 rounded-2xl border border-clay/30 bg-clay/[0.07] px-4 py-2.5">
+          <div>
+            <p className="text-[9.5px] uppercase tracking-[0.14em] text-clay-deep">Creator reward</p>
+            <p className="font-display text-xl leading-none text-ink">10%</p>
+          </div>
+          <p className="max-w-[130px] text-[9.5px] leading-snug text-ink-faint">Illustrative — subject to final FORMÉ terms.</p>
         </div>
-        <p className="max-w-[150px] text-[10.5px] leading-snug text-ink-faint">
-          Illustrative creator reward — subject to final FORMÉ terms.
-        </p>
+      </div>
+
+      <div className={`mt-4 flex flex-col items-center gap-1 transition-opacity duration-500 ${live ? "opacity-100" : "opacity-0"}`}>
+        <p className="text-[12.5px] text-ink-soft">Found something you love?</p>
+        <p className="font-display text-base italic text-ink">Make it yours.</p>
       </div>
     </div>
   );

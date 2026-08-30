@@ -272,6 +272,16 @@ function Face({ garment, colorHex, side, overlay, printArea, showPrintHint, acce
           <feDropShadow dx="1.1" dy="1.5" stdDeviation="0.5" floodColor="#000000" floodOpacity="0.4" />
           <feDropShadow dx="-0.6" dy="-0.6" stdDeviation="0.3" floodColor="#ffffff" floodOpacity="0.35" />
         </filter>
+
+        {/* smooths a rough freehand sketch into cleaner, more consistent linework */}
+        <filter id="refine-smooth" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="0.8" result="blur" />
+          <feComponentTransfer in="blur" result="sharp">
+            <feFuncA type="linear" slope="3.4" intercept="-0.5" />
+          </feComponentTransfer>
+          <feComposite in="sharp" in2="SourceGraphic" operator="over" />
+          <feDropShadow dx="0.6" dy="1" stdDeviation="0.4" floodColor="#000000" floodOpacity="0.22" />
+        </filter>
       </defs>
 
       {/* drop shadow on the surface below */}

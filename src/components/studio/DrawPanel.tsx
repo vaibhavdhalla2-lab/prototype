@@ -1,6 +1,6 @@
 import { useDesign, type DrawTool } from "../../lib/store";
 import { track } from "../../lib/analytics";
-import { IconUndo, IconRedo, IconTrash } from "../icons";
+import { IconUndo, IconRedo, IconTrash, IconSparkle, IconCheck } from "../icons";
 
 const TOOLS: { id: DrawTool; label: string }[] = [
   { id: "marker", label: "Marker" },
@@ -16,11 +16,14 @@ interface DrawPanelProps {
   setTool: (t: DrawTool) => void;
   color: string;
   setColor: (c: string) => void;
+  onRefine?: () => void;
 }
 
-export default function DrawPanel({ tool, setTool, color, setColor }: DrawPanelProps) {
+export default function DrawPanel({ tool, setTool, color, setColor, onRefine }: DrawPanelProps) {
   const design = useDesign();
   const side = design.view === "back" ? "back" : "front";
+  const strokes = side === "back" ? design.strokesBack : design.strokesFront;
+  const isRefined = side === "back" ? design.refinedBack : design.refinedFront;
 
   return (
     <div className="animate-fade-in">
@@ -98,6 +101,24 @@ export default function DrawPanel({ tool, setTool, color, setColor }: DrawPanelP
           <IconTrash className="h-4 w-4" /> Clear
         </button>
       </div>
+
+      {onRefine && (
+        <button
+          onClick={onRefine}
+          disabled={strokes.length === 0 || isRefined}
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-ink py-2.5 text-[12px] font-medium uppercase tracking-[0.1em] text-ivory transition-opacity disabled:opacity-30"
+        >
+          {isRefined ? (
+            <>
+              <IconCheck className="h-4 w-4" /> Refined
+            </>
+          ) : (
+            <>
+              <IconSparkle className="h-4 w-4" /> Refine My Sketch
+            </>
+          )}
+        </button>
+      )}
 
       <p className="mt-5 font-display italic text-sm text-ink-faint">"Your canvas. Your rules."</p>
     </div>

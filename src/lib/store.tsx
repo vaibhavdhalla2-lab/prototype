@@ -49,6 +49,8 @@ export interface DesignState {
   artwork: ArtworkState | null;
   strokesFront: DrawStroke[];
   strokesBack: DrawStroke[];
+  refinedFront: boolean;
+  refinedBack: boolean;
   text: TextState | null;
   sourceMode: SourceMode;
   remixOf: string | null;
@@ -67,6 +69,8 @@ const DEFAULT_STATE: DesignState = {
   artwork: null,
   strokesFront: [],
   strokesBack: [],
+  refinedFront: false,
+  refinedBack: false,
   text: null,
   sourceMode: null,
   remixOf: null,
@@ -89,6 +93,7 @@ interface DesignStore extends DesignState {
   clearStrokes: (side: GarmentSide) => void;
   canUndo: (side: GarmentSide) => boolean;
   canRedo: (side: GarmentSide) => boolean;
+  setRefined: (side: GarmentSide, v: boolean) => void;
   setName: (n: string) => void;
   setSourceMode: (m: SourceMode) => void;
   setAccentTrim: (v: boolean) => void;
@@ -132,9 +137,17 @@ export function DesignProvider({ children }: { children: ReactNode }) {
   const setPocketVisible = useCallback((v: boolean) => setState((s) => ({ ...s, pocketVisible: v })), []);
 
   const addStroke = useCallback((side: GarmentSide, stroke: DrawStroke) => {
-    setState((s) => (side === "front" ? { ...s, strokesFront: [...s.strokesFront, stroke] } : { ...s, strokesBack: [...s.strokesBack, stroke] }));
+    setState((s) =>
+      side === "front"
+        ? { ...s, strokesFront: [...s.strokesFront, stroke], refinedFront: false }
+        : { ...s, strokesBack: [...s.strokesBack, stroke], refinedBack: false },
+    );
     if (side === "front") setRedoFront([]);
     else setRedoBack([]);
+  }, []);
+
+  const setRefined = useCallback((side: GarmentSide, v: boolean) => {
+    setState((s) => (side === "front" ? { ...s, refinedFront: v } : { ...s, refinedBack: v }));
   }, []);
 
   const undoStroke = useCallback((side: GarmentSide) => {
@@ -168,7 +181,7 @@ export function DesignProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const clearStrokes = useCallback((side: GarmentSide) => {
-    setState((s) => (side === "front" ? { ...s, strokesFront: [] } : { ...s, strokesBack: [] }));
+    setState((s) => (side === "front" ? { ...s, strokesFront: [], refinedFront: false } : { ...s, strokesBack: [], refinedBack: false }));
     if (side === "front") setRedoFront([]);
     else setRedoBack([]);
   }, []);
@@ -215,6 +228,7 @@ export function DesignProvider({ children }: { children: ReactNode }) {
       clearStrokes,
       canUndo,
       canRedo,
+      setRefined,
       setName,
       setSourceMode,
       setAccentTrim,
@@ -224,7 +238,7 @@ export function DesignProvider({ children }: { children: ReactNode }) {
       loadFromMarketDesign,
       applyPartial,
     }),
-    [state, setGarment, setView, setColor, setMaterial, setFit, setArtwork, setText, addStroke, undoStroke, redoStroke, clearStrokes, canUndo, canRedo, setName, setSourceMode, setAccentTrim, setFinish, setPocketVisible, startFresh, loadFromMarketDesign, applyPartial],
+    [state, setGarment, setView, setColor, setMaterial, setFit, setArtwork, setText, addStroke, undoStroke, redoStroke, clearStrokes, canUndo, canRedo, setRefined, setName, setSourceMode, setAccentTrim, setFinish, setPocketVisible, startFresh, loadFromMarketDesign, applyPartial],
   );
 
   return <DesignContext.Provider value={value}>{children}</DesignContext.Provider>;

@@ -20,14 +20,16 @@ import DetailsPanel from "../components/studio/DetailsPanel";
 import GraphicsPanel from "../components/studio/GraphicsPanel";
 import SummaryPanel from "../components/studio/SummaryPanel";
 import MuseAssistant from "../components/studio/MuseAssistant";
+import MusePanel from "../components/studio/MusePanel";
 import BottomSheet from "../components/studio/BottomSheet";
 import DrawLayer from "../components/studio/DrawLayer";
 import ArtworkLayer from "../components/studio/ArtworkLayer";
+import RefineDrawing from "../components/studio/RefineDrawing";
 import { IconSparkle, IconArrowRight, IconClose, IconPencil, IconType, IconUpload, IconLayers } from "../components/icons";
 
 type Stage = "pick" | "upload" | "prompt" | "studio";
 type Category = "design" | "material" | "color" | "fit" | "details";
-type DesignSub = "draw" | "text" | "image" | "graphics";
+type DesignSub = "image" | "muse" | "draw" | "text" | "graphics";
 type ViewTab = "front" | "back" | "detail" | "3d";
 
 const CATEGORY_TABS: { id: Category; label: string }[] = [
@@ -38,12 +40,47 @@ const CATEGORY_TABS: { id: Category; label: string }[] = [
   { id: "details", label: "Details" },
 ];
 
+// Order matters: Image, Muse, Draw are the three primary creation methods —
+// Text and Graphics remain available but secondary (reachable via "More").
 const DESIGN_SUB_TABS: { id: DesignSub; label: string; icon: typeof IconPencil }[] = [
+  { id: "image", label: "Image", icon: IconUpload },
+  { id: "muse", label: "Muse", icon: IconSparkle },
   { id: "draw", label: "Draw", icon: IconPencil },
   { id: "text", label: "Text", icon: IconType },
-  { id: "image", label: "Image", icon: IconUpload },
   { id: "graphics", label: "Graphics", icon: IconLayers },
 ];
+
+const PRIMARY_METHODS: { id: DesignSub; title: string; body: string; icon: typeof IconPencil }[] = [
+  { id: "image", title: "Upload An Image", body: "Show us your inspiration or artwork.", icon: IconUpload },
+  { id: "muse", title: "Tell MUSE", body: "Describe the aesthetic you're imagining.", icon: IconSparkle },
+  { id: "draw", title: "Draw It", body: "Start with a blank canvas.", icon: IconPencil },
+];
+
+function DesignChooser({ onSelect }: { onSelect: (sub: DesignSub) => void }) {
+  return (
+    <div className="animate-fade-in">
+      <p className="text-[11px] uppercase tracking-[0.25em] text-ink-faint">How do you want to create?</p>
+      <div className="mt-4 flex flex-col gap-2.5">
+        {PRIMARY_METHODS.map((m) => (
+          <button
+            key={m.id}
+            onClick={() => onSelect(m.id)}
+            className="group flex items-center gap-4 rounded-2xl border border-line bg-paper p-4 text-left transition-all hover:-translate-y-0.5 hover:border-ink/40 hover:shadow-[0_16px_36px_-24px_rgba(26,23,18,0.35)]"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line-soft text-ink transition-colors group-hover:border-ink group-hover:bg-ink group-hover:text-ivory">
+              <m.icon className="h-5 w-5" />
+            </span>
+            <span className="flex-1">
+              <span className="block text-[15px] font-medium text-ink">{m.title}</span>
+              <span className="mt-0.5 block text-[12.5px] text-ink-soft">{m.body}</span>
+            </span>
+            <IconArrowRight className="h-4 w-4 shrink-0 text-ink-faint transition-transform group-hover:translate-x-1 group-hover:text-ink" />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function TextOverlay({
   content,
@@ -73,6 +110,7 @@ export default function Create() {
   const [stage, setStage] = useState<Stage>("studio");
   const [category, setCategory] = useState<Category>("design");
   const [designSub, setDesignSub] = useState<DesignSub>("draw");
+  const [designChooserOpen, setDesignChooserOpen] = useState(true);
   const [museOpen, setMuseOpen] = useState(false);
   const [drawTool, setDrawTool] = useState<DrawTool>("marker");
   const [drawColor, setDrawColor] = useState("#1a1712");
@@ -81,6 +119,7 @@ export default function Create() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
+  const [refiningOpen, setRefiningOpen] = useState(false);
 
   useEffect(() => {
     if (initialized.current) return;
@@ -137,7 +176,10 @@ export default function Create() {
 
   const jump = (cat: string, sub?: string) => {
     setCategory(cat as Category);
-    if (sub) setDesignSub(sub as DesignSub);
+    if (sub) {
+      setDesignSub(sub as DesignSub);
+      setDesignChooserOpen(false);
+    }
     setSheetOpen(true);
     setReviewOpen(false);
   };
@@ -148,7 +190,7 @@ export default function Create() {
     setMoreOpen(false);
   };
 
-  const drawExpanded = sheetOpen && category === "design" && designSub === "draw";
+  const drawExpanded = sheetOpen && category === "design" && designSub === "draw" && !designChooserOpen;
 
   if (stage === "pick") {
     return (
@@ -166,14 +208,11 @@ export default function Create() {
   if (stage === "upload") {
     return (
       <EntryUpload
-        onEnterStudio={(tab) => {
+        onEnterStudio={() => {
           setStage("studio");
-          if (tab === "image") {
-            setCategory("design");
-            setDesignSub("image");
-          } else {
-            setCategory("design");
-          }
+          setCategory("design");
+          setDesignSub("image");
+          setDesignChooserOpen(false);
         }}
       />
     );
@@ -185,6 +224,7 @@ export default function Create() {
         onEnterStudio={(tab) => {
           setStage("studio");
           setCategory(tab === "color" ? "color" : "design");
+          setDesignChooserOpen(false);
         }}
       />
     );
@@ -204,6 +244,7 @@ export default function Create() {
 
   const colorHex = colorById(design.color).hex;
   const printArea = PRINT_AREAS[design.garment].front;
+  const backPrintArea = PRINT_AREAS[design.garment].back;
   const textColor = ["offwhite", "stone"].includes(design.color) ? "#1a1712" : "#f6f3ec";
 
   const frontContent = (
@@ -214,6 +255,8 @@ export default function Create() {
         tool={drawTool}
         color={drawColor}
         eraseColor={colorHex}
+        refined={design.refinedFront}
+        printArea={printArea}
         onStrokeEnd={(s) => {
           design.addStroke("front", s);
           track("drawing_started", { side: "front", tool: drawTool });
@@ -237,6 +280,8 @@ export default function Create() {
       tool={drawTool}
       color={drawColor}
       eraseColor={colorHex}
+      refined={design.refinedBack}
+      printArea={backPrintArea}
       onStrokeEnd={(s) => {
         design.addStroke("back", s);
         track("drawing_started", { side: "back", tool: drawTool });
@@ -258,9 +303,17 @@ export default function Create() {
     window.setTimeout(() => setSavedFlash(false), 1800);
   };
 
+  const startRefine = () => {
+    const side = design.view === "back" ? "back" : "front";
+    const strokes = side === "back" ? design.strokesBack : design.strokesFront;
+    const alreadyRefined = side === "back" ? design.refinedBack : design.refinedFront;
+    if (strokes.length > 0 && !alreadyRefined) setRefiningOpen(true);
+  };
+
   const renderPanel = () => {
     if (category === "design") {
-      if (designSub === "draw") return <DrawPanel tool={drawTool} setTool={setDrawTool} color={drawColor} setColor={setDrawColor} />;
+      if (designSub === "draw") return <DrawPanel tool={drawTool} setTool={setDrawTool} color={drawColor} setColor={setDrawColor} onRefine={startRefine} />;
+      if (designSub === "muse") return <MusePanel />;
       if (designSub === "text") return <TextPanel />;
       if (designSub === "image") return <ImagePanel />;
       return <GraphicsPanel />;
@@ -384,7 +437,7 @@ export default function Create() {
             </div>
 
             {category === "design" && (
-              <div className="mt-3 grid grid-cols-2 gap-1.5">
+              <div className="mt-3 grid grid-cols-3 gap-1.5">
                 {DESIGN_SUB_TABS.map((t) => (
                   <button
                     key={t.id}
@@ -428,7 +481,7 @@ export default function Create() {
               <IconArrowRight className="h-3.5 w-3.5 text-clay-deep" />
             </button>
             <div className="mt-6">
-              <SummaryPanel onJump={jump} />
+              <SummaryPanel onJump={jump} previewFrontOverlay={frontOverlay} previewBackOverlay={backOverlay} />
             </div>
           </div>
         </div>
@@ -468,8 +521,8 @@ export default function Create() {
             className="mt-5 flex w-full items-center justify-between rounded-2xl bg-ink px-5 py-4 text-ivory"
           >
             <span>
-              <span className="block text-[11px] uppercase tracking-[0.16em] text-ivory/60">Estimated price</span>
-              <span className="font-display text-xl">Review &amp; finish</span>
+              <span className="block text-[11px] uppercase tracking-[0.16em] text-ivory/60">Ready?</span>
+              <span className="font-display text-xl">Review &amp; Finish</span>
             </span>
             <IconArrowRight className="h-5 w-5" />
           </button>
@@ -503,26 +556,37 @@ export default function Create() {
 
         <BottomSheet
           open={sheetOpen && !drawExpanded}
-          title={category === "design" ? `Design · ${DESIGN_SUB_TABS.find((t) => t.id === designSub)!.label}` : CATEGORY_TABS.find((t) => t.id === category)!.label}
+          title={
+            category === "design"
+              ? designChooserOpen
+                ? "Design"
+                : `Design · ${DESIGN_SUB_TABS.find((t) => t.id === designSub)!.label}`
+              : CATEGORY_TABS.find((t) => t.id === category)!.label
+          }
           onClose={() => setSheetOpen(false)}
         >
-          {category === "design" && (
-            <div className="mb-4 grid grid-cols-4 gap-1.5">
-              {DESIGN_SUB_TABS.map((t) => (
+          {category === "design" ? (
+            designChooserOpen ? (
+              <DesignChooser
+                onSelect={(sub) => {
+                  setDesignSub(sub);
+                  setDesignChooserOpen(false);
+                }}
+              />
+            ) : (
+              <div className="animate-fade-in">
                 <button
-                  key={t.id}
-                  onClick={() => setDesignSub(t.id)}
-                  className={`flex flex-col items-center gap-1 rounded-lg border py-2 text-[10px] uppercase tracking-[0.04em] transition-colors ${
-                    designSub === t.id ? "border-ink text-ink" : "border-line-soft text-ink-faint"
-                  }`}
+                  onClick={() => setDesignChooserOpen(true)}
+                  className="mb-4 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.1em] text-ink-faint transition-colors hover:text-ink-soft"
                 >
-                  <t.icon className="h-3.5 w-3.5" />
-                  {t.label}
+                  ← Change method
                 </button>
-              ))}
-            </div>
+                {renderPanel()}
+              </div>
+            )
+          ) : (
+            renderPanel()
           )}
-          {renderPanel()}
         </BottomSheet>
 
         {/* dedicated full-canvas drawing mode — the garment stays large while you draw */}
@@ -530,7 +594,16 @@ export default function Create() {
           <div className="fixed inset-0 z-50 flex flex-col bg-ivory animate-fade-in">
             <div className="flex items-center justify-between border-b border-line-soft px-4 py-3">
               <p className="text-[11px] uppercase tracking-[0.2em] text-ink-faint">Draw on the garment</p>
-              <button onClick={() => setSheetOpen(false)} className="text-[12px] font-medium uppercase tracking-[0.14em] text-ink">
+              <button
+                onClick={() => {
+                  const side = design.view === "back" ? "back" : "front";
+                  const strokes = side === "back" ? design.strokesBack : design.strokesFront;
+                  const alreadyRefined = side === "back" ? design.refinedBack : design.refinedFront;
+                  if (strokes.length > 0 && !alreadyRefined) startRefine();
+                  else setSheetOpen(false);
+                }}
+                className="text-[12px] font-medium uppercase tracking-[0.14em] text-ink"
+              >
                 Done
               </button>
             </div>
@@ -555,11 +628,30 @@ export default function Create() {
           </div>
         )}
 
+        {refiningOpen && design.garment && (
+          <RefineDrawing
+            garment={design.garment}
+            colorHex={colorHex}
+            side={design.view === "back" ? "back" : "front"}
+            fit={design.fit}
+            accentTrim={design.accentTrim}
+            pocketVisible={design.pocketVisible}
+            strokes={design.view === "back" ? design.strokesBack : design.strokesFront}
+            printArea={design.view === "back" ? backPrintArea : printArea}
+            onKeep={() => {
+              design.setRefined(design.view === "back" ? "back" : "front", true);
+              track("drawing_started", { action: "refined", side: design.view });
+              setRefiningOpen(false);
+              setSheetOpen(false);
+            }}
+            onEditAgain={() => setRefiningOpen(false)}
+          />
+        )}
+
         <BottomSheet open={moreOpen} title="More tools" onClose={() => setMoreOpen(false)}>
           <div className="grid grid-cols-2 gap-3">
             {[
               { id: "design" as Category, sub: "text" as DesignSub, label: "Text", icon: IconType },
-              { id: "design" as Category, sub: "image" as DesignSub, label: "Image", icon: IconUpload },
               { id: "design" as Category, sub: "graphics" as DesignSub, label: "Graphics", icon: IconLayers },
               { id: "details" as Category, sub: undefined, label: "Details", icon: IconSparkle },
             ].map((item) => (
@@ -567,7 +659,10 @@ export default function Create() {
                 key={item.label}
                 onClick={() => {
                   setCategory(item.id);
-                  if (item.sub) setDesignSub(item.sub);
+                  if (item.sub) {
+                    setDesignSub(item.sub);
+                    setDesignChooserOpen(false);
+                  }
                   setMoreOpen(false);
                   setSheetOpen(true);
                 }}
@@ -592,7 +687,7 @@ export default function Create() {
                   <IconClose className="h-4 w-4" />
                 </button>
               </div>
-              <SummaryPanel onJump={jump} />
+              <SummaryPanel onJump={jump} previewFrontOverlay={frontOverlay} previewBackOverlay={backOverlay} />
             </div>
           </div>
         )}

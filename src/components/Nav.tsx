@@ -34,7 +34,7 @@ export default function Nav() {
             FORM<span className="text-clay">É</span>
           </NavLink>
 
-          <nav className="hidden items-center gap-9 md:flex">
+          <nav className="hidden items-center gap-9 lg:flex">
             <NavLink to="/create" className={LINK_CLS}>
               Start Creating
             </NavLink>
@@ -49,7 +49,7 @@ export default function Nav() {
             </NavLink>
           </nav>
 
-          <div className="hidden md:block">
+          <div className="hidden lg:block">
             <button
               onClick={() => navigate("/create")}
               className="group inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-[12px] font-medium uppercase tracking-[0.14em] text-ivory transition-transform duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_30px_-10px_rgba(26,23,18,0.5)]"
@@ -59,13 +59,13 @@ export default function Nav() {
             </button>
           </div>
 
-          <button className="md:hidden text-ink" onClick={() => setMobileOpen((v) => !v)} aria-label="Menu">
+          <button className="lg:hidden text-ink" onClick={() => setMobileOpen((v) => !v)} aria-label="Menu">
             {mobileOpen ? <IconClose className="h-6 w-6" /> : <IconMenu className="h-6 w-6" />}
           </button>
         </div>
 
         {mobileOpen && (
-          <div className="animate-fade-in border-t border-line-soft bg-paper px-6 py-6 md:hidden">
+          <div className="animate-fade-in border-t border-line-soft bg-paper px-6 py-6 lg:hidden">
             <div className="flex flex-col gap-5">
               <NavLink to="/create" onClick={() => setMobileOpen(false)} className="text-lg font-display">
                 Start Creating
@@ -85,7 +85,7 @@ export default function Nav() {
       </header>
 
       {/* Mobile bottom tab bar */}
-      <nav data-mobile-chrome className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-line-soft bg-paper/95 px-4 pb-[max(10px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md md:hidden">
+      <nav data-mobile-chrome className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-line-soft bg-paper/95 px-4 pb-[max(10px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md lg:hidden">
         <NavLink to="/marketplace" className="flex flex-col items-center gap-1 px-4 py-1 text-ink-soft [&.active]:text-ink">
           {({ isActive }) => (
             <>
