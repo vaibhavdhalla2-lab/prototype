@@ -1,60 +1,43 @@
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import { useEffect } from "react";
-import Nav from "./components/Nav";
-import Footer from "./components/Footer";
-import FeedbackWidget from "./components/FeedbackWidget";
-import Onboarding from "./components/onboarding/Onboarding";
-import { DesignProvider } from "./lib/store";
-import { FeedbackProvider } from "./lib/feedback";
-import { OnboardingProvider } from "./lib/onboarding";
-import Home from "./pages/Home";
-import Create from "./pages/Create";
-import Marketplace from "./pages/Marketplace";
-import Profile from "./pages/Profile";
-import About from "./pages/About";
-
-function ScrollToTop() {
-  const { pathname } = useLocation();
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
-  return null;
-}
-
-function Layout() {
-  const location = useLocation();
-  const isStudio = location.pathname === "/create";
-  return (
-    <div className="flex min-h-screen flex-col bg-ivory">
-      <Nav />
-      <main className="flex-1">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/create" element={<Create />} />
-          <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/about" element={<About />} />
-        </Routes>
-      </main>
-      {!isStudio && <Footer />}
-      <FeedbackWidget />
-      <Onboarding />
-      <div data-mobile-chrome className="h-16 lg:hidden" />
-    </div>
-  );
-}
+import { useApp } from "./lib/store";
+import TopNav from "./components/TopNav";
+import InputPanel from "./components/InputPanel";
+import RightPanel from "./components/RightPanel";
+import Canvas from "./components/Canvas";
+import MermaidView from "./components/MermaidView";
+import DocumentationView from "./components/DocumentationView";
+import PlanView from "./components/PlanView";
+import BuildProgress from "./components/BuildProgress";
+import ModifyPreviewModal from "./components/ModifyPreviewModal";
+import EvidencePanel from "./components/EvidencePanel";
+import Toasts from "./components/Toasts";
 
 export default function App() {
+  const { state } = useApp();
+
+  if (!state.hydrated) {
+    return (
+      <div className="grid h-screen w-screen place-items-center bg-canvas">
+        <span className="h-6 w-6 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+      </div>
+    );
+  }
+
   return (
-    <BrowserRouter>
-      <DesignProvider>
-        <FeedbackProvider>
-          <OnboardingProvider>
-            <ScrollToTop />
-            <Layout />
-          </OnboardingProvider>
-        </FeedbackProvider>
-      </DesignProvider>
-    </BrowserRouter>
+    <div className="flex h-screen w-screen flex-col overflow-hidden">
+      <TopNav />
+      <div className="flex flex-1 overflow-hidden">
+        <InputPanel />
+        {state.view === "diagram" && <Canvas />}
+        {state.view === "mermaid" && <MermaidView />}
+        {state.view === "documentation" && <DocumentationView />}
+        <RightPanel />
+      </div>
+
+      <PlanView />
+      <BuildProgress />
+      <ModifyPreviewModal />
+      <EvidencePanel />
+      <Toasts />
+    </div>
   );
 }
