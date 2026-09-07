@@ -1,33 +1,32 @@
-# FlowBuilder AI
+# React + TypeScript + Vite
 
-A functional prototype of an AI-powered process flow / block diagram builder. Describe a process in a prompt, or attach documents and video, and FlowBuilder AI produces an editable process plan, an interactive diagram, the underlying Mermaid source, and generated SOP documentation — with every step traceable back to its evidence.
+This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
-All AI behavior (prompt enhancement, planning, diagram generation, component modification, documentation) is simulated on the client with realistic staged loading, so the prototype runs entirely in the browser with no backend or API key.
+Currently, two official plugins are available:
 
-## Running locally
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-```bash
-npm install
-npm run dev
+## React Compiler
+
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+
+## Expanding the Oxlint configuration
+
+If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+
+```json
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["react", "typescript", "oxc"],
+  "options": {
+    "typeAware": true
+  },
+  "rules": {
+    "react/rules-of-hooks": "error",
+    "react/only-export-components": ["warn", { "allowConstantExport": true }]
+  }
+}
 ```
 
-Open the app and click **Load demo process** for a fully populated example (Customer Refund Process), or describe your own process from scratch.
-
-## Highlights
-
-- Prompt, document, and video inputs with simulated processing and a live context summary
-- Prompt enhancement with an original/enhanced side-by-side compare
-- Plan mode: an editable AI-proposed plan (steps, actors, decisions, gaps) before anything is built
-- Build mode: staged progress, then an interactive SVG diagram with pan/zoom/fit and draggable-free layered layout
-- Every component cites its evidence (document/email/Slack/video) with an evidence drawer
-- "Ask AI to Modify" on any component, with a diff preview before changes are applied
-- A live Mermaid code view that's bidirectionally synced with the diagram, with validation and line-level error reporting
-- Diagram-level and component-level threaded comments
-- Full undo/redo history with keyboard shortcuts
-- Auto-generated, editable process documentation (SOP)
-- Export to PDF, DOCX, and Mermaid
-- State persists to `localStorage` across reloads
-
-## Stack
-
-Vite, React 19, TypeScript, Tailwind CSS v4. Exports powered by `jspdf`, `docx`, and `html-to-image`.
+See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
