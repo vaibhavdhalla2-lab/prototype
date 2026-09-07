@@ -181,3 +181,55 @@ export const IconAlert = (p: IconProps) => (
   </svg>
 );
 export const IconClose = IconX;
+export const IconChevronDown = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M6 9l6 6 6-6" />
+  </svg>
+);
+export const IconTemplate = (p: IconProps) => (
+  <svg {...base(p)}>
+    <rect x="3" y="3" width="7" height="9" rx="1.5" />
+    <rect x="14" y="3" width="7" height="5" rx="1.5" />
+    <rect x="14" y="12" width="7" height="9" rx="1.5" />
+    <rect x="3" y="16" width="7" height="5" rx="1.5" />
+  </svg>
+);
+export const IconArrowUp = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M12 19V5" />
+    <path d="M6 11l6-6 6 6" />
+  </svg>
+);
+export const IconClock = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M12 7v5l3.5 2" />
+  </svg>
+);
+export const IconRestore = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M3 12a9 9 0 109-9" />
+    <path d="M3 4v5h5" />
+    <path d="M12 8v4l3 2" />
+  </svg>
+);
+export const IconLock = (p: IconProps) => (
+  <svg {...base(p)}>
+    <rect x="5" y="11" width="14" height="9" rx="2" />
+    <path d="M8 11V7a4 4 0 018 0v4" />
+  </svg>
+);
+export const IconImage = (p: IconProps) => (
+  <svg {...base(p)}>
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <circle cx="8.5" cy="8.5" r="1.5" />
+    <path d="M21 15l-5-5L5 21" />
+  </svg>
+);
+export const IconDatabase = (p: IconProps) => (
+  <svg {...base(p)}>
+    <ellipse cx="12" cy="5" rx="8" ry="3" />
+    <path d="M4 5v14c0 1.66 3.58 3 8 3s8-1.34 8-3V5" />
+    <path d="M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3" />
+  </svg>
+);

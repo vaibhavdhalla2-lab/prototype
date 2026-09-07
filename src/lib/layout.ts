@@ -51,10 +51,59 @@ export function computeLayout(model: ProcessModel): LayoutResult {
     inAdj.get(e.to)!.push(e.from);
   }
 
-  // Layer assignment via Kahn's algorithm (longest path from roots).
+  // Detect back edges (loops) via DFS so a cycle can't corrupt forward layering —
+  // they're excluded from layer assignment below but still drawn as edges.
+  const backEdgePairs = new Set<string>();
+  {
+    const UNVISITED = 0,
+      IN_PROGRESS = 1,
+      DONE = 2;
+    const color = new Map<string, number>();
+    for (const id of nodeIds) color.set(id, UNVISITED);
+    const stack: { id: string; iter: number }[] = [];
+    for (const startId of nodeIds) {
+      if (color.get(startId) !== UNVISITED) continue;
+      stack.push({ id: startId, iter: 0 });
+      color.set(startId, IN_PROGRESS);
+      while (stack.length) {
+        const frame = stack[stack.length - 1];
+        const neighbors = outAdj.get(frame.id) ?? [];
+        if (frame.iter >= neighbors.length) {
+          color.set(frame.id, DONE);
+          stack.pop();
+          continue;
+        }
+        const next = neighbors[frame.iter++];
+        const c = color.get(next);
+        if (c === IN_PROGRESS) {
+          backEdgePairs.add(`${frame.id}->${next}`);
+        } else if (c === UNVISITED) {
+          color.set(next, IN_PROGRESS);
+          stack.push({ id: next, iter: 0 });
+        }
+      }
+    }
+  }
+
+  // Layering adjacency excludes back edges so a loop-back connection can't pull an
+  // earlier step down below the steps that causally follow it.
+  const layerOutAdj = new Map<string, string[]>();
+  const layerInAdj = new Map<string, string[]>();
+  for (const id of nodeIds) {
+    layerOutAdj.set(id, []);
+    layerInAdj.set(id, []);
+  }
+  for (const e of edges) {
+    if (!layerOutAdj.has(e.from) || !layerInAdj.has(e.to)) continue;
+    if (backEdgePairs.has(`${e.from}->${e.to}`)) continue;
+    layerOutAdj.get(e.from)!.push(e.to);
+    layerInAdj.get(e.to)!.push(e.from);
+  }
+
+  // Layer assignment via Kahn's algorithm (longest path from roots) over the acyclic subgraph.
   const layer = new Map<string, number>();
   const indegree = new Map<string, number>();
-  for (const id of nodeIds) indegree.set(id, inAdj.get(id)!.length);
+  for (const id of nodeIds) indegree.set(id, layerInAdj.get(id)!.length);
   const queue: string[] = nodeIds.filter((id) => indegree.get(id) === 0);
   if (queue.length === 0 && nodeIds.length > 0) queue.push(nodeIds[0]);
   for (const id of queue) layer.set(id, 0);
@@ -67,7 +116,7 @@ export function computeLayout(model: ProcessModel): LayoutResult {
     if (visited.has(id)) continue;
     visited.add(id);
     const l = layer.get(id) ?? 0;
-    for (const next of outAdj.get(id) ?? []) {
+    for (const next of layerOutAdj.get(id) ?? []) {
       const nl = Math.max(layer.get(next) ?? 0, l + 1);
       layer.set(next, nl);
       const deg = (indegree.get(next) ?? 1) - 1;

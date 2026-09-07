@@ -126,3 +126,23 @@ export interface DiagramComment {
 
 export type AppView = "diagram" | "mermaid" | "documentation";
 export type RightPanelMode = "inspector" | "comments";
+
+export type GenerationMode = "build" | "plan";
+
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  createdAt: number;
+  versionLabel?: string;
+  selectedNodeId?: string;
+}
+
+export interface TemplateDefinition {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  prompt: string;
+  model: ProcessModel;
+}
