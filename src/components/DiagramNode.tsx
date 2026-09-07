@@ -6,14 +6,26 @@ import { IconPaperclip, IconComment, IconSparkle } from "./icons";
 const TYPE_STYLES: Record<ProcessNode["type"], { bg: string; border: string; text: string }> = {
   start: { bg: "bg-success-soft", border: "border-success/40", text: "text-success" },
   end: { bg: "bg-ink/5", border: "border-ink-faint/40", text: "text-ink-soft" },
-  process: { bg: "bg-surface", border: "border-border", text: "text-ink" },
+  process: { bg: "bg-brand-soft", border: "border-brand/30", text: "text-ink" },
   decision: { bg: "bg-warn-soft", border: "border-warn/40", text: "text-warn" },
-  io: { bg: "bg-brand-soft", border: "border-brand/30", text: "text-brand-deep" },
+  io: { bg: "bg-surface-2", border: "border-ink-faint/40", text: "text-ink-soft" },
 };
 
-export default function DiagramNode({ node, layout, selected }: { node: ProcessNode; layout: LayoutNode; selected: boolean }) {
+const EXCEPTION_STYLE = { bg: "bg-exception-soft", border: "border-exception/50", text: "text-exception" };
+
+export default function DiagramNode({
+  node,
+  layout,
+  selected,
+  isException,
+}: {
+  node: ProcessNode;
+  layout: LayoutNode;
+  selected: boolean;
+  isException?: boolean;
+}) {
   const { dispatch } = useApp();
-  const style = TYPE_STYLES[node.type];
+  const style = isException && node.type === "process" ? EXCEPTION_STYLE : TYPE_STYLES[node.type];
 
   const commonProps = {
     onClick: (e: React.MouseEvent) => {

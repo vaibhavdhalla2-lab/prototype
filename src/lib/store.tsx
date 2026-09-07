@@ -1,9 +1,11 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, useRef, type ReactNode } from "react";
 import type {
   AppView,
+  ChatMessage,
   CommentReply,
   CommentThread,
   DiagramComment,
+  GenerationMode,
   ModificationPreview,
   ProcessModel,
   ProcessPlan,
@@ -42,6 +44,9 @@ export interface AppState {
   showEnhanceCompare: boolean;
   enhancing: boolean;
   uploads: UploadedSourceFile[];
+
+  generationMode: GenerationMode;
+  chat: ChatMessage[];
 
   planning: boolean;
   plan: ProcessPlan | null;
@@ -109,6 +114,9 @@ function initialState(): AppState {
     enhancing: false,
     uploads: [],
 
+    generationMode: "build",
+    chat: [],
+
     planning: false,
     plan: null,
     showPlanModal: false,
@@ -159,6 +167,10 @@ function initialState(): AppState {
 export type Action =
   | { type: "SET_PROMPT"; text: string }
   | { type: "SET_PROCESS_NAME"; name: string }
+  | { type: "SET_GENERATION_MODE"; mode: GenerationMode }
+  | { type: "ADD_CHAT_MESSAGE"; message: ChatMessage }
+  | { type: "SET_HISTORY_INDEX"; index: number }
+  | { type: "RESTORE_VERSION"; index: number }
   | { type: "SET_ENHANCING"; value: boolean }
   | { type: "SET_ENHANCED_PROMPT"; text: string }
   | { type: "USE_ENHANCED"; value: boolean }
@@ -237,6 +249,44 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, prompt: action.text, savedStatus: "saving" };
     case "SET_PROCESS_NAME":
       return { ...state, processName: action.name };
+    case "SET_GENERATION_MODE":
+      return { ...state, generationMode: action.mode };
+    case "ADD_CHAT_MESSAGE":
+      return { ...state, chat: [...state.chat, action.message] };
+    case "SET_HISTORY_INDEX": {
+      const entry = state.history[action.index];
+      if (!entry) return state;
+      const mermaidText = generateMermaid(entry.model);
+      return {
+        ...state,
+        model: entry.model,
+        mermaidText,
+        mermaidDraft: mermaidText,
+        mermaidError: null,
+        mermaidDirty: false,
+        historyIndex: action.index,
+        selectedNodeId: null,
+        selectedEdgeId: null,
+      };
+    }
+    case "RESTORE_VERSION": {
+      const entry = state.history[action.index];
+      if (!entry) return state;
+      const mermaidText = generateMermaid(entry.model);
+      const hist = pushHistory(state, entry.model, `Restored Version ${action.index + 1}`);
+      return {
+        ...state,
+        model: entry.model,
+        mermaidText,
+        mermaidDraft: mermaidText,
+        mermaidError: null,
+        mermaidDirty: false,
+        ...hist,
+        selectedNodeId: null,
+        selectedEdgeId: null,
+        savedStatus: "saving",
+      };
+    }
     case "SET_ENHANCING":
       return { ...state, enhancing: action.value };
     case "SET_ENHANCED_PROMPT":
@@ -478,6 +528,10 @@ const PERSIST_FIELDS: (keyof AppState)[] = [
   "diagramComments",
   "isDemo",
   "view",
+  "chat",
+  "generationMode",
+  "history",
+  "historyIndex",
 ];
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -498,8 +552,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
             ...payload,
             mermaidText,
             mermaidDraft: mermaidText,
-            history: model ? [{ label: "Restored session", model, timestamp: Date.now() }] : [],
-            historyIndex: model ? 0 : -1,
+            history:
+              payload.history && payload.history.length > 0
+                ? payload.history
+                : model
+                  ? [{ label: "Initial generation", model, timestamp: Date.now() }]
+                  : [],
+            historyIndex:
+              payload.history && payload.history.length > 0
+                ? Math.min(payload.historyIndex ?? payload.history.length - 1, payload.history.length - 1)
+                : model
+                  ? 0
+                  : -1,
           },
         });
       } else {
@@ -537,6 +601,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     state.model,
     state.documentation,
     state.diagramComments,
+    state.chat,
+    state.generationMode,
+    state.history,
+    state.view,
+    state.activePromptIsEnhanced,
+    state.documentationEdited,
+    state.documentationStale,
+    state.isDemo,
   ]);
 
   const notify = useMemo(

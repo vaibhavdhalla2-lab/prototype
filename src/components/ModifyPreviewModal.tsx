@@ -1,10 +1,12 @@
 import { useApp } from "../lib/store";
 import { useFlowActions } from "../lib/actions";
+import { useEscapeKey } from "../hooks/useEscapeKey";
 import { IconSparkle, IconCheck, IconX } from "./icons";
 
 export default function ModifyPreviewModal() {
   const { state } = useApp();
   const actions = useFlowActions();
+  useEscapeKey(actions.rejectModification, !!state.modificationPreview);
   const preview = state.modificationPreview;
   if (!preview) return null;
 

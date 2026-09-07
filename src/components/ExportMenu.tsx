@@ -1,10 +1,12 @@
 import { useEffect, useRef } from "react";
 import { useFlowActions } from "../lib/actions";
-import { IconDoc, IconFile, IconMermaid, IconCopy } from "./icons";
+import { useEscapeKey } from "../hooks/useEscapeKey";
+import { IconDoc, IconFile, IconMermaid, IconCopy, IconImage } from "./icons";
 
 export default function ExportMenu({ onClose }: { onClose: () => void }) {
   const actions = useFlowActions();
   const ref = useRef<HTMLDivElement>(null);
+  useEscapeKey(onClose);
 
   useEffect(() => {
     function onDown(e: MouseEvent) {
@@ -35,8 +37,9 @@ export default function ExportMenu({ onClose }: { onClose: () => void }) {
       ref={ref}
       className="absolute right-0 top-full z-40 mt-2 w-64 rounded-xl border border-border bg-surface p-1.5 shadow-lg animate-pop"
     >
-      {item(<IconFile />, "Export PDF", "Diagram, documentation & citations", actions.handleExportPdf)}
+      {item(<IconImage />, "Export PNG", "High-resolution diagram image", actions.handleExportPng)}
       {item(<IconDoc />, "Export DOCX", "Purpose, steps, decisions & sources", actions.handleExportDocx)}
+      {item(<IconFile />, "Export PDF", "Diagram, documentation & citations", actions.handleExportPdf)}
       {item(<IconMermaid />, "Export Mermaid", "Download the .mmd source file", actions.handleExportMermaid)}
       <div className="my-1 h-px bg-border" />
       {item(<IconCopy />, "Copy Mermaid", "Copy code to clipboard", actions.handleCopyMermaid)}

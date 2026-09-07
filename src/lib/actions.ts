@@ -1,11 +1,20 @@
 import { useApp } from "./store";
-import { wait, enhancePrompt, generatePlan, buildModelFromPlan, interpretModification, generateDocumentation } from "./ai";
+import { wait, enhancePrompt, generatePlan, buildModelFromPlan, interpretModification, interpretDiagramModification, generateDocumentation } from "./ai";
 import { generateMermaid, parseMermaid, mergeMetadata } from "./mermaid";
 import { buildDemoModel, buildDemoUploads, buildDemoComments, DEMO_DOCUMENTATION, DEMO_PROMPT } from "../data/demo";
-import { exportDocx, exportMermaidFile, exportPdf, copyText } from "./export";
-import type { ProcessNode, ProcessPlan } from "../types";
+import { exportDocx, exportMermaidFile, exportPdf, exportPng, copyText } from "./export";
+import { makeId } from "./id";
+import type { ChatMessage, ProcessNode, ProcessPlan, TemplateDefinition } from "../types";
+
+function chatMsg(role: ChatMessage["role"], content: string, extra: Partial<ChatMessage> = {}): ChatMessage {
+  return { id: makeId("msg"), role, content, createdAt: Date.now(), ...extra };
+}
 
 const BUILD_STAGE_KEYS = ["analyze", "steps", "decisions", "actors", "diagram", "docs"] as const;
+
+function nextVersionNumber(state: ReturnType<typeof useApp>["state"]): number {
+  return Math.min(state.historyIndex + 2, 50);
+}
 
 export function useFlowActions() {
   const { state, dispatch, notify } = useApp();
@@ -41,11 +50,19 @@ export function useFlowActions() {
       notify("Add a prompt or upload a source before planning.", "error");
       return;
     }
+    dispatch({ type: "ADD_CHAT_MESSAGE", message: chatMsg("user", state.prompt) });
     dispatch({ type: "SET_PLANNING", value: true });
     await wait(1300 + Math.random() * 400);
     const plan = generatePlan(state.prompt || "General business process");
     dispatch({ type: "SET_PLANNING", value: false });
     dispatch({ type: "SET_PLAN", plan });
+    dispatch({
+      type: "ADD_CHAT_MESSAGE",
+      message: chatMsg(
+        "assistant",
+        `I've drafted a ${plan.steps.length}-step plan for "${plan.processTitle}" with ${plan.decisions.length} decision point${plan.decisions.length === 1 ? "" : "s"}. Review it in the panel, then click Build Diagram when you're ready.`,
+      ),
+    });
   }
 
   function closePlanModal() {
@@ -78,6 +95,16 @@ export function useFlowActions() {
     }
     dispatch({ type: "SET_BUILDING", value: false });
     dispatch({ type: "SET_PROCESS_NAME", name: plan.processTitle });
+    const stepCount = model ? model.nodes.filter((n) => n.type !== "start" && n.type !== "end").length : plan.steps.length;
+    const decisionCount = model ? model.nodes.filter((n) => n.type === "decision").length : plan.decisions.length;
+    dispatch({
+      type: "ADD_CHAT_MESSAGE",
+      message: chatMsg(
+        "assistant",
+        `I've created a ${stepCount}-step process for "${plan.processTitle}" including ${decisionCount} decision point${decisionCount === 1 ? "" : "s"}${plan.exceptions.length ? ` and exception handling for ${plan.exceptions.length} case${plan.exceptions.length === 1 ? "" : "s"}` : ""}.`,
+        { versionLabel: `Version ${nextVersionNumber(state)}` },
+      ),
+    });
     notify("Diagram generated successfully.");
   }
 
@@ -85,6 +112,9 @@ export function useFlowActions() {
     if (!hasContext()) {
       notify("Add a prompt or upload a source before building.", "error");
       return;
+    }
+    if (!state.model) {
+      dispatch({ type: "ADD_CHAT_MESSAGE", message: chatMsg("user", state.prompt) });
     }
     const plan = generatePlan(state.prompt || "General business process");
     await runBuildStages(plan);
@@ -119,12 +149,63 @@ export function useFlowActions() {
     dispatch({ type: "SET_MODIFICATION_PREVIEW", preview });
   }
 
+  async function sendChatMessage(instruction: string) {
+    if (!instruction.trim() || !state.model) return;
+    const nodeId = state.selectedNodeId ?? undefined;
+    dispatch({ type: "ADD_CHAT_MESSAGE", message: chatMsg("user", instruction, { selectedNodeId: nodeId }) });
+    dispatch({ type: "SET_MODIFYING", value: true });
+    if (nodeId) dispatch({ type: "SET_MODIFYING_NODE", id: nodeId });
+    await wait(900 + Math.random() * 500);
+    const node = nodeId ? state.model.nodes.find((n) => n.id === nodeId) : undefined;
+    const preview = node ? interpretModification(node, instruction, state.model) : interpretDiagramModification(state.model, instruction);
+    dispatch({ type: "SET_MODIFYING", value: false });
+    dispatch({ type: "SET_MODIFICATION_PREVIEW", preview });
+  }
+
   function acceptModification() {
+    if (!state.modificationPreview) return;
+    const versionLabel = `Version ${nextVersionNumber(state)}`;
+    const summary = state.modificationPreview.summary;
     dispatch({ type: "ACCEPT_MODIFICATION" });
+    dispatch({ type: "ADD_CHAT_MESSAGE", message: chatMsg("assistant", summary, { versionLabel }) });
     notify("Component updated by AI.");
   }
   function rejectModification() {
     dispatch({ type: "SET_MODIFICATION_PREVIEW", preview: null });
+    dispatch({ type: "ADD_CHAT_MESSAGE", message: chatMsg("assistant", "No problem — I left the diagram as it was.") });
+  }
+
+  function applyTemplate(template: TemplateDefinition) {
+    dispatch({ type: "SET_PROMPT", text: template.prompt });
+    dispatch({ type: "APPLY_MODEL", model: template.model, label: `Template: ${template.name}` });
+    dispatch({ type: "SET_PROCESS_NAME", name: template.name });
+    const text = generateDocumentation(template.model, template.name);
+    dispatch({ type: "SET_DOCUMENTATION", text });
+    dispatch({ type: "ADD_CHAT_MESSAGE", message: chatMsg("user", template.prompt) });
+    dispatch({
+      type: "ADD_CHAT_MESSAGE",
+      message: chatMsg(
+        "assistant",
+        `Loaded the "${template.name}" template as a starting point. Keep refining it conversationally, or open the Mermaid code to edit it directly.`,
+        { versionLabel: "Version 1" },
+      ),
+    });
+    notify(`Loaded "${template.name}" template.`);
+  }
+
+  function previewVersion(index: number) {
+    dispatch({ type: "SET_HISTORY_INDEX", index });
+  }
+
+  function restoreVersion(index: number) {
+    const entry = state.history[index];
+    if (!entry) return;
+    dispatch({ type: "RESTORE_VERSION", index });
+    dispatch({
+      type: "ADD_CHAT_MESSAGE",
+      message: chatMsg("assistant", `Restored "${entry.label}" as the newest version.`, { versionLabel: `Version ${nextVersionNumber(state)}` }),
+    });
+    notify("Version restored.");
   }
 
   function applyMermaidEdits() {
@@ -216,7 +297,7 @@ export function useFlowActions() {
     dispatch({
       type: "LOAD_DEMO",
       payload: {
-        processName: "Customer Refund Process",
+        processName: "Order-to-Cash Process",
         prompt: DEMO_PROMPT,
         enhancedPrompt: null,
         activePromptIsEnhanced: false,
@@ -232,6 +313,14 @@ export function useFlowActions() {
         isDemo: true,
         history: [{ label: "Demo process loaded", model, timestamp: Date.now() }],
         historyIndex: 0,
+        chat: [
+          chatMsg("user", DEMO_PROMPT),
+          chatMsg(
+            "assistant",
+            "I've created an 8-phase process covering order creation, validation, credit check, SAP order, parallel inventory & finance checks, fulfilment with delivery retries, invoicing with a correction loop, and AR & collections — including escalation paths to the Credit Manager, Customer Service Manager and Finance Manager.",
+            { versionLabel: "Version 1" },
+          ),
+        ],
       },
     });
     notify("Demo process loaded.");
@@ -249,6 +338,14 @@ export function useFlowActions() {
     const docs = state.documentation ?? generateDocumentation(state.model, state.processName);
     await exportPdf(state.processName, docs);
     notify("Export completed.");
+  }
+  async function handleExportPng() {
+    if (!state.model) {
+      notify("Generate a diagram before exporting.", "error");
+      return;
+    }
+    const ok = await exportPng(state.processName);
+    notify(ok ? "Diagram exported as PNG." : "Unable to export PNG — try the Diagram view first.", ok ? "default" : "error");
   }
   async function handleExportDocx() {
     if (!state.model) {
@@ -284,8 +381,12 @@ export function useFlowActions() {
     handleBuildDirect,
     reviseWithAi,
     handleModifyRequest,
+    sendChatMessage,
     acceptModification,
     rejectModification,
+    applyTemplate,
+    previewVersion,
+    restoreVersion,
     updateNodeManually,
     deleteNodeManually,
     deleteEdge,
@@ -299,6 +400,7 @@ export function useFlowActions() {
     loadDemo,
     newProcess,
     handleExportPdf,
+    handleExportPng,
     handleExportDocx,
     handleExportMermaid,
     handleCopyMermaid,

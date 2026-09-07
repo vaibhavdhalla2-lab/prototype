@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useApp } from "../lib/store";
 import { useFlowActions } from "../lib/actions";
 import { makeId } from "../lib/id";
+import { useEscapeKey } from "../hooks/useEscapeKey";
 import type { PlanDecision, PlanStep } from "../types";
 import { IconX, IconPlus, IconTrash, IconSparkle } from "./icons";
 
@@ -9,6 +10,7 @@ export default function PlanView() {
   const { state } = useApp();
   const actions = useFlowActions();
   const [newException, setNewException] = useState("");
+  useEscapeKey(actions.closePlanModal, state.showPlanModal && !!state.plan);
 
   if (!state.showPlanModal || !state.plan) return null;
   const plan = state.plan;

@@ -217,6 +217,36 @@ const DOMAINS: DomainTemplate[] = [
     enhanced:
       "Create a software deployment process beginning with a pull request, followed by automated testing, code review, merging, staging deployment, production deployment and release verification. Include failure and rollback paths at each verification gate.",
   },
+  {
+    key: "ordertocash",
+    keywords: ["order-to-cash", "order to cash", "o2c"],
+    processTitle: "Order-to-Cash Process",
+    understanding:
+      "I understand this as an order-to-cash workflow involving Sales, Finance, Warehouse and SAP. The process begins when a customer places an order and ends once payment is collected and the receivable is closed.",
+    actors: ["Customer", "Sales", "Finance", "Warehouse", "SAP"],
+    steps: [
+      { name: "Order Validation", actor: "Sales" },
+      { name: "Credit Check", actor: "Finance" },
+      { name: "Create SAP Order", actor: "Sales" },
+      { name: "Inventory Check", actor: "Warehouse" },
+      { name: "Fulfilment", actor: "Warehouse" },
+      { name: "Invoice", actor: "Finance" },
+      { name: "Payment Collection", actor: "Finance" },
+    ],
+    decisions: [
+      {
+        question: "Is credit approved?",
+        afterStepIndex: 1,
+        yesLabel: "Yes",
+        noLabel: "No",
+        onNo: "end",
+      },
+    ],
+    exceptions: ["Customer fails the credit check.", "Inventory is insufficient to fulfil the order.", "Payment is overdue by more than 30 days."],
+    gaps: ["The provided information does not specify an escalation path when the credit check fails."],
+    enhanced:
+      "Create an Order-to-Cash workflow involving Sales, Finance, Warehouse and SAP. Start when a customer places an order, then validate the order, run a credit check, create the SAP sales order, check inventory, fulfil the order, invoice the customer and collect payment. Include an ending path if the credit check fails and clarify who owns escalating overdue payments.",
+  },
 ];
 
 export function detectDomain(text: string): DomainTemplate | null {
@@ -560,18 +590,22 @@ export function interpretModification(
     return base;
   }
 
-  // --- Add exception ---
-  if (/add.*exception|error path|failure path|add.*when/.test(lower)) {
+  // --- Add exception / escalation ---
+  if (/add.*(exception|escalat)|error path|failure path|add.*when/.test(lower)) {
+    const roleMatch = instruction.match(/([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+){0,2})\s+escalation/);
+    const role = roleMatch ? roleMatch[1].replace(/^(Add|Create|Include|Insert|Also)\s+/i, "") : null;
     const whenMatch = instruction.match(/when\s+(.+)$/i);
-    const label = whenMatch ? titleCase(whenMatch[1].replace(/[."']/g, "")) : "Handle Exception";
-    const exceptionNode = makeNode("process", label, current.actor);
+    const label = role ? titleCase(role) : whenMatch ? titleCase(whenMatch[1].replace(/[."']/g, "")) : "Handle Exception";
+    const actor = role ? titleCase(role) : current.actor;
+    const edgeLabel = whenMatch ? titleCase(whenMatch[1].replace(/[."']/g, "")) : "Exception";
+    const exceptionNode = makeNode("process", label, actor);
     const endNode = makeNode("end", "End");
     result.nodes.push(exceptionNode, endNode);
-    result.edges.push(makeEdge(current.id, exceptionNode.id, "Exception"));
+    result.edges.push(makeEdge(current.id, exceptionNode.id, edgeLabel));
     result.edges.push(makeEdge(exceptionNode.id, endNode.id));
     base.addedNodes = [exceptionNode, endNode];
-    base.summary = `Added an exception path "${label}" from "${current.label}".`;
-    base.edgesAfter = [makeEdge(current.id, exceptionNode.id, "Exception")];
+    base.summary = `Added an escalation path to "${label}" from "${current.label}".`;
+    base.edgesAfter = [makeEdge(current.id, exceptionNode.id, edgeLabel)];
     return base;
   }
 
@@ -581,6 +615,59 @@ export function interpretModification(
   current.aiGenerated = true;
   base.modifiedNodes = [{ before, after: { ...current } }];
   base.summary = `Applied your instruction to "${current.label}".`;
+  return base;
+}
+
+// ---------- Whole-diagram AI modification (chat, no component selected) ----------
+
+export function interpretDiagramModification(model: ProcessModel, instruction: string): ModificationPreview {
+  const lower = instruction.toLowerCase();
+  const quoted = findQuoted(instruction);
+
+  let target: ProcessNode | undefined;
+  if (quoted) {
+    target = model.nodes.find((n) => n.label.toLowerCase() === quoted.toLowerCase());
+  }
+  if (!target) {
+    target = [...model.nodes]
+      .filter((n) => n.type !== "start")
+      .sort((a, b) => b.label.length - a.label.length)
+      .find((n) => lower.includes(n.label.toLowerCase()));
+  }
+
+  if (target) {
+    return interpretModification(target, instruction, model);
+  }
+
+  // No specific component referenced — append a new step onto the end of the process.
+  const result = cloneModel(model);
+  const label = titleCase(instruction.replace(/^(add|create|include|insert)\s+/i, "").slice(0, 60)) || "New Step";
+  const newNode = makeNode("process", label);
+  result.nodes.push(newNode);
+
+  const base: ModificationPreview = {
+    instruction,
+    targetNodeId: newNode.id,
+    summary: "",
+    removedNodeIds: [],
+    addedNodes: [newNode],
+    modifiedNodes: [],
+    edgesBefore: [],
+    edgesAfter: [],
+    resultModel: result,
+  };
+
+  const end = result.nodes.find((n) => n.type === "end");
+  if (end) {
+    const incoming = result.edges.filter((e) => e.to === end.id);
+    result.edges = result.edges.filter((e) => e.to !== end.id || e.from !== incoming[0]?.from);
+    if (incoming.length > 0) {
+      result.edges.push(makeEdge(incoming[0].from, newNode.id, incoming[0].label));
+    }
+    result.edges.push(makeEdge(newNode.id, end.id));
+    base.edgesAfter = result.edges.filter((e) => e.from === newNode.id || e.to === newNode.id);
+  }
+  base.summary = `Added "${label}" to the process.`;
   return base;
 }
 
