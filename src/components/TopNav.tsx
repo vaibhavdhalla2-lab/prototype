@@ -1,17 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useApp } from "../lib/store";
 import { useFlowActions } from "../lib/actions";
-import { useEscapeKey } from "../hooks/useEscapeKey";
 import {
+  IconSparkle,
+  IconPlan,
+  IconBuild,
   IconUndo,
   IconRedo,
   IconComment,
   IconDoc,
   IconMermaid,
   IconExport,
-  IconChevronDown,
-  IconClock,
-  IconRestore,
   IconCheck,
 } from "./icons";
 import ExportMenu from "./ExportMenu";
@@ -93,36 +92,12 @@ export default function TopNav() {
             )}
           </span>
         </div>
-        <VersionDropdown />
       </div>
 
       <div className="flex flex-1 items-center justify-center gap-1.5">
-        <div className="flex items-center rounded-lg border border-border bg-surface-2 p-0.5">
-          <button
-            onClick={() => dispatch({ type: "SET_VIEW", view: "diagram" })}
-            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition ${
-              state.view === "diagram" ? "bg-surface text-ink shadow-sm" : "text-ink-soft hover:text-ink"
-            }`}
-          >
-            Diagram
-          </button>
-          <button
-            onClick={() => dispatch({ type: "SET_VIEW", view: "mermaid" })}
-            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition ${
-              state.view === "mermaid" ? "bg-surface text-ink shadow-sm" : "text-ink-soft hover:text-ink"
-            }`}
-          >
-            <IconMermaid className="h-3.5 w-3.5" /> Code
-          </button>
-        </div>
-        <button
-          onClick={() => dispatch({ type: "SET_VIEW", view: "documentation" })}
-          className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium hover:bg-surface-2 ${state.view === "documentation" ? "bg-surface-2 text-ink" : "text-ink-soft"}`}
-          title="Documentation"
-        >
-          <IconDoc />
-          <span className="hidden lg:inline">Documentation</span>
-        </button>
+        <NavButton icon={<IconSparkle />} label="Enhance Prompt" onClick={actions.handleEnhancePrompt} disabled={state.enhancing || !state.prompt.trim()} loading={state.enhancing} />
+        <NavButton icon={<IconPlan />} label="Plan" onClick={actions.handlePlan} disabled={state.planning || state.building} loading={state.planning} />
+        <NavButton icon={<IconBuild />} label="Build" onClick={actions.handleBuildDirect} disabled={state.building || state.planning} loading={state.building} primary />
         <div className="mx-1 h-6 w-px bg-border" />
         <button
           onClick={() => dispatch({ type: "UNDO" })}
@@ -160,6 +135,22 @@ export default function TopNav() {
             ) : null;
           })()}
         </button>
+        <button
+          onClick={() => dispatch({ type: "SET_VIEW", view: "documentation" })}
+          className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium hover:bg-surface-2 ${state.view === "documentation" ? "bg-surface-2 text-ink" : "text-ink-soft"}`}
+          title="Documentation"
+        >
+          <IconDoc />
+          <span className="hidden lg:inline">Documentation</span>
+        </button>
+        <button
+          onClick={() => dispatch({ type: "SET_VIEW", view: state.view === "mermaid" ? "diagram" : "mermaid" })}
+          className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium hover:bg-surface-2 ${state.view === "mermaid" ? "bg-surface-2 text-ink" : "text-ink-soft"}`}
+          title="Mermaid"
+        >
+          <IconMermaid />
+          <span className="hidden lg:inline">Mermaid</span>
+        </button>
         <div className="relative">
           <button
             onClick={() => setExportOpen((v) => !v)}
@@ -176,76 +167,32 @@ export default function TopNav() {
   );
 }
 
-function VersionDropdown() {
-  const { state } = useApp();
-  const actions = useFlowActions();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEscapeKey(() => setOpen(false), open);
-
-  useEffect(() => {
-    if (!open) return;
-    function onDown(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, [open]);
-
-  if (state.history.length === 0) return null;
-  const current = state.historyIndex + 1;
-
+function NavButton({
+  icon,
+  label,
+  onClick,
+  disabled,
+  loading,
+  primary,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+  primary?: boolean;
+}) {
   return (
-    <div className="relative shrink-0" ref={ref}>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs font-medium text-ink-soft hover:bg-surface-2"
-      >
-        Version {current} <IconChevronDown className="h-3 w-3" />
-      </button>
-      {open && (
-        <div className="absolute left-0 top-full z-40 mt-2 w-72 rounded-xl border border-border bg-surface p-1.5 shadow-lg animate-pop">
-          <p className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">Version History</p>
-          <div className="max-h-72 space-y-0.5 overflow-y-auto scrollbar-none">
-            {state.history
-              .map((h, i) => ({ ...h, i }))
-              .slice()
-              .reverse()
-              .map(({ label, timestamp, i }) => (
-                <div
-                  key={i}
-                  className={`flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm ${i === state.historyIndex ? "bg-brand-soft" : "hover:bg-surface-2"}`}
-                >
-                  <button onClick={() => actions.previewVersion(i)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
-                    <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-semibold ${i === state.historyIndex ? "bg-brand text-white" : "bg-surface-2 text-ink-soft"}`}>
-                      {i + 1}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-ink">{label}</span>
-                      <span className="flex items-center gap-1 text-[10px] text-ink-faint">
-                        <IconClock className="h-2.5 w-2.5" /> {new Date(timestamp).toLocaleTimeString()}
-                      </span>
-                    </span>
-                  </button>
-                  {i === state.historyIndex ? (
-                    <IconCheck className="h-3.5 w-3.5 shrink-0 text-brand-deep" />
-                  ) : (
-                    <button
-                      onClick={() => {
-                        actions.restoreVersion(i);
-                        setOpen(false);
-                      }}
-                      title="Restore this version"
-                      className="shrink-0 rounded p-1 text-ink-faint hover:bg-surface hover:text-brand-deep"
-                    >
-                      <IconRestore className="h-3.5 w-3.5" />
-                    </button>
-                  )}
-                </div>
-              ))}
-          </div>
-        </div>
-      )}
-    </div>
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50 ${
+        primary ? "bg-brand text-white hover:bg-brand-deep" : "text-ink-soft hover:bg-surface-2 hover:text-ink"
+      }`}
+    >
+      {loading ? <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" /> : icon}
+      <span>{label}</span>
+      {loading && <IconCheck className="hidden" />}
+    </button>
   );
 }

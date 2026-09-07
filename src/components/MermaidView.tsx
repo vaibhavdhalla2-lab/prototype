@@ -52,7 +52,7 @@ export default function MermaidView() {
           <div>
             <p className="font-medium">Unable to update diagram. Mermaid syntax error near line {state.mermaidError.line}.</p>
             <p className="text-xs text-danger/80">{state.mermaidError.message}</p>
-            {state.mermaidError.raw && <p className="mt-1 rounded bg-ink/10 px-2 py-1 font-mono text-xs">{state.mermaidError.raw}</p>}
+            {state.mermaidError.raw && <p className="mt-1 rounded bg-white/60 px-2 py-1 font-mono text-xs">{state.mermaidError.raw}</p>}
           </div>
         </div>
       )}

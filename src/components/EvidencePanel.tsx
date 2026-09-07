@@ -1,6 +1,5 @@
 import type { SVGProps } from "react";
 import { useApp } from "../lib/store";
-import { useEscapeKey } from "../hooks/useEscapeKey";
 import type { SourceRef } from "../types";
 import { IconX, IconFile, IconMail, IconSlack, IconVideo } from "./icons";
 
@@ -20,7 +19,6 @@ const CONFIDENCE_STYLE: Record<SourceRef["confidence"], string> = {
 export default function EvidencePanel() {
   const { state, dispatch } = useApp();
   const node = state.model?.nodes.find((n) => n.id === state.evidenceNodeId);
-  useEscapeKey(() => dispatch({ type: "SET_EVIDENCE_NODE", id: null }), !!node);
   if (!node) return null;
 
   return (

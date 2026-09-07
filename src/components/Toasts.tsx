@@ -9,7 +9,7 @@ export default function Toasts() {
         <div
           key={t.id}
           className={`pointer-events-auto flex items-center gap-2 rounded-lg border px-3.5 py-2.5 text-sm shadow-lg animate-fade-up ${
-            t.tone === "error" ? "border-danger/30 bg-surface text-danger" : "border-border bg-surface-2 text-ink"
+            t.tone === "error" ? "border-danger/30 bg-white text-danger" : "border-border bg-ink text-white"
           }`}
         >
           {t.tone === "error" ? <IconAlert className="h-4 w-4 shrink-0" /> : <IconCheck className="h-4 w-4 shrink-0" />}

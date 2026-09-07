@@ -6,19 +6,20 @@ function src(partial: Omit<SourceRef, "id" | "demo">): SourceRef {
   return { ...partial, id: makeId("dsrc"), demo: true };
 }
 
-const sopDoc = (locator: string, excerpt: string, confidence: SourceRef["confidence"] = "High") =>
-  src({ type: "document", title: "Order-to-Cash SOP.pdf", locator, excerpt, confidence });
+const refundPolicy = (locator: string, excerpt: string, confidence: SourceRef["confidence"] = "High") =>
+  src({ type: "document", title: "Refund Policy.pdf", locator, excerpt, confidence });
 
-const financePolicy = (locator: string, excerpt: string) =>
-  src({ type: "document", title: "Credit & Collections Policy.docx", locator, excerpt, confidence: "High" });
+const supportSop = (locator: string, excerpt: string) =>
+  src({ type: "document", title: "Customer Support SOP.docx", locator, excerpt, confidence: "High" });
 
-const opsEmail = (excerpt: string) => src({ type: "email", title: "Sales Ops Email", locator: "Aug 14, 2026", excerpt, confidence: "Medium" });
+const supportEmail = (excerpt: string) =>
+  src({ type: "email", title: "Customer Support Email", locator: "Aug 12, 2026", excerpt, confidence: "Medium" });
 
 const slackThread = (excerpt: string) =>
-  src({ type: "slack", title: "Order Desk Slack Thread", locator: "#order-desk · Aug 14, 2026", excerpt, confidence: "Medium" });
+  src({ type: "slack", title: "Refund Handling Slack Thread", locator: "#customer-ops · Aug 12, 2026", excerpt, confidence: "Medium" });
 
 const walkthroughVideo = (locator: string, excerpt: string) =>
-  src({ type: "video", title: "O2C Walkthrough.mp4", locator, excerpt, confidence: "Medium" });
+  src({ type: "video", title: "Refund Walkthrough.mp4", locator, excerpt, confidence: "Medium" });
 
 function node(
   id: string,
@@ -38,223 +39,174 @@ function node(
   };
 }
 
+const idStart = "demo_start";
+const idReceive = "demo_receive";
+const idValidate = "demo_validate";
+const idDecision = "demo_decision";
+const idReject = "demo_reject";
+const idNotifyReject = "demo_notify_reject";
+const idFinance = "demo_finance";
+const idProcessRefund = "demo_process_refund";
+const idNotifySuccess = "demo_notify_success";
+const idEnd = "demo_end";
+
 export function buildDemoModel(): ProcessModel {
-  const creditComment = {
+  const validateComment = {
     id: makeId("c"),
-    author: "Priya Shah",
-    text: "Should the Credit Manager also be notified by email, or is the in-app queue enough?",
-    createdAt: Date.UTC(2026, 7, 14, 11, 10),
+    author: "Sarah Kim",
+    text: "Should we also validate the customer's account status here, not just the order?",
+    createdAt: Date.UTC(2026, 7, 13, 15, 20),
     resolved: false,
     replies: [
-      { id: makeId("cr"), author: "You", text: "In-app queue is enough for now — email can be a fast-follow.", createdAt: Date.UTC(2026, 7, 14, 13, 40) },
+      {
+        id: makeId("cr"),
+        author: "You",
+        text: "Yes, good catch — add an account-status check to this step.",
+        createdAt: Date.UTC(2026, 7, 13, 16, 5),
+      },
     ],
   };
 
-  const n: ProcessNode[] = [
-    node("order_received", "start", "Customer Submits Order", { description: "The customer places an order through the storefront or a Sales representative." }),
-    node("create_order", "process", "Create Order in CRM", {
-      actor: "Sales",
-      description: "Sales creates the order record in the CRM with customer, product and pricing details.",
-      sources: [sopDoc("Page 2", "Every order must be logged in the CRM before it proceeds to validation.")],
+  const nodes: ProcessNode[] = [
+    node(idStart, "start", "Customer Submits Request", {
+      description: "The customer initiates a refund request through the support portal or by contacting Customer Support directly.",
     }),
-    node("validate_order", "process", "Validate Order", {
-      actor: "Sales Operations",
-      description: "Validate mandatory fields, pricing and contract terms against the CRM record.",
+    node(idReceive, "process", "Receive Refund Request", {
+      actor: "Customer Support",
+      description: "Customer Support logs the incoming request and confirms receipt with the customer.",
+      sources: [supportSop("Page 5", "Customer support receives and logs incoming refund requests within one business day of submission.")],
+    }),
+    node(idValidate, "process", "Validate Order", {
+      actor: "Customer Support",
+      description: "Verify the order against refund eligibility rules before proceeding.",
       sources: [
-        sopDoc("Page 4", "Order validation must confirm mandatory fields, pricing accuracy and contract terms before credit review."),
-        slackThread('"We keep seeing orders missing the contract reference — flag those before they reach credit." — Order Desk Lead'),
+        refundPolicy("Page 3", "Refund requests must be validated against the original order before any further action is taken."),
+        slackThread("\"We should always cross-check the order ID against the order management system before touching eligibility.\" — Priya, Support Lead"),
       ],
+      comments: [validateComment],
     }),
-    node("order_complete", "decision", "Order Complete?", { description: "Checks whether all mandatory fields, pricing and contract terms are present." }),
-    node("correct_resubmit", "process", "Correct & Resubmit", { actor: "Sales", description: "Sales corrects the missing or incorrect fields and resubmits for validation." }),
-    node("credit_check", "process", "Credit Check", {
+    node(idDecision, "decision", "Is the request eligible?", {
+      description: "Eligibility is determined by the refund window, item condition, and order status.",
+      sources: [refundPolicy("Page 2", "Refunds are eligible within 30 days of delivery for unopened or defective items.")],
+    }),
+    node(idReject, "process", "Reject Request", {
+      actor: "Customer Support",
+      description: "Customer Support records the rejection reason for the customer's records.",
+      sources: [refundPolicy("Page 2", "Requests outside the eligibility window must be rejected with a documented reason.")],
+    }),
+    node(idNotifyReject, "process", "Notify Customer", {
+      actor: "Customer Support",
+      description: "The customer is notified of the rejection along with the reason.",
+      sources: [supportSop("Page 6", "Customers must be notified of a rejected refund within 24 hours, including the reason for rejection.")],
+    }),
+    node(idFinance, "process", "Finance Approval", {
       actor: "Finance",
-      description: "Finance runs a credit check against the customer's credit standing and open balance.",
-      sources: [financePolicy("Page 1", "All new orders above the customer's approved credit limit require a credit check before an SAP order is created.")],
+      description: "Finance reviews eligible requests and approves the refund amount.",
+      sources: [supportEmail("\"Finance must sign off on any refund over $50 before it is processed.\" — Finance Ops, Aug 12")],
     }),
-    node("credit_decision", "decision", "Credit Approved?", { comments: [creditComment] }),
-    node("credit_manager_review", "process", "Credit Manager Review", {
-      actor: "Credit Manager",
-      description: "The Credit Manager reviews the flagged order and decides how to proceed.",
-      sources: [opsEmail('"Anything over the limit comes to me directly — I can approve, ask for security, or reject." — Credit Manager')],
+    node(idProcessRefund, "process", "Process Refund", {
+      actor: "Payment System",
+      description: "The approved refund is issued back to the customer's original payment method.",
+      sources: [walkthroughVideo("04:32", "\"...once Finance approves, the payment system automatically issues the refund to the original payment method within 3-5 business days...\"")],
     }),
-    node("credit_manager_decision", "decision", "Manager Decision"),
-    node("request_security", "process", "Request Security Deposit", { actor: "Finance", description: "Finance requests a deposit or security to offset the credit risk." }),
-    node("order_rejected", "end", "Order Rejected"),
-    node("sap_order", "process", "Create SAP Sales Order", {
-      actor: "Sales Operations",
-      description: "System: SAP. The approved order is created as a sales order in SAP.",
-      sources: [walkthroughVideo("02:10", '"...once credit clears, the order flows into SAP automatically as a sales order..."')],
+    node(idNotifySuccess, "process", "Notify Customer", {
+      actor: "Customer Support",
+      description: "The customer is notified that the refund has been processed successfully.",
+      sources: [supportSop("Page 6", "Customers must be notified once a refund has been successfully processed.")],
     }),
-    node("inventory_check", "process", "Inventory Check", { actor: "Warehouse", description: "Warehouse confirms stock availability for every line item." }),
-    node("finance_validation", "process", "Finance Validation", { actor: "Finance", description: "Finance validates pricing, tax and billing details in parallel with the inventory check." }),
-    node("fulfilment", "process", "Prepare Shipment", { actor: "Warehouse", description: "Warehouse picks, packs and stages the order once both inventory and finance checks clear." }),
-    node("delivery_attempt", "process", "Delivery Attempt", { actor: "Warehouse", description: "The carrier attempts delivery to the customer's address." }),
-    node("delivered", "decision", "Delivered?"),
-    node("retries_exhausted", "decision", "Retried Twice Already?"),
-    node("retry_delivery", "process", "Retry Delivery", { actor: "Warehouse", description: "A second delivery attempt is scheduled with the carrier." }),
-    node("escalate_csm", "process", "Escalate to Customer Service Manager", {
-      actor: "Customer Service Manager",
-      description: "After two failed attempts, the Customer Service Manager contacts the customer to arrange delivery.",
+    node(idEnd, "end", "Request Closed", {
+      description: "The refund request is closed and archived for reporting.",
     }),
-    node("invoice", "process", "Generate Invoice", { actor: "Finance", description: "Finance generates the invoice from the fulfilled order." }),
-    node("invoice_correct", "decision", "Invoice Correct?"),
-    node("correct_invoice", "process", "Correct Invoice", { actor: "Finance", description: "Finance corrects pricing or line-item errors on the invoice." }),
-    node("send_invoice", "process", "Send Invoice to Customer", {
-      actor: "Finance",
-      sources: [sopDoc("Page 9", "Invoices must be sent to the customer within one business day of fulfilment.")],
-    }),
-    node("monitor_receivable", "process", "Monitor Receivable", { actor: "Collections", description: "Collections tracks the invoice against its due date." }),
-    node("payment_received", "decision", "Payment Received?"),
-    node("grace_period", "process", "Grace Period", { actor: "Collections", description: "A short grace period is applied before follow-up begins." }),
-    node("still_unpaid", "decision", "Still Unpaid After Grace Period?"),
-    node("collections_followup", "process", "Collections Follow-up", {
-      actor: "Collections",
-      sources: [financePolicy("Page 6", "Accounts unpaid after the grace period move to active collections follow-up.")],
-    }),
-    node("resolved_after_followup", "decision", "Resolved?"),
-    node("finance_manager_escalation", "process", "Finance Manager Escalation", {
-      actor: "Finance Manager",
-      description: "Unresolved accounts are escalated for a payment plan or write-off decision.",
-    }),
-    node("close_order", "end", "Order Closed"),
   ];
-
-  const e = (from: string, to: string, label?: string) => ({ id: makeId("e"), from, to, label });
 
   const edges = [
-    e("order_received", "create_order"),
-    e("create_order", "validate_order"),
-    e("validate_order", "order_complete"),
-    e("order_complete", "correct_resubmit", "No"),
-    e("correct_resubmit", "validate_order"),
-    e("order_complete", "credit_check", "Yes"),
-    e("credit_check", "credit_decision"),
-    e("credit_decision", "sap_order", "Approved"),
-    e("credit_decision", "credit_manager_review", "Flagged"),
-    e("credit_manager_review", "credit_manager_decision"),
-    e("credit_manager_decision", "sap_order", "Approve"),
-    e("credit_manager_decision", "request_security", "Request Security"),
-    e("credit_manager_decision", "order_rejected", "Reject"),
-    e("request_security", "sap_order"),
-    e("sap_order", "inventory_check"),
-    e("sap_order", "finance_validation"),
-    e("inventory_check", "fulfilment"),
-    e("finance_validation", "fulfilment"),
-    e("fulfilment", "delivery_attempt"),
-    e("delivery_attempt", "delivered"),
-    e("delivered", "invoice", "Yes"),
-    e("delivered", "retries_exhausted", "No"),
-    e("retries_exhausted", "retry_delivery", "No"),
-    e("retry_delivery", "delivery_attempt"),
-    e("retries_exhausted", "escalate_csm", "Yes"),
-    e("escalate_csm", "invoice"),
-    e("invoice", "invoice_correct"),
-    e("invoice_correct", "correct_invoice", "No"),
-    e("correct_invoice", "invoice"),
-    e("invoice_correct", "send_invoice", "Yes"),
-    e("send_invoice", "monitor_receivable"),
-    e("monitor_receivable", "payment_received"),
-    e("payment_received", "close_order", "Yes"),
-    e("payment_received", "grace_period", "No"),
-    e("grace_period", "still_unpaid"),
-    e("still_unpaid", "close_order", "No"),
-    e("still_unpaid", "collections_followup", "Yes"),
-    e("collections_followup", "resolved_after_followup"),
-    e("resolved_after_followup", "close_order", "Yes"),
-    e("resolved_after_followup", "finance_manager_escalation", "No"),
-    e("finance_manager_escalation", "close_order"),
+    { id: makeId("e"), from: idStart, to: idReceive },
+    { id: makeId("e"), from: idReceive, to: idValidate },
+    { id: makeId("e"), from: idValidate, to: idDecision },
+    { id: makeId("e"), from: idDecision, to: idReject, label: "No" },
+    { id: makeId("e"), from: idReject, to: idNotifyReject },
+    { id: makeId("e"), from: idNotifyReject, to: idEnd },
+    { id: makeId("e"), from: idDecision, to: idFinance, label: "Yes" },
+    { id: makeId("e"), from: idFinance, to: idProcessRefund },
+    { id: makeId("e"), from: idProcessRefund, to: idNotifySuccess },
+    { id: makeId("e"), from: idNotifySuccess, to: idEnd },
   ];
 
-  return { nodes: n, edges };
+  return { nodes, edges };
 }
 
 export function buildDemoUploads(): UploadedSourceFile[] {
   const now = Date.now();
   return [
-    { id: nodeRefId(), kind: "document", name: "Order-to-Cash SOP.pdf", fileType: "pdf", status: "ready", simulated: true, addedAt: now - 50000 },
-    { id: nodeRefId(), kind: "document", name: "Credit & Collections Policy.docx", fileType: "docx", status: "ready", simulated: true, addedAt: now - 40000 },
-    { id: nodeRefId(), kind: "video", name: "O2C Walkthrough.mp4", fileType: "mp4", duration: "02:10", status: "ready", simulated: true, addedAt: now - 30000 },
+    { id: nodeRefId(), kind: "document", name: "Refund Policy.pdf", fileType: "pdf", status: "ready", simulated: true, addedAt: now - 50000 },
+    { id: nodeRefId(), kind: "document", name: "Customer Support SOP.docx", fileType: "docx", status: "ready", simulated: true, addedAt: now - 40000 },
+    { id: nodeRefId(), kind: "video", name: "Refund Walkthrough.mp4", fileType: "mp4", duration: "04:32", status: "ready", simulated: true, addedAt: now - 30000 },
   ];
 }
 
 export const DEMO_PROMPT =
-  "Create an end-to-end Order-to-Cash process covering CRM, SAP, Finance, Warehouse and Collections. Start with order creation and validation, run a credit check with a Credit Manager escalation path, create the SAP order, run parallel inventory and finance checks, fulfil with delivery retries and a Customer Service Manager escalation, invoice with a correction loop, and finish with receivables monitoring and a collections/Finance Manager escalation path.";
+  "Create a process diagram for handling a customer refund request. The request is received by customer support, validated against the order, approved by finance, processed through the payment system, and the customer is notified. If the request is rejected, notify the customer with the reason.";
 
 export function buildDemoComments(): DiagramComment[] {
   return [
     {
       id: makeId("dc"),
       author: "Marcus Webb",
-      text: "This matches the walkthrough we did with Finance and Warehouse last week — nice work capturing both escalation paths.",
-      createdAt: Date.UTC(2026, 7, 13, 9, 30),
+      text: "Overall this matches what we walked through with Finance last week. Nice work.",
+      createdAt: Date.UTC(2026, 7, 12, 10, 0),
       resolved: false,
       replies: [],
     },
   ];
 }
 
-export const DEMO_DOCUMENTATION = `# Order-to-Cash Process
+export const DEMO_DOCUMENTATION = `# Customer Refund Process
 
 ## Purpose
-This document describes the end-to-end Order-to-Cash process across Sales, CRM, SAP, Warehouse, Finance and Collections, from order creation through cash receipt.
+This document describes how customer refund requests are received, validated, approved, and processed, ensuring customers are notified of the outcome in every case.
 
 ## Scope
-This process begins when a customer submits an order and ends once the order is closed — whether payment was collected on time or after a collections escalation.
+This process begins when a customer submits a refund request and ends once the request is closed — whether the refund was approved and processed, or rejected.
 
 ## Actors
 - Customer
-- Sales
-- Sales Operations
+- Customer Support
 - Finance
-- Credit Manager
-- Warehouse
-- Customer Service Manager
-- Collections
-- Finance Manager
+- Payment System
 
 ## Process Steps
-1. **Create Order in CRM** — Sales
-   Sales creates the order record in the CRM with customer, product and pricing details.
-2. **Validate Order** — Sales Operations (Sources: Order-to-Cash SOP.pdf, Page 4)
-   Validate mandatory fields, pricing and contract terms. Incomplete orders loop back through **Correct & Resubmit**.
-3. **Credit Check** — Finance (Sources: Credit & Collections Policy.docx, Page 1)
-   Orders above the customer's credit limit are flagged for **Credit Manager Review**, which can approve, request a security deposit, or reject the order.
-4. **Create SAP Sales Order** — Sales Operations (System: SAP)
-   The approved order is created as a sales order in SAP.
-5. **Inventory Check** and **Finance Validation** — Warehouse / Finance (parallel)
-   Both must complete before fulfilment begins.
-6. **Fulfilment** — Warehouse
-   Delivery is attempted up to twice before escalating to the Customer Service Manager.
-7. **Invoicing** — Finance
-   Invoice errors loop back through **Correct Invoice** before the invoice is sent.
-8. **AR & Collections** — Collections / Finance Manager
-   Unpaid receivables move through a grace period, collections follow-up, and a Finance Manager escalation for a payment plan.
+1. **Receive Refund Request** — Customer Support (Sources: Customer Support SOP.docx, Page 5)
+   Customer Support logs the incoming request and confirms receipt with the customer.
+2. **Validate Order** — Customer Support (Sources: Refund Policy.pdf, Page 3; Refund Handling Slack Thread)
+   Verify the order against refund eligibility rules before proceeding. Includes an account-status check per team discussion.
+3. **Check Eligibility** — Customer Support (Sources: Refund Policy.pdf, Page 2)
+   Refunds are eligible within 30 days of delivery for unopened or defective items.
+4. **Finance Approval** — Finance (Sources: Customer Support Email, Aug 12, 2026)
+   Finance reviews eligible requests and approves the refund amount for anything over $50.
+5. **Process Refund** — Payment System (Sources: Refund Walkthrough.mp4, 04:32)
+   The approved refund is issued back to the customer's original payment method within 3-5 business days.
+6. **Notify Customer** — Customer Support (Sources: Customer Support SOP.docx, Page 6)
+   The customer is notified of the outcome — approval and processing, or rejection with a reason.
 
 ## Decision Points
-- **Order Complete?** — No loops back to correction; Yes proceeds to credit check.
-- **Credit Approved?** — Approved orders proceed directly; flagged orders go to Credit Manager Review.
-- **Manager Decision** — Approve, Request Security, or Reject.
-- **Delivered?** / **Retried Twice Already?** — Governs the delivery retry and CSM escalation path.
-- **Invoice Correct?** — No loops back to correction.
-- **Payment Received?** / **Still Unpaid After Grace Period?** / **Resolved?** — Governs the collections escalation path.
+- **Is the request eligible?** Determined by the refund window, item condition, and order status.
+  - Yes → Finance Approval
+  - No → Reject Request → Notify Customer
 
 ## Exceptions
-- Order fails validation and is returned to Sales for correction.
-- Customer fails the credit check and is routed to the Credit Manager.
-- Delivery fails twice and is escalated to the Customer Service Manager.
-- Invoice contains errors and is corrected before sending.
-- Payment is not received after the grace period and is escalated to Collections, then to the Finance Manager.
+- Order cannot be found or does not match the request.
+- Finance rejects the refund request.
+- Payment processing fails after approval (owner: Payment System — escalate to Finance).
 
 ## Inputs
-- Customer order (storefront or Sales)
-- CRM order record
-- Customer credit standing
+- Customer refund request (portal or direct contact)
+- Original order record
+- Refund policy eligibility rules
 
 ## Outputs
-- Fulfilled shipment
-- Sent invoice
-- Closed order record with payment collected or a resolved payment plan
+- Approved refund issued to the customer
+- Rejection notice with documented reason
+- Closed request record for reporting
 
 ## Process Diagram
 See the Diagram and Mermaid views for the interactive version of this process.

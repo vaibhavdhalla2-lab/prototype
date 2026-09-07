@@ -1,7 +1,6 @@
 import { useApp } from "./lib/store";
 import TopNav from "./components/TopNav";
-import ChatPanel from "./components/chat/ChatPanel";
-import LandingScreen from "./components/landing/LandingScreen";
+import InputPanel from "./components/InputPanel";
 import RightPanel from "./components/RightPanel";
 import Canvas from "./components/Canvas";
 import MermaidView from "./components/MermaidView";
@@ -25,20 +24,14 @@ export default function App() {
 
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden">
-      {state.model ? (
-        <>
-          <TopNav />
-          <div className="flex flex-1 overflow-hidden">
-            <ChatPanel />
-            {state.view === "diagram" && <Canvas />}
-            {state.view === "mermaid" && <MermaidView />}
-            {state.view === "documentation" && <DocumentationView />}
-            <RightPanel />
-          </div>
-        </>
-      ) : (
-        <LandingScreen />
-      )}
+      <TopNav />
+      <div className="flex flex-1 overflow-hidden">
+        <InputPanel />
+        {state.view === "diagram" && <Canvas />}
+        {state.view === "mermaid" && <MermaidView />}
+        {state.view === "documentation" && <DocumentationView />}
+        <RightPanel />
+      </div>
 
       <PlanView />
       <BuildProgress />

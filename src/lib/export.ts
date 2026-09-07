@@ -8,7 +8,7 @@ import {
   ImageRun,
   AlignmentType,
 } from "docx";
-import { toJpeg, toPng } from "html-to-image";
+import { toJpeg } from "html-to-image";
 import { canvasElRef } from "./canvasRef";
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -47,19 +47,6 @@ async function snapshotCanvas(): Promise<string | null> {
     return await toJpeg(el, { backgroundColor: "#ffffff", pixelRatio: 1.5, quality: 0.85 });
   } catch {
     return null;
-  }
-}
-
-export async function exportPng(processName: string): Promise<boolean> {
-  const el = canvasElRef.current;
-  if (!el) return false;
-  try {
-    const dataUrl = await toPng(el, { backgroundColor: "#14161d", pixelRatio: 3, cacheBust: true });
-    const blob = await (await fetch(dataUrl)).blob();
-    downloadBlob(blob, `${slug(processName)}.png`);
-    return true;
-  } catch {
-    return false;
   }
 }
 

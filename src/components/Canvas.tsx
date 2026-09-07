@@ -13,15 +13,6 @@ export default function Canvas() {
   const [dragging, setDragging] = useState(false);
 
   const layout = useMemo(() => (state.model ? computeLayout(state.model) : null), [state.model]);
-  const exceptionNodeIds = useMemo(() => {
-    const ids = new Set<string>();
-    if (state.model) {
-      for (const e of state.model.edges) {
-        if (e.label && /exception|reject|fail|escalat/i.test(e.label)) ids.add(e.to);
-      }
-    }
-    return ids;
-  }, [state.model]);
 
   useEffect(() => {
     canvasElRef.current = viewportRef.current?.querySelector("[data-canvas-stage]") ?? null;
@@ -124,7 +115,7 @@ export default function Canvas() {
             height: layout.height,
             transform: `translate(${state.pan.x}px, ${state.pan.y}px) scale(${state.zoom})`,
             transformOrigin: "0 0",
-            background: "var(--color-surface)",
+            background: "white",
           }}
           className="relative rounded-xl shadow-sm"
         >
@@ -169,7 +160,7 @@ export default function Canvas() {
                       fontSize={11.5}
                       fontWeight={600}
                       fill={selected ? "var(--color-brand-deep)" : "var(--color-ink-soft)"}
-                      stroke="var(--color-surface)"
+                      stroke="white"
                       strokeWidth={4}
                       paintOrder="stroke"
                     >
@@ -182,9 +173,7 @@ export default function Canvas() {
             {state.model.nodes.map((n) => {
               const ln = layout.nodes.get(n.id);
               if (!ln) return null;
-              return (
-                <DiagramNode key={n.id} node={n} layout={ln} selected={state.selectedNodeId === n.id} isException={exceptionNodeIds.has(n.id)} />
-              );
+              return <DiagramNode key={n.id} node={n} layout={ln} selected={state.selectedNodeId === n.id} />;
             })}
           </svg>
         </div>
