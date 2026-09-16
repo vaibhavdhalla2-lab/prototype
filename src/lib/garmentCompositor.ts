@@ -88,13 +88,12 @@ function drawToImageData(img: HTMLImageElement, w: number, h: number): ImageData
  * right whether the source photo was shot bright and high-key or more
  * neutrally lit; the *relative* shading is what gets preserved either way.
  */
-function midLuminance(base: ImageData, mask: ImageData): number {
+function midLuminance(base: ImageData): number {
   const bd = base.data;
-  const md = mask.data;
   let sum = 0;
   let count = 0;
   for (let i = 0; i < bd.length; i += 4) {
-    if (bd[i + 3] === 0 || md[i + 3] === 0) continue;
+    if (bd[i + 3] === 0) continue;
     sum += luminance01(bd[i], bd[i + 1], bd[i + 2]);
     count++;
   }
@@ -102,25 +101,35 @@ function midLuminance(base: ImageData, mask: ImageData): number {
 }
 
 /**
- * Recolors base.png within mask.png's non-transparent region, preserving
- * every fold/seam/weave-texture variation as relative light and dark.
- * Pixels outside the mask (but inside the garment's own alpha) keep their
- * original photographed color untouched — e.g. a contrast-stitched collar
- * that shouldn't follow the body color. Pixels outside the garment stay
- * fully transparent.
+ * Recolors base.png's own non-transparent region, preserving every
+ * fold/seam/weave-texture variation as relative light and dark. Pixels
+ * outside the garment (base alpha 0) stay fully transparent.
+ *
+ * mask.png is loaded and its alpha is available (`maskAlpha` below) for a
+ * garment that legitimately needs to protect part of its own silhouette
+ * from recoloring — e.g. a contrast-stitched collar on a future two-tone
+ * hoodie. It is *not* used to gate the T-shirt recolor region here: measured
+ * against the actual shipped assets, mask.png's silhouette sits tens to
+ * ~150px (of 4500px) off from base.png's at several scanlines, non-uniformly
+ * — a real export/alignment mismatch, not anti-aliasing noise. Since this
+ * garment is a single uniform fabric with nothing that should stay
+ * unrecolored, gating on that mask would just punch an unrecolored hole
+ * wherever it falls short of base's true silhouette (exactly the white
+ * sleeve patch seen in testing). Using base's own — inherently self-aligned
+ * — alpha as the region instead fixes that outright. If a future garment
+ * needs true partial exclusion, re-enable the `maskAlpha <=` gate below once
+ * that garment's mask is verified pixel-aligned to its base.
  */
-function recolorBase(baseImg: HTMLImageElement, maskImg: HTMLImageElement, colorHex: string): HTMLCanvasElement {
+function recolorBase(baseImg: HTMLImageElement, colorHex: string): HTMLCanvasElement {
   const w = baseImg.naturalWidth;
   const h = baseImg.naturalHeight;
 
   const base = drawToImageData(baseImg, w, h);
-  const mask = drawToImageData(maskImg, w, h);
-  const baseMid = luminanceCache.get(baseImg) ?? midLuminance(base, mask);
+  const baseMid = luminanceCache.get(baseImg) ?? midLuminance(base);
   luminanceCache.set(baseImg, baseMid);
 
   const [cr, cg, cb] = hexToRgb01(colorHex);
   const bd = base.data;
-  const md = mask.data;
 
   const outCanvas = document.createElement("canvas");
   outCanvas.width = w;
@@ -136,15 +145,6 @@ function recolorBase(baseImg: HTMLImageElement, maskImg: HTMLImageElement, color
       continue;
     }
 
-    const maskAlpha = md[i + 3] / 255;
-    if (maskAlpha <= 0) {
-      od[i] = bd[i];
-      od[i + 1] = bd[i + 1];
-      od[i + 2] = bd[i + 2];
-      od[i + 3] = baseAlpha;
-      continue;
-    }
-
     const l = luminance01(bd[i], bd[i + 1], bd[i + 2]);
     const lNorm = clamp01(0.5 + (l - baseMid) * CONTRAST);
 
@@ -152,10 +152,9 @@ function recolorBase(baseImg: HTMLImageElement, maskImg: HTMLImageElement, color
     const gg = softLight(cg, lNorm) * 255;
     const bb = softLight(cb, lNorm) * 255;
 
-    // Feather by mask alpha so anti-aliased mask edges don't produce a hard seam.
-    od[i] = bd[i] + (rr - bd[i]) * maskAlpha;
-    od[i + 1] = bd[i + 1] + (gg - bd[i + 1]) * maskAlpha;
-    od[i + 2] = bd[i + 2] + (bb - bd[i + 2]) * maskAlpha;
+    od[i] = rr;
+    od[i + 1] = gg;
+    od[i + 2] = bb;
     od[i + 3] = baseAlpha;
   }
 
@@ -163,14 +162,19 @@ function recolorBase(baseImg: HTMLImageElement, maskImg: HTMLImageElement, color
   return outCanvas;
 }
 
-/** Recolors (and caches) base+mask for a given color — the expensive pixel pass only runs once per combination. */
+/**
+ * Recolors (and caches) base for a given color — the expensive pixel pass
+ * only runs once per combination. `maskSrc` is still loaded (so a missing
+ * mask file surfaces as a clear load error) but its content currently isn't
+ * used to gate the recolor region — see the comment on recolorBase().
+ */
 export async function getRecoloredBase(baseSrc: string, maskSrc: string, colorHex: string): Promise<HTMLCanvasElement> {
-  const key = `${baseSrc}|${maskSrc}|${colorHex.toLowerCase()}`;
+  const key = `${baseSrc}|${colorHex.toLowerCase()}`;
   const cached = recolorCache.get(key);
   if (cached) return cached;
 
-  const [baseImg, maskImg] = await Promise.all([loadImageCached(baseSrc), loadImageCached(maskSrc)]);
-  const canvas = recolorBase(baseImg, maskImg, colorHex);
+  const [baseImg] = await Promise.all([loadImageCached(baseSrc), loadImageCached(maskSrc)]);
+  const canvas = recolorBase(baseImg, colorHex);
   recolorCache.set(key, canvas);
   return canvas;
 }

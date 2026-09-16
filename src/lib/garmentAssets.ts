@@ -29,9 +29,8 @@ export const GARMENT_ASSET_REGISTRY: Partial<Record<GarmentKind, GarmentAssetSet
   tshirt: {
     base: "/garments/tshirt/base.png",
     mask: "/garments/tshirt/mask.png",
-    shadows: "/garments/tshirt/shadows.png",
-    highlights: "/garments/tshirt/highlights.png",
-    reference: "/garments/tshirt/reference.webp",
+    shadows: "/garments/tshirt/shadow.png",
+    highlights: "/garments/tshirt/highlight.png",
   },
 
   // hoodie: {
