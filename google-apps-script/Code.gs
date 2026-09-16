@@ -28,7 +28,7 @@ var HEADERS = [
 ];
 
 // Fields that must be present (non-empty) for a submission to be accepted.
-var REQUIRED_FIELDS = ["overallRating", "usageIntent", "purchaseIntent", "creatorIntent", "easeOfUse"];
+var REQUIRED_FIELDS = ["rating", "usageIntent", "purchaseIntent", "creatorIntent", "easeOfUse"];
 
 function doPost(e) {
   try {
@@ -55,7 +55,7 @@ function doPost(e) {
       formatTimestamp(new Date()), // server-side timestamp — never trust the client's clock
       sanitize(data.name),
       sanitize(data.email),
-      sanitize(data.overallRating),
+      sanitize(data.rating),
       sanitize(data.usageIntent),
       sanitize(data.favouriteFeature),
       sanitize(data.purchaseIntent),

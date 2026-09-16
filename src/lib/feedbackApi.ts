@@ -47,7 +47,7 @@ export async function submitFeedback(data: FeedbackFormData): Promise<SubmitFeed
   const payload = {
     name: data.name.trim(),
     email: data.email.trim(),
-    overallRating: data.overallRating,
+    rating: data.overallRating,
     usageIntent: data.usageIntent,
     favouriteFeature: data.favouriteFeatures.join("; "),
     purchaseIntent: data.purchaseIntent,
@@ -56,7 +56,6 @@ export async function submitFeedback(data: FeedbackFormData): Promise<SubmitFeed
     likedMost: data.likedMost.trim(),
     improvement: data.improvement.trim(),
     additionalFeedback: data.additionalFeedback.trim(),
-    source: "forme-web",
   };
 
   let res: Response;
