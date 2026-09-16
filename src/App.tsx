@@ -12,6 +12,7 @@ import Create from "./pages/Create";
 import Marketplace from "./pages/Marketplace";
 import Profile from "./pages/Profile";
 import About from "./pages/About";
+import GarmentLab from "./pages/GarmentLab";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -34,6 +35,7 @@ function Layout() {
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/about" element={<About />} />
+          <Route path="/garment-lab" element={<GarmentLab />} />
         </Routes>
       </main>
       {!isStudio && <Footer />}
