@@ -181,3 +181,12 @@ export function IconTrash(props: IconProps) {
     </svg>
   );
 }
+
+export function IconStar(props: IconProps & { filled?: boolean }) {
+  const { filled, ...rest } = props;
+  return (
+    <svg viewBox="0 0 24 24" {...base} fill={filled ? "currentColor" : "none"} {...rest}>
+      <path d="M12 3.5l2.55 5.4 5.95.75-4.4 4.1 1.2 5.9L12 16.8l-5.3 2.85 1.2-5.9-4.4-4.1 5.95-.75L12 3.5z" strokeLinejoin="round" />
+    </svg>
+  );
+}

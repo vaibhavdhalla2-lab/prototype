@@ -1,63 +1,142 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useFeedback } from "../lib/feedback";
 import { track } from "../lib/analytics";
-import { IconClose, IconCheck } from "./icons";
+import { submitFeedback, type FeedbackFormData } from "../lib/feedbackApi";
+import { IconClose, IconCheck, IconStar } from "./icons";
 
-const EXCITEMENT_OPTIONS = [
-  "Creating from scratch",
-  "Uploading an image",
-  "MUSE recommendations",
-  "Material guidance",
+const USAGE_OPTIONS = ["Definitely would", "Probably would", "Maybe", "Probably wouldn't", "Definitely wouldn't"];
+const FEATURE_OPTIONS = [
+  "Design from scratch",
+  "Upload an image",
+  "Tell MUSE what I want",
+  "Draw my own design",
+  "Choose materials",
+  "Remix existing designs",
   "Marketplace",
-  "Remixing",
-  "Seeing the realistic garment",
+  "Create and earn from designs",
   "Other",
 ];
+const INTENT_OPTIONS = ["Definitely", "Probably", "Maybe", "Probably not", "No"];
 
-const BLOCKER_OPTIONS = [
-  "Price",
-  "Delivery time",
-  "Quality uncertainty",
-  "Too complicated",
-  "Not enough customization",
-  "I'd rather buy ready-made clothing",
-  "Other",
-];
+const TEXT_MAX = 100;
+const AREA_MAX = 600;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const EMPTY: FeedbackFormData = {
+  name: "",
+  email: "",
+  overallRating: null,
+  usageIntent: null,
+  favouriteFeatures: [],
+  purchaseIntent: null,
+  creatorIntent: null,
+  easeOfUse: null,
+  likedMost: "",
+  improvement: "",
+  additionalFeedback: "",
+  company: "",
+};
 
 function toggle<T>(list: T[], item: T): T[] {
   return list.includes(item) ? list.filter((i) => i !== item) : [...list, item];
 }
 
+function Stars({ value, onChange, ariaLabel }: { value: number | null; onChange: (n: number) => void; ariaLabel: string }) {
+  const [hover, setHover] = useState<number | null>(null);
+  const active = hover ?? value ?? 0;
+  return (
+    <div className="flex items-center gap-1" role="radiogroup" aria-label={ariaLabel}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          onClick={() => onChange(n)}
+          onMouseEnter={() => setHover(n)}
+          onMouseLeave={() => setHover(null)}
+          aria-label={`${n} star${n > 1 ? "s" : ""}`}
+          aria-pressed={value === n}
+          className="p-0.5"
+        >
+          <IconStar filled={n <= active} className={`h-6 w-6 transition-colors ${n <= active ? "text-clay-deep" : "text-line"}`} />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function RadioList({ options, value, onChange, name }: { options: string[]; value: string | null; onChange: (v: string) => void; name: string }) {
+  return (
+    <div className="flex flex-col gap-2" role="radiogroup" aria-label={name}>
+      {options.map((opt) => (
+        <button
+          key={opt}
+          type="button"
+          role="radio"
+          aria-checked={value === opt}
+          onClick={() => onChange(opt)}
+          className={`flex items-center gap-3 rounded-xl border px-4 py-2.5 text-left text-[13.5px] transition-colors ${
+            value === opt ? "border-ink bg-ivory-dim text-ink" : "border-line text-ink-soft hover:border-ink-soft"
+          }`}
+        >
+          <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${value === opt ? "border-ink" : "border-line-soft"}`}>
+            {value === opt && <span className="h-2 w-2 rounded-full bg-ink" />}
+          </span>
+          {opt}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+type Stage = "form" | "submitting" | "success" | "error";
+
 export default function FeedbackWidget() {
   const { isOpen, open, close } = useFeedback();
-  const [submitted, setSubmitted] = useState(false);
+  const [stage, setStage] = useState<Stage>("form");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [data, setData] = useState<FeedbackFormData>(EMPTY);
+  const submittingRef = useRef(false);
 
-  const [likelihood, setLikelihood] = useState<number | null>(null);
-  const [excitement, setExcitement] = useState<string[]>([]);
-  const [wouldBuy, setWouldBuy] = useState<"yes" | "maybe" | "no" | null>(null);
-  const [blockers, setBlockers] = useState<string[]>([]);
-  const [openText, setOpenText] = useState("");
+  const set = <K extends keyof FeedbackFormData>(key: K, value: FeedbackFormData[K]) => setData((d) => ({ ...d, [key]: value }));
+
+  const emailValid = data.email.trim() === "" || EMAIL_RE.test(data.email.trim());
+  const requiredFilled =
+    data.overallRating !== null && data.usageIntent !== null && data.purchaseIntent !== null && data.creatorIntent !== null && data.easeOfUse !== null;
+  const canSubmit = requiredFilled && emailValid && stage !== "submitting";
 
   const reset = () => {
-    setSubmitted(false);
-    setLikelihood(null);
-    setExcitement([]);
-    setWouldBuy(null);
-    setBlockers([]);
-    setOpenText("");
+    setStage("form");
+    setErrorMessage("");
+    setData(EMPTY);
   };
 
   const handleClose = () => {
     close();
-    setTimeout(reset, 300);
+    window.setTimeout(reset, 300);
   };
 
-  const canSubmit = likelihood !== null && wouldBuy !== null;
+  const handleSubmit = async () => {
+    if (!canSubmit || submittingRef.current) return;
+    submittingRef.current = true;
+    setStage("submitting");
 
-  const handleSubmit = () => {
-    if (!canSubmit) return;
-    track("feedback_submitted", { likelihood, excitement, wouldBuy, blockers, openText });
-    setSubmitted(true);
+    const result = await submitFeedback(data);
+
+    submittingRef.current = false;
+    if (result.ok) {
+      track("feedback_submitted", {
+        overallRating: data.overallRating,
+        usageIntent: data.usageIntent,
+        favouriteFeatures: data.favouriteFeatures,
+        purchaseIntent: data.purchaseIntent,
+        creatorIntent: data.creatorIntent,
+        easeOfUse: data.easeOfUse,
+      });
+      setStage("success");
+    } else {
+      setErrorMessage(result.message);
+      setStage("error");
+    }
   };
 
   return (
@@ -68,7 +147,7 @@ export default function FeedbackWidget() {
           className="fixed right-0 top-1/2 z-30 hidden -translate-y-1/2 items-center gap-2 rounded-l-xl border border-r-0 border-line bg-paper px-3 py-4 shadow-[0_8px_24px_-12px_rgba(26,23,18,0.35)] transition-all hover:pr-4 hover:bg-ink hover:text-ivory md:flex"
           style={{ writingMode: "vertical-rl" }}
         >
-          <span className="text-[11px] font-medium uppercase tracking-[0.2em]">How do you feel?</span>
+          <span className="text-[11px] font-medium uppercase tracking-[0.2em]">Tell Us What You Think</span>
         </button>
       )}
 
@@ -76,7 +155,7 @@ export default function FeedbackWidget() {
         <button
           data-mobile-chrome
           onClick={open}
-          aria-label="Give feedback"
+          aria-label="Tell us what you think"
           className="fixed bottom-24 right-4 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-line bg-paper text-ink shadow-[0_8px_20px_-10px_rgba(26,23,18,0.4)] md:hidden"
         >
           <span className="font-display text-lg leading-none">?</span>
@@ -93,119 +172,184 @@ export default function FeedbackWidget() {
               <IconClose className="h-5 w-5" />
             </button>
 
-            {!submitted ? (
-              <>
-                <p className="font-display text-2xl text-ink sm:text-3xl">How did that feel?</p>
-                <p className="mt-2 text-sm text-ink-soft">
-                  We're building FORMÉ from the ground up. Tell us what worked, what didn't, and what you'd want next.
-                </p>
-
-                <div className="mt-8 space-y-8">
-                  <div>
-                    <p className="mb-3 text-[13px] font-medium text-ink">How likely would you be to use FORMÉ?</p>
-                    <div className="flex items-center gap-2">
-                      {[1, 2, 3, 4, 5].map((n) => (
-                        <button
-                          key={n}
-                          onClick={() => setLikelihood(n)}
-                          className={`flex h-11 w-11 items-center justify-center rounded-full border text-sm transition-all ${
-                            likelihood === n ? "border-ink bg-ink text-ivory scale-105" : "border-line text-ink-soft hover:border-ink-soft"
-                          }`}
-                        >
-                          {n}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="mt-1.5 flex justify-between text-[11px] text-ink-faint">
-                      <span>Not at all</span>
-                      <span>Absolutely</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <p className="mb-3 text-[13px] font-medium text-ink">What did you find most exciting?</p>
-                    <div className="flex flex-wrap gap-2">
-                      {EXCITEMENT_OPTIONS.map((opt) => (
-                        <button
-                          key={opt}
-                          onClick={() => setExcitement((s) => toggle(s, opt))}
-                          className={`rounded-full border px-3.5 py-1.5 text-[12.5px] transition-colors ${
-                            excitement.includes(opt) ? "border-ink bg-ink text-ivory" : "border-line text-ink-soft hover:border-ink-soft"
-                          }`}
-                        >
-                          {opt}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <p className="mb-3 text-[13px] font-medium text-ink">Would you actually buy something you designed?</p>
-                    <div className="flex gap-2">
-                      {(["yes", "maybe", "no"] as const).map((v) => (
-                        <button
-                          key={v}
-                          onClick={() => setWouldBuy(v)}
-                          className={`flex-1 rounded-xl border py-2.5 text-[12px] font-medium uppercase tracking-[0.1em] transition-colors ${
-                            wouldBuy === v ? "border-ink bg-ink text-ivory" : "border-line text-ink-soft hover:border-ink-soft"
-                          }`}
-                        >
-                          {v}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <p className="mb-3 text-[13px] font-medium text-ink">What would stop you from using this?</p>
-                    <div className="flex flex-wrap gap-2">
-                      {BLOCKER_OPTIONS.map((opt) => (
-                        <button
-                          key={opt}
-                          onClick={() => setBlockers((s) => toggle(s, opt))}
-                          className={`rounded-full border px-3.5 py-1.5 text-[12.5px] transition-colors ${
-                            blockers.includes(opt) ? "border-ink bg-ink text-ivory" : "border-line text-ink-soft hover:border-ink-soft"
-                          }`}
-                        >
-                          {opt}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <p className="mb-3 text-[13px] font-medium text-ink">
-                      What would make FORMÉ something you would genuinely want to use?
-                    </p>
-                    <textarea
-                      value={openText}
-                      onChange={(e) => setOpenText(e.target.value)}
-                      rows={3}
-                      placeholder="Tell us anything..."
-                      className="w-full resize-none rounded-xl border border-line bg-ivory px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:border-ink focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  disabled={!canSubmit}
-                  onClick={handleSubmit}
-                  className="mt-8 w-full rounded-full bg-ink py-3.5 text-[12px] font-medium uppercase tracking-[0.16em] text-ivory transition-opacity disabled:opacity-30 hover:opacity-90"
-                >
-                  Submit Feedback
-                </button>
-              </>
-            ) : (
+            {stage === "success" ? (
               <div className="flex flex-col items-center py-10 text-center animate-fade-up">
                 <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-ink text-ivory">
                   <IconCheck className="h-6 w-6" />
                 </div>
                 <p className="font-display text-3xl text-ink">Thank you.</p>
-                <p className="mt-2 max-w-xs text-sm text-ink-soft">You're helping shape what FORMÉ becomes.</p>
-                <button onClick={handleClose} className="mt-8 rounded-full border border-line px-6 py-2.5 text-[12px] uppercase tracking-[0.14em] text-ink hover:border-ink">
-                  Close
+                <p className="mt-2 max-w-xs text-sm text-ink-soft">Your feedback is helping us shape FORMÉ.</p>
+                <p className="mt-4 font-display italic text-ink-faint">"Give your imagination form."</p>
+                <button
+                  onClick={handleClose}
+                  className="mt-8 rounded-full bg-ink px-7 py-2.5 text-[12px] font-medium uppercase tracking-[0.16em] text-ivory hover:opacity-90"
+                >
+                  Back To FORMÉ
                 </button>
               </div>
+            ) : stage === "error" ? (
+              <div className="flex flex-col items-center py-10 text-center animate-fade-up">
+                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full border border-clay/40 bg-clay/[0.08] text-clay-deep">
+                  <IconClose className="h-6 w-6" />
+                </div>
+                <p className="font-display text-3xl text-ink">Something went wrong.</p>
+                <p className="mt-2 max-w-xs text-sm text-ink-soft">Please try again — nothing you entered has been lost.</p>
+                {errorMessage && <p className="mt-2 max-w-xs text-[12px] text-ink-faint">{errorMessage}</p>}
+                <div className="mt-8 flex gap-2.5">
+                  <button
+                    onClick={() => setStage("form")}
+                    className="rounded-full bg-ink px-7 py-2.5 text-[12px] font-medium uppercase tracking-[0.16em] text-ivory hover:opacity-90"
+                  >
+                    Try Again
+                  </button>
+                  <button onClick={handleClose} className="rounded-full border border-line px-6 py-2.5 text-[12px] uppercase tracking-[0.14em] text-ink-soft hover:border-ink">
+                    Close
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className="font-display text-2xl text-ink sm:text-3xl">Tell us what you think.</p>
+                <p className="mt-2 text-sm text-ink-soft">
+                  We're building FORMÉ from the ground up. Two minutes of your honest reaction shapes what we build next.
+                </p>
+
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSubmit();
+                  }}
+                  className="mt-8 space-y-7"
+                >
+                  {/* honeypot — hidden from real users */}
+                  <input
+                    type="text"
+                    value={data.company}
+                    onChange={(e) => set("company", e.target.value)}
+                    tabIndex={-1}
+                    autoComplete="off"
+                    aria-hidden="true"
+                    className="absolute left-[-9999px] h-0 w-0 opacity-0"
+                  />
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div>
+                      <label className="mb-2 block text-[13px] font-medium text-ink">What's your name?</label>
+                      <input
+                        type="text"
+                        value={data.name}
+                        onChange={(e) => set("name", e.target.value)}
+                        maxLength={TEXT_MAX}
+                        placeholder="Your name"
+                        className="w-full rounded-xl border border-line bg-ivory px-4 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-ink focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-[13px] font-medium text-ink">Email address</label>
+                      <input
+                        type="email"
+                        value={data.email}
+                        onChange={(e) => set("email", e.target.value)}
+                        maxLength={TEXT_MAX}
+                        placeholder="you@email.com"
+                        className={`w-full rounded-xl border bg-ivory px-4 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:outline-none ${
+                          emailValid ? "border-line focus:border-ink" : "border-clay/60 focus:border-clay"
+                        }`}
+                      />
+                      {!emailValid && <p className="mt-1.5 text-[12px] text-clay-deep">Enter a valid email address.</p>}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="mb-3 text-[13px] font-medium text-ink">How would you rate your overall FORMÉ experience?</p>
+                    <Stars value={data.overallRating} onChange={(n) => set("overallRating", n)} ariaLabel="Overall experience rating" />
+                  </div>
+
+                  <div>
+                    <p className="mb-3 text-[13px] font-medium text-ink">If FORMÉ were available today, how likely would you be to use it?</p>
+                    <RadioList name="Usage intent" options={USAGE_OPTIONS} value={data.usageIntent} onChange={(v) => set("usageIntent", v)} />
+                  </div>
+
+                  <div>
+                    <p className="mb-3 text-[13px] font-medium text-ink">What interested you most?</p>
+                    <div className="flex flex-wrap gap-2">
+                      {FEATURE_OPTIONS.map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => set("favouriteFeatures", toggle(data.favouriteFeatures, opt))}
+                          className={`rounded-full border px-3.5 py-1.5 text-[12.5px] transition-colors ${
+                            data.favouriteFeatures.includes(opt) ? "border-ink bg-ink text-ivory" : "border-line text-ink-soft hover:border-ink-soft"
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="mb-3 text-[13px] font-medium text-ink">If you designed something you genuinely loved, would you buy it?</p>
+                    <RadioList name="Purchase intent" options={INTENT_OPTIONS} value={data.purchaseIntent} onChange={(v) => set("purchaseIntent", v)} />
+                  </div>
+
+                  <div>
+                    <p className="mb-3 text-[13px] font-medium text-ink">
+                      Would you publish your designs on FORMÉ for others to discover and potentially buy?
+                    </p>
+                    <RadioList name="Creator intent" options={INTENT_OPTIONS} value={data.creatorIntent} onChange={(v) => set("creatorIntent", v)} />
+                  </div>
+
+                  <div>
+                    <p className="mb-3 text-[13px] font-medium text-ink">How easy was it to understand how FORMÉ works?</p>
+                    <Stars value={data.easeOfUse} onChange={(n) => set("easeOfUse", n)} ariaLabel="Ease of use rating" />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-[13px] font-medium text-ink">What did you like most about FORMÉ?</label>
+                    <textarea
+                      value={data.likedMost}
+                      onChange={(e) => set("likedMost", e.target.value)}
+                      rows={2}
+                      maxLength={AREA_MAX}
+                      placeholder="Tell us anything..."
+                      className="w-full resize-none rounded-xl border border-line bg-ivory px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:border-ink focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-[13px] font-medium text-ink">What would you change or improve?</label>
+                    <textarea
+                      value={data.improvement}
+                      onChange={(e) => set("improvement", e.target.value)}
+                      rows={2}
+                      maxLength={AREA_MAX}
+                      placeholder="Tell us anything..."
+                      className="w-full resize-none rounded-xl border border-line bg-ivory px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:border-ink focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-[13px] font-medium text-ink">Anything else you want to tell us?</label>
+                    <textarea
+                      value={data.additionalFeedback}
+                      onChange={(e) => set("additionalFeedback", e.target.value)}
+                      rows={2}
+                      maxLength={AREA_MAX}
+                      placeholder="Tell us anything..."
+                      className="w-full resize-none rounded-xl border border-line bg-ivory px-4 py-3 text-sm text-ink placeholder:text-ink-faint focus:border-ink focus:outline-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={!canSubmit}
+                    className="flex w-full items-center justify-center gap-2 rounded-full bg-ink py-3.5 text-[12px] font-medium uppercase tracking-[0.16em] text-ivory transition-opacity disabled:opacity-30 hover:opacity-90"
+                  >
+                    {stage === "submitting" ? "Submitting..." : "Submit Feedback"}
+                  </button>
+                </form>
+              </>
             )}
           </div>
         </div>
