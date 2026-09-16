@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { drawGarmentToCanvas, getRecoloredBase, loadImageCached } from "../../lib/garmentCompositor";
+import { drawGarmentToCanvas, getMaskedLayer, getRecoloredBase } from "../../lib/garmentCompositor";
 import { GARMENT_ASSET_REGISTRY, type GarmentKind } from "../../lib/garmentAssets";
 
 export interface GarmentPreviewProps {
@@ -55,8 +55,8 @@ export default function GarmentPreview({
     try {
       const recolored = await getRecoloredBase(base, mask, color);
       const [shadowImg, highlightImg] = await Promise.all([
-        shadows ? loadImageCached(shadows).catch(() => null) : Promise.resolve(null),
-        highlights ? loadImageCached(highlights).catch(() => null) : Promise.resolve(null),
+        shadows ? getMaskedLayer(shadows, base).catch(() => null) : Promise.resolve(null),
+        highlights ? getMaskedLayer(highlights, base).catch(() => null) : Promise.resolve(null),
       ]);
       if (!canvasRef.current) return;
       drawGarmentToCanvas(canvasRef.current, {

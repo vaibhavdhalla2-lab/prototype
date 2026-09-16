@@ -1,6 +1,9 @@
-import { useRef, useState, useCallback, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, useCallback, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import type { GarmentType, ViewMode } from "../data/catalog";
 import { threadTone } from "../lib/color";
+import GarmentPreview from "./garment/GarmentPreview";
+import { GARMENT_ASSET_REGISTRY } from "../lib/garmentAssets";
+import { preloadGarmentAssets } from "../lib/garmentCompositor";
 
 const VIEW_BOX = "0 0 360 440";
 
@@ -389,6 +392,38 @@ function Face({ garment, colorHex, side, overlay, printArea, showPrintHint, acce
   );
 }
 
+/**
+ * Real-photo counterpart to Face(): the recolored T-shirt photo (see
+ * garmentCompositor.ts) stands in for the SVG silhouette/shading/stitching,
+ * while user artwork/drawing/text keep rendering exactly as before, in an
+ * overlaid SVG sharing the same viewBox — so DrawLayer/ArtworkLayer's
+ * `ownerSVGElement.getScreenCTM()` pointer math is unaffected.
+ */
+function PhotographicFace({ colorHex, overlay, printArea, showPrintHint }: Pick<FaceProps, "colorHex" | "overlay" | "printArea" | "showPrintHint">) {
+  return (
+    <div className="relative h-full w-full">
+      <GarmentPreview garment="tshirt" color={colorHex} className="absolute inset-0 h-full w-full" alt="" />
+      <svg viewBox={VIEW_BOX} className="absolute inset-0 h-full w-full overflow-visible">
+        <g pointerEvents="auto">{overlay}</g>
+        {showPrintHint && (
+          <rect
+            x={printArea.x}
+            y={printArea.y}
+            width={printArea.width}
+            height={printArea.height}
+            fill="none"
+            stroke="#9a6a43"
+            strokeOpacity={0.35}
+            strokeDasharray="6 6"
+            strokeWidth={1.5}
+            rx={4}
+          />
+        )}
+      </svg>
+    </div>
+  );
+}
+
 /* ----------------------------------------------------------------------- */
 /* Print areas per garment/side, in the 360x440 viewBox coordinate space    */
 /* ----------------------------------------------------------------------- */
@@ -436,7 +471,14 @@ const FIT_SCALE: Record<NonNullable<GarmentStageProps["fit"]>, { x: number; y: n
 };
 
 export function GarmentStage({ garment, colorHex, view, frontOverlay, backOverlay, showPrintHint, accentTrim, pocketVisible, fit, className }: GarmentStageProps) {
+  const hasPhotoFront = garment === "tshirt" && Boolean(GARMENT_ASSET_REGISTRY.tshirt);
   const [dragAngle, setDragAngle] = useState(-26);
+
+  useEffect(() => {
+    if (!hasPhotoFront) return;
+    const assets = GARMENT_ASSET_REGISTRY.tshirt!;
+    preloadGarmentAssets([assets.base, assets.mask, assets.shadows, assets.highlights]);
+  }, [hasPhotoFront]);
   const dragging = useRef(false);
   const lastX = useRef(0);
   const startAngle = useRef(0);
@@ -483,7 +525,11 @@ export function GarmentStage({ garment, colorHex, view, frontOverlay, backOverla
         }}
       >
         <div className="absolute inset-0" style={{ backfaceVisibility: "hidden" }}>
-          <Face garment={garment} colorHex={colorHex} side="front" overlay={frontOverlay} printArea={PRINT_AREAS[garment].front} showPrintHint={showPrintHint} accentTrim={accentTrim} pocketVisible={pocketVisible} />
+          {hasPhotoFront ? (
+            <PhotographicFace colorHex={colorHex} overlay={frontOverlay} printArea={PRINT_AREAS[garment].front} showPrintHint={showPrintHint} />
+          ) : (
+            <Face garment={garment} colorHex={colorHex} side="front" overlay={frontOverlay} printArea={PRINT_AREAS[garment].front} showPrintHint={showPrintHint} accentTrim={accentTrim} pocketVisible={pocketVisible} />
+          )}
         </div>
         <div className="absolute inset-0" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
           <Face garment={garment} colorHex={colorHex} side="back" overlay={backOverlay} printArea={PRINT_AREAS[garment].back} showPrintHint={showPrintHint} accentTrim={accentTrim} pocketVisible={pocketVisible} />

@@ -28,6 +28,23 @@ const recolorCache = new Map<string, HTMLCanvasElement>();
 /** How strongly the base photo's own shadows/highlights push away from the flat target color. */
 const CONTRAST = 1.15;
 
+/**
+ * The shipped exports (base.png/shadow.png/highlight.png) aren't transparent
+ * everywhere outside the shirt — pixel-sampling them found a uniform,
+ * semi-opaque studio-backdrop wash filling their full canvas rectangle
+ * (base ~alpha 51/255, shadow ~8/255, highlight ~128/255) surrounding a
+ * fully-opaque (alpha 255) garment. Left alone, the highlight layer's ~50%
+ * wash alone renders as a visible pale rectangle behind the shirt. Any raw
+ * alpha at or below this cutoff is treated as "not garment"; true fabric
+ * pixels sit far above it, so the real silhouette (edges included) survives.
+ */
+const BACKDROP_ALPHA_CUTOFF = 90;
+
+function thresholdAlpha(rawAlpha: number): number {
+  if (rawAlpha <= BACKDROP_ALPHA_CUTOFF) return 0;
+  return Math.round(((rawAlpha - BACKDROP_ALPHA_CUTOFF) / (255 - BACKDROP_ALPHA_CUTOFF)) * 255);
+}
+
 export function loadImageCached(src: string): Promise<HTMLImageElement> {
   let pending = imageCache.get(src);
   if (!pending) {
@@ -93,7 +110,7 @@ function midLuminance(base: ImageData): number {
   let sum = 0;
   let count = 0;
   for (let i = 0; i < bd.length; i += 4) {
-    if (bd[i + 3] === 0) continue;
+    if (bd[i + 3] <= BACKDROP_ALPHA_CUTOFF) continue;
     sum += luminance01(bd[i], bd[i + 1], bd[i + 2]);
     count++;
   }
@@ -139,7 +156,7 @@ function recolorBase(baseImg: HTMLImageElement, colorHex: string): HTMLCanvasEle
   const od = out.data;
 
   for (let i = 0; i < bd.length; i += 4) {
-    const baseAlpha = bd[i + 3];
+    const baseAlpha = thresholdAlpha(bd[i + 3]);
     if (baseAlpha === 0) {
       od[i + 3] = 0;
       continue;
@@ -179,6 +196,67 @@ export async function getRecoloredBase(baseSrc: string, maskSrc: string, colorHe
   return canvas;
 }
 
+const shapeCache = new Map<string, Promise<HTMLCanvasElement>>();
+const maskedLayerCache = new Map<string, Promise<HTMLCanvasElement>>();
+
+/**
+ * A plain white silhouette stencil — alpha-only, thresholded the same way as
+ * recolorBase() — independent of target color. Used to clip the shadow/
+ * highlight layers to the real garment shape instead of whatever backdrop
+ * wash their own export canvas happens to carry (see BACKDROP_ALPHA_CUTOFF).
+ */
+function getGarmentShape(baseSrc: string): Promise<HTMLCanvasElement> {
+  let pending = shapeCache.get(baseSrc);
+  if (!pending) {
+    pending = loadImageCached(baseSrc).then((baseImg) => {
+      const w = baseImg.naturalWidth;
+      const h = baseImg.naturalHeight;
+      const base = drawToImageData(baseImg, w, h);
+      const bd = base.data;
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d")!;
+      const out = ctx.createImageData(w, h);
+      const od = out.data;
+      for (let i = 0; i < bd.length; i += 4) {
+        od[i] = 255;
+        od[i + 1] = 255;
+        od[i + 2] = 255;
+        od[i + 3] = thresholdAlpha(bd[i + 3]);
+      }
+      ctx.putImageData(out, 0, 0);
+      return canvas;
+    });
+    shapeCache.set(baseSrc, pending);
+  }
+  return pending;
+}
+
+/**
+ * Loads a shadow/highlight mockup layer and clips it to the garment's real
+ * silhouette (derived from base.png), so its own backdrop wash never shows.
+ * Cached per (layer, base) pair — the clip shape doesn't depend on color.
+ */
+export function getMaskedLayer(layerSrc: string, baseSrc: string): Promise<HTMLCanvasElement> {
+  const key = `${layerSrc}|${baseSrc}`;
+  let pending = maskedLayerCache.get(key);
+  if (!pending) {
+    pending = Promise.all([loadImageCached(layerSrc), getGarmentShape(baseSrc)]).then(([layerImg, shape]) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = shape.width;
+      canvas.height = shape.height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(layerImg, 0, 0, shape.width, shape.height);
+      ctx.globalCompositeOperation = "destination-in";
+      ctx.drawImage(shape, 0, 0);
+      return canvas;
+    });
+    maskedLayerCache.set(key, pending);
+  }
+  return pending;
+}
+
 function containFit(srcW: number, srcH: number, boxW: number, boxH: number) {
   const scale = Math.min(boxW / srcW, boxH / srcH);
   const dw = srcW * scale;
@@ -188,8 +266,8 @@ function containFit(srcW: number, srcH: number, boxW: number, boxH: number) {
 
 export interface DrawGarmentOptions {
   recoloredBase: HTMLCanvasElement;
-  shadows?: HTMLImageElement | null;
-  highlights?: HTMLImageElement | null;
+  shadows?: HTMLCanvasElement | HTMLImageElement | null;
+  highlights?: HTMLCanvasElement | HTMLImageElement | null;
   shadowBlendMode: GlobalCompositeOperation;
   highlightBlendMode: GlobalCompositeOperation;
   dpr: number;
