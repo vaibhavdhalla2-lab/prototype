@@ -25,7 +25,7 @@ export default function MicroPrompt({ question, options = ["Yes", "Maybe", "No"]
     >
       {!answered ? (
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className={`text-sm ${dark ? "text-[#fff4e6]/85" : "text-ink"}`}>{question}</p>
+          <p className={`text-sm ${dark ? "text-[#faf4ea]/85" : "text-ink"}`}>{question}</p>
           <div className="flex items-center gap-2">
             {options.map((opt) => (
               <button
@@ -36,21 +36,21 @@ export default function MicroPrompt({ question, options = ["Yes", "Maybe", "No"]
                 }}
                 className={`rounded-full border px-3.5 py-1.5 text-[11px] font-medium uppercase tracking-[0.08em] transition-colors ${
                   dark
-                    ? "border-white/15 text-[#fff4e6]/60 hover:border-[#ff6fae]/50 hover:text-[#fff4e6]"
+                    ? "border-white/15 text-[#faf4ea]/60 hover:border-[#d4af70]/50 hover:text-[#faf4ea]"
                     : "border-line text-ink-soft hover:border-ink hover:text-ink"
                 }`}
               >
                 {opt}
               </button>
             ))}
-            <button onClick={() => setDismissed(true)} className={dark ? "text-[#fff4e6]/30 hover:text-[#fff4e6]/60" : "text-ink-faint hover:text-ink-soft"} aria-label="Dismiss">
+            <button onClick={() => setDismissed(true)} className={dark ? "text-[#faf4ea]/30 hover:text-[#faf4ea]/60" : "text-ink-faint hover:text-ink-soft"} aria-label="Dismiss">
               <IconClose className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
       ) : (
-        <div className={`flex items-center gap-2 text-sm ${dark ? "text-[#fff4e6]/70" : "text-ink-soft"}`}>
-          <IconCheck className={`h-4 w-4 ${dark ? "text-[#ff6fae]" : "text-clay"}`} />
+        <div className={`flex items-center gap-2 text-sm ${dark ? "text-[#faf4ea]/70" : "text-ink-soft"}`}>
+          <IconCheck className={`h-4 w-4 ${dark ? "text-[#d4af70]" : "text-clay"}`} />
           Thanks — noted.
         </div>
       )}

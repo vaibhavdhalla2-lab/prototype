@@ -144,7 +144,7 @@ export default function FeedbackWidget() {
       {!isOpen && (
         <button
           onClick={open}
-          className="fixed right-0 top-1/2 z-30 hidden -translate-y-1/2 items-center gap-2 rounded-l-xl border border-r-0 border-line bg-paper px-3 py-4 shadow-[0_8px_24px_-12px_rgba(26,23,18,0.35)] transition-all hover:pr-4 hover:bg-ink hover:text-ivory md:flex"
+          className="fixed right-0 top-1/2 z-30 hidden -translate-y-1/2 items-center gap-2 rounded-l-xl border border-r-0 border-[#d4af70]/30 bg-paper px-3 py-4 shadow-[0_8px_24px_-12px_rgba(53,28,69,0.3)] transition-all hover:pr-4 hover:bg-[#351c45] hover:text-[#d4af70] md:flex"
           style={{ writingMode: "vertical-rl" }}
         >
           <span className="text-[11px] font-medium uppercase tracking-[0.2em]">Tell Us What You Think</span>
@@ -174,7 +174,7 @@ export default function FeedbackWidget() {
 
             {stage === "success" ? (
               <div className="flex flex-col items-center py-10 text-center animate-fade-up">
-                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-ink text-ivory">
+                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-[#351c45] text-[#d4af70]">
                   <IconCheck className="h-6 w-6" />
                 </div>
                 <p className="font-display text-3xl text-ink">Thank you.</p>
@@ -182,7 +182,7 @@ export default function FeedbackWidget() {
                 <p className="mt-4 font-display italic text-ink-faint">"Give your imagination form."</p>
                 <button
                   onClick={handleClose}
-                  className="mt-8 rounded-full bg-ink px-7 py-2.5 text-[12px] font-medium uppercase tracking-[0.16em] text-ivory hover:opacity-90"
+                  className="mt-8 rounded-full bg-[#351c45] px-7 py-2.5 text-[12px] font-medium uppercase tracking-[0.16em] text-[#d4af70] hover:opacity-90"
                 >
                   Back To FORMÉ
                 </button>
@@ -198,7 +198,7 @@ export default function FeedbackWidget() {
                 <div className="mt-8 flex gap-2.5">
                   <button
                     onClick={() => setStage("form")}
-                    className="rounded-full bg-ink px-7 py-2.5 text-[12px] font-medium uppercase tracking-[0.16em] text-ivory hover:opacity-90"
+                    className="rounded-full bg-[#351c45] px-7 py-2.5 text-[12px] font-medium uppercase tracking-[0.16em] text-[#d4af70] hover:opacity-90"
                   >
                     Try Again
                   </button>
@@ -344,7 +344,7 @@ export default function FeedbackWidget() {
                   <button
                     type="submit"
                     disabled={!canSubmit}
-                    className="flex w-full items-center justify-center gap-2 rounded-full bg-ink py-3.5 text-[12px] font-medium uppercase tracking-[0.16em] text-ivory transition-opacity disabled:opacity-30 hover:opacity-90"
+                    className="flex w-full items-center justify-center gap-2 rounded-full bg-[#351c45] py-3.5 text-[12px] font-medium uppercase tracking-[0.16em] text-[#d4af70] transition-opacity disabled:opacity-30 hover:opacity-90"
                   >
                     {stage === "submitting" ? "Submitting..." : "Submit Feedback"}
                   </button>

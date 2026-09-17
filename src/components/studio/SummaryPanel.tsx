@@ -75,7 +75,7 @@ export default function SummaryPanel({ onJump, previewFrontOverlay, previewBackO
 
         <button
           onClick={goToFinal}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-ink py-3.5 text-[12.5px] font-medium uppercase tracking-[0.16em] text-ivory transition-transform hover:-translate-y-0.5"
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-[#351c45] py-3.5 text-[12.5px] font-medium uppercase tracking-[0.16em] text-[#d4af70] transition-transform hover:-translate-y-0.5"
         >
           Make It Real
           <IconArrowRight className="h-4 w-4" />
@@ -116,16 +116,16 @@ export default function SummaryPanel({ onJump, previewFrontOverlay, previewBackO
         />
       </div>
 
-      <div className="mt-5 rounded-2xl bg-ink px-5 py-5 text-ivory">
+      <div className="mt-5 rounded-2xl bg-[#351c45] px-5 py-5 text-[#faf4ea]">
         <div className="flex items-baseline justify-between">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-ivory/60">Estimated price</p>
-          <p className="font-display text-3xl">₹{price.toLocaleString("en-IN")}</p>
+          <p className="text-[11px] uppercase tracking-[0.2em] text-[#faf4ea]/60">Estimated price</p>
+          <p className="font-display text-3xl text-[#d4af70]">₹{price.toLocaleString("en-IN")}</p>
         </div>
-        <div className="mt-3 flex items-baseline justify-between border-t border-ivory/15 pt-3">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-ivory/60">Estimated delivery</p>
+        <div className="mt-3 flex items-baseline justify-between border-t border-[#faf4ea]/15 pt-3">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-[#faf4ea]/60">Estimated delivery</p>
           <p className="text-sm">{DELIVERY_ESTIMATE}</p>
         </div>
-        <p className="mt-3 text-[11px] text-ivory/50">Prototype estimate based on the current design and manufacturing assumptions.</p>
+        <p className="mt-3 text-[11px] text-[#faf4ea]/50">Prototype estimate based on the current design and manufacturing assumptions.</p>
       </div>
 
       {!ordered ? (
@@ -134,13 +134,13 @@ export default function SummaryPanel({ onJump, previewFrontOverlay, previewBackO
             setOrdered(true);
             track("design_completed", { garment: design.garment, ordered: true });
           }}
-          className="mt-4 w-full rounded-full bg-ink py-3.5 text-[12.5px] font-medium uppercase tracking-[0.16em] text-ivory transition-transform hover:-translate-y-0.5"
+          className="mt-4 w-full rounded-full bg-[#351c45] py-3.5 text-[12.5px] font-medium uppercase tracking-[0.16em] text-[#d4af70] transition-transform hover:-translate-y-0.5"
         >
           Order — Make It Real
         </button>
       ) : (
-        <div className="mt-4 animate-scale-in rounded-2xl border border-line-soft bg-ivory-dim p-5 text-center">
-          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-ink text-ivory">
+        <div className="mt-4 animate-scale-in rounded-2xl border border-[#d4af70]/30 bg-ivory-dim p-5 text-center">
+          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[#351c45] text-[#d4af70]">
             <IconCheck className="h-5 w-5" />
           </div>
           <p className="mt-3 font-display text-xl text-ink">You made this.</p>
@@ -201,7 +201,7 @@ export default function SummaryPanel({ onJump, previewFrontOverlay, previewBackO
                   setPublished(true);
                   track("publish_clicked", { garment: design.garment });
                 }}
-                className="flex-1 rounded-full bg-ink py-3 text-[12px] uppercase tracking-[0.12em] text-ivory disabled:opacity-30"
+                className="flex-1 rounded-full bg-[#351c45] py-3 text-[12px] uppercase tracking-[0.12em] text-[#d4af70] disabled:opacity-30"
               >
                 Publish To Marketplace
               </button>

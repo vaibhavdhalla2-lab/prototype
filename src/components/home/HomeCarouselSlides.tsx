@@ -5,7 +5,7 @@ import { GarmentStage } from "../Garment";
 import { GARMENTS, COLORS, colorById } from "../../data/catalog";
 import { MARKET_DESIGNS } from "../../data/marketplace";
 import { track } from "../../lib/analytics";
-import GlowButton from "./GlowButton";
+import GlowButton from "../GlowButton";
 import {
   IconArrowRight,
   IconUpload,
@@ -43,7 +43,7 @@ function Eyebrow({ children, tone, onPlum }: { children: string; tone: string; o
   return (
     <p
       className="mb-4 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.3em]"
-      style={{ color: onPlum ? "#fff4e6cc" : tone }}
+      style={{ color: onPlum ? "#faf4eacc" : tone }}
     >
       <span className="h-1.5 w-1.5 rounded-full" style={{ background: tone }} />
       {children}
@@ -57,9 +57,9 @@ function VisualSkeleton({ className }: { className?: string }) {
 }
 
 /**
- * Glass card shell shared by every slide — a warm cream-to-peach gradient
+ * Glass card shell shared by every slide — an ivory-to-lavender gradient
  * glass surface with a soft glow ring in the slide's accent, or (`plumBg`)
- * a deep-plum surface with cream text for the marketplace/earn moments the
+ * a deep-plum surface with ivory text for the marketplace/earn moments the
  * brand spec calls out as dark sections.
  */
 function SlideShell({ tone, plumBg, children }: { tone: string; plumBg?: boolean; children: ReactNode }) {
@@ -68,8 +68,8 @@ function SlideShell({ tone, plumBg, children }: { tone: string; plumBg?: boolean
       className={`grain ${plumBg ? "grain-deep" : ""} relative h-full overflow-hidden rounded-[28px] sm:mx-24 sm:rounded-[32px] lg:mx-28`}
       style={{
         background: plumBg
-          ? "linear-gradient(150deg, #351c45 0%, #201129 100%)"
-          : "linear-gradient(150deg, rgba(255,244,230,0.94) 0%, rgba(255,179,138,0.55) 100%)",
+          ? "linear-gradient(150deg, #351c45 0%, #24102f 100%)"
+          : "linear-gradient(150deg, rgba(250,244,234,0.94) 0%, rgba(233,213,255,0.55) 100%)",
         boxShadow: plumBg
           ? `0 0 0 1px rgba(255,255,255,0.1), 0 0 90px -30px ${tone}77, 0 40px 100px -50px rgba(0,0,0,0.5)`
           : `0 0 0 1px rgba(255,255,255,0.6), 0 0 90px -35px ${tone}66, 0 40px 90px -55px rgba(53,28,69,0.25)`,
@@ -81,8 +81,8 @@ function SlideShell({ tone, plumBg, children }: { tone: string; plumBg?: boolean
 }
 
 const PLUM = "#351c45";
-const PINK = "#ff6fae";
-const GOLD = "#e5c07b";
+const VIOLET = "#8b5cf6";
+const GOLD = "#d4af70";
 
 /* ----------------------------------------------------------------------- */
 /* SLIDE 1 — Create your own                                                */
@@ -92,16 +92,16 @@ export function SlideCreateFromScratch({ active }: SlideProps) {
   const navigate = useNavigate();
   const ready = useLazyActive(active);
   return (
-    <SlideShell tone={PINK}>
+    <SlideShell tone={GOLD}>
       <div className="grid h-full grid-cols-1 items-center gap-8 px-6 pt-9 pb-16 sm:px-10 sm:pt-12 sm:pb-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-6 lg:px-14">
         <div className="order-2 lg:order-1">
-          <Eyebrow tone={PINK}>Getting started</Eyebrow>
-          <h3 className="font-display-heavy text-[clamp(2.4rem,7.5vw,4.6rem)] uppercase leading-[0.86] tracking-tight text-[#1a1518]">
+          <Eyebrow tone={GOLD}>Getting started</Eyebrow>
+          <h3 className="font-display-heavy text-[clamp(2.4rem,7.5vw,4.6rem)] uppercase leading-[0.86] tracking-tight text-[#17151a]">
             Create
             <br />
             your own.
           </h3>
-          <p className="mt-5 max-w-sm text-[15px] leading-relaxed text-[#1a1518]/60">
+          <p className="mt-5 max-w-sm text-[15px] leading-relaxed text-[#17151a]/60">
             Start with a blank T-shirt and make it yours — no design experience required.
           </p>
           <div className="mt-8">
@@ -124,7 +124,7 @@ export function SlideCreateFromScratch({ active }: SlideProps) {
                 <path d="M8 3h8l2 4-1 2v10a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V9L6 7l2-4z" />
               </svg>
             </div>
-            <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/70 bg-white/80 px-3 py-1 text-[9.5px] font-medium uppercase tracking-[0.12em] text-[#1a1518]/55 shadow-sm">
+            <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/70 bg-white/80 px-3 py-1 text-[9.5px] font-medium uppercase tracking-[0.12em] text-[#17151a]/55 shadow-sm">
               Blank canvas
             </span>
           </div>
@@ -132,17 +132,17 @@ export function SlideCreateFromScratch({ active }: SlideProps) {
           <div className="relative w-[46%] max-w-[170px] animate-float-slow">
             <div
               className="aspect-[3/4] overflow-hidden rounded-2xl border p-4"
-              style={{ borderColor: `${PINK}55`, background: `${PINK}14`, boxShadow: `0 0 40px -12px ${PINK}77` }}
+              style={{ borderColor: `${GOLD}55`, background: `${GOLD}14`, boxShadow: `0 0 40px -12px ${GOLD}77` }}
             >
               {ready ? (
-                <GarmentPreview garment="tshirt" color={PINK} className="h-full w-full" alt="Designed T-shirt" />
+                <GarmentPreview garment="tshirt" color={GOLD} className="h-full w-full" alt="Designed T-shirt" />
               ) : (
                 <VisualSkeleton className="h-full w-full" />
               )}
             </div>
             <span
               className="absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-3 py-1 text-[9.5px] font-medium uppercase tracking-[0.12em] text-white shadow-sm"
-              style={{ background: PINK }}
+              style={{ background: GOLD }}
             >
               Made by you
             </span>
@@ -159,7 +159,7 @@ export function SlideCreateFromScratch({ active }: SlideProps) {
 
 const WAYS = [
   { id: "image", label: "Upload", body: "Show us your inspiration.", icon: IconUpload, tone: PLUM },
-  { id: "muse", label: "Muse", body: "Tell us what you're imagining.", icon: IconSparkle, tone: PINK },
+  { id: "muse", label: "Muse", body: "Tell us what you're imagining.", icon: IconSparkle, tone: VIOLET },
   { id: "draw", label: "Draw", body: "Draw it yourself.", icon: IconDraw, tone: PLUM },
 ];
 
@@ -169,7 +169,7 @@ export function SlideThreeWays({ active: _active }: SlideProps) {
     <SlideShell tone={PLUM}>
       <div className="flex h-full flex-col px-6 pt-9 pb-16 sm:px-10 sm:pt-12 sm:pb-14 lg:px-14">
         <Eyebrow tone={PLUM}>Three ways to design</Eyebrow>
-        <h3 className="font-display-heavy max-w-2xl text-[clamp(2rem,6vw,3.6rem)] uppercase leading-[0.9] tracking-tight text-[#1a1518]">
+        <h3 className="font-display-heavy max-w-2xl text-[clamp(2rem,6vw,3.6rem)] uppercase leading-[0.9] tracking-tight text-[#17151a]">
           How do you imagine it?
         </h3>
 
@@ -189,9 +189,9 @@ export function SlideThreeWays({ active: _active }: SlideProps) {
               >
                 <Icon className="h-5 w-5" />
               </span>
-              <p className="mt-4 font-display text-xl text-[#1a1518]">{label}</p>
-              <p className="mt-1 text-[13px] text-[#1a1518]/55">{body}</p>
-              <span className="mt-auto pt-4 inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-[#1a1518]/45 transition-colors group-hover:text-[#1a1518]/80">
+              <p className="mt-4 font-display text-xl text-[#17151a]">{label}</p>
+              <p className="mt-1 text-[13px] text-[#17151a]/55">{body}</p>
+              <span className="mt-auto pt-4 inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-[#17151a]/45 transition-colors group-hover:text-[#17151a]/80">
                 Try it
                 <IconArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
               </span>
@@ -218,10 +218,10 @@ export function SlideDiscoverMarketplace({ active }: SlideProps) {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <Eyebrow tone={GOLD}>Not here to design?</Eyebrow>
-            <h3 className="font-display-heavy max-w-lg text-[clamp(1.9rem,5.5vw,3.2rem)] uppercase leading-[0.9] tracking-tight text-[#1a1518]">
+            <h3 className="font-display-heavy max-w-lg text-[clamp(1.9rem,5.5vw,3.2rem)] uppercase leading-[0.9] tracking-tight text-[#17151a]">
               Find something you love.
             </h3>
-            <p className="mt-3 max-w-sm text-[14px] text-[#1a1518]/55">Discover designs made by people like you. Buy it. Remix it. Make it yours.</p>
+            <p className="mt-3 max-w-sm text-[14px] text-[#17151a]/55">Discover designs made by people like you. Buy it. Remix it. Make it yours.</p>
           </div>
         </div>
 
@@ -240,10 +240,10 @@ export function SlideDiscoverMarketplace({ active }: SlideProps) {
                 </span>
               </div>
               <div className="p-2.5 sm:p-3.5">
-                <p className="truncate font-display text-[13px] sm:text-base text-[#1a1518]">{d.name}</p>
+                <p className="truncate font-display text-[13px] sm:text-base text-[#17151a]">{d.name}</p>
                 <div className="mt-0.5 flex items-center justify-between">
-                  <p className="truncate text-[10.5px] text-[#1a1518]/45">@{d.creator}</p>
-                  <p className="shrink-0 text-[10.5px] font-medium text-[#1a1518]/80">₹{d.price.toLocaleString("en-IN")}</p>
+                  <p className="truncate text-[10.5px] text-[#17151a]/45">@{d.creator}</p>
+                  <p className="shrink-0 text-[10.5px] font-medium text-[#17151a]/80">₹{d.price.toLocaleString("en-IN")}</p>
                 </div>
               </div>
             </div>
@@ -279,7 +279,7 @@ export function SlideCreateShareEarn({ active: _active }: SlideProps) {
     <SlideShell tone={GOLD} plumBg>
       <div className="flex h-full flex-col px-6 pt-9 pb-16 sm:px-10 sm:pt-12 sm:pb-14 lg:px-14">
         <Eyebrow tone={GOLD} onPlum>From idea to income</Eyebrow>
-        <h3 className="font-display-heavy max-w-2xl text-[clamp(1.9rem,6vw,3.6rem)] uppercase leading-[0.9] tracking-tight text-[#fff4e6]">
+        <h3 className="font-display-heavy max-w-2xl text-[clamp(1.9rem,6vw,3.6rem)] uppercase leading-[0.9] tracking-tight text-[#faf4ea]">
           Your design.
           <br />
           Their next favourite.
@@ -290,15 +290,15 @@ export function SlideCreateShareEarn({ active: _active }: SlideProps) {
             <div key={label} className="flex items-center gap-2 sm:gap-3">
               <div className="glass-plum flex items-center gap-2.5 rounded-full px-4 py-2.5">
                 <Icon className="h-3.5 w-3.5" style={{ color: GOLD }} />
-                <span className="whitespace-nowrap text-[11.5px] font-medium uppercase tracking-[0.1em] text-[#fff4e6]">{label}</span>
+                <span className="whitespace-nowrap text-[11.5px] font-medium uppercase tracking-[0.1em] text-[#faf4ea]">{label}</span>
               </div>
-              {i < EARN_FLOW.length - 1 && <IconArrowRight className="hidden h-3.5 w-3.5 text-[#fff4e6]/25 sm:block" />}
+              {i < EARN_FLOW.length - 1 && <IconArrowRight className="hidden h-3.5 w-3.5 text-[#faf4ea]/25 sm:block" />}
             </div>
           ))}
         </div>
 
         <div className="mt-2 flex flex-wrap items-center justify-between gap-4">
-          <p className="text-[11px] italic text-[#fff4e6]/45">Illustrative creator reward — subject to final FORMÉ terms.</p>
+          <p className="text-[11px] italic text-[#faf4ea]/45">Illustrative creator reward — subject to final FORMÉ terms.</p>
           <GlowButton onClick={() => navigate("/create")}>
             Create &amp; Sell
             <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -319,7 +319,7 @@ export function SlideFormeFuture({ active }: SlideProps) {
     <SlideShell tone={GOLD}>
       <div className="flex h-full flex-col px-6 pt-9 pb-16 sm:px-10 sm:pt-12 sm:pb-14 lg:px-14">
         <Eyebrow tone={GOLD}>The FORMÉ universe</Eyebrow>
-        <h3 className="font-display-heavy max-w-xl text-[clamp(2rem,6vw,3.6rem)] uppercase leading-[0.9] tracking-tight text-[#1a1518]">
+        <h3 className="font-display-heavy max-w-xl text-[clamp(2rem,6vw,3.6rem)] uppercase leading-[0.9] tracking-tight text-[#17151a]">
           This is just the beginning.
         </h3>
 
@@ -328,19 +328,19 @@ export function SlideFormeFuture({ active }: SlideProps) {
             <div key={g.id} className="relative flex flex-col overflow-hidden rounded-2xl border border-white/60 bg-white/45">
               <div className={`flex h-24 items-center justify-center p-4 sm:h-32 ${g.available ? "" : "opacity-45 grayscale"}`}>
                 {ready ? (
-                  <GarmentStage garment={g.id} colorHex={g.available ? PINK : COLORS[1].hex} view="front" className="h-full w-full" />
+                  <GarmentStage garment={g.id} colorHex={g.available ? GOLD : COLORS[1].hex} view="front" className="h-full w-full" />
                 ) : (
                   <VisualSkeleton className="h-full w-full" />
                 )}
               </div>
               <div className="p-3 text-center">
-                <p className="font-display text-sm text-[#1a1518]">{g.label}</p>
+                <p className="font-display text-sm text-[#17151a]">{g.label}</p>
                 {g.available ? (
-                  <p className="mt-1 text-[9.5px] font-medium uppercase tracking-[0.12em]" style={{ color: PINK }}>
+                  <p className="mt-1 text-[9.5px] font-medium uppercase tracking-[0.12em]" style={{ color: GOLD }}>
                     Available now
                   </p>
                 ) : (
-                  <p className="mt-1 flex items-center justify-center gap-1 text-[9.5px] font-medium uppercase tracking-[0.1em] text-[#1a1518]/35">
+                  <p className="mt-1 flex items-center justify-center gap-1 text-[9.5px] font-medium uppercase tracking-[0.1em] text-[#17151a]/35">
                     <IconLock className="h-2.5 w-2.5" /> Coming soon
                   </p>
                 )}
@@ -356,15 +356,15 @@ export function SlideFormeFuture({ active }: SlideProps) {
               </svg>
             </div>
             <div className="p-3 text-center">
-              <p className="font-display text-sm text-[#1a1518]">Socks</p>
-              <p className="mt-1 flex items-center justify-center gap-1 text-[9.5px] font-medium uppercase tracking-[0.1em] text-[#1a1518]/35">
+              <p className="font-display text-sm text-[#17151a]">Socks</p>
+              <p className="mt-1 flex items-center justify-center gap-1 text-[9.5px] font-medium uppercase tracking-[0.1em] text-[#17151a]/35">
                 <IconLock className="h-2.5 w-2.5" /> Coming soon
               </p>
             </div>
           </div>
         </div>
 
-        <p className="mt-6 text-[13px] text-[#1a1518]/50">More ways to wear your imagination are coming.</p>
+        <p className="mt-6 text-[13px] text-[#17151a]/50">More ways to wear your imagination are coming.</p>
       </div>
     </SlideShell>
   );

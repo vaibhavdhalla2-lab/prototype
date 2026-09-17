@@ -80,7 +80,7 @@ export default function RefineDrawing({ garment, colorHex, side, fit, accentTrim
           <div className="animate-fade-up mt-8 flex w-full max-w-xs flex-col gap-2.5 [animation-delay:200ms]">
             <button
               onClick={onKeep}
-              className="flex items-center justify-center gap-2 rounded-full bg-ink py-3.5 text-[12.5px] font-medium uppercase tracking-[0.16em] text-ivory transition-transform hover:-translate-y-0.5"
+              className="flex items-center justify-center gap-2 rounded-full bg-[#351c45] py-3.5 text-[12.5px] font-medium uppercase tracking-[0.16em] text-[#d4af70] transition-transform hover:-translate-y-0.5"
             >
               <IconCheck className="h-4 w-4" /> Keep Refined Version
             </button>

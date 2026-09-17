@@ -6,6 +6,8 @@ import type { GarmentType } from "../data/catalog";
 import { useDesign } from "../lib/store";
 import { track } from "../lib/analytics";
 import { GarmentStage } from "../components/Garment";
+import GradientMesh from "../components/GradientMesh";
+import GlowButton from "../components/GlowButton";
 import { IconRemix, IconEye, IconClose } from "../components/icons";
 import MicroPrompt from "../components/MicroPrompt";
 
@@ -23,12 +25,15 @@ const GARMENT_FILTERS: { id: GarmentType | "all"; label: string }[] = [
   ...GARMENTS.map((g) => ({ id: g.id, label: `${g.label}s` })),
 ];
 
+/** A collectible-object product card — glass surface, thin gold edge, soft plum shadow, gentle lift on hover. */
 function DesignCard({ d, onOpen, onRemix }: { d: MarketDesign; onOpen: () => void; onRemix: () => void }) {
   return (
-    <div className="group overflow-hidden rounded-2xl border border-line bg-paper transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_-28px_rgba(26,23,18,0.4)]">
+    <div className="card-atelier group overflow-hidden">
       <button onClick={onOpen} className="block w-full text-left">
         <div className="flex aspect-[4/5] items-center justify-center p-6" style={{ background: `${d.accent}14` }}>
-          <GarmentStage garment={d.garment} colorHex={colorById(d.color).hex} view="front" className="h-full w-full" />
+          <div className="h-full w-full transition-transform duration-500 group-hover:scale-105">
+            <GarmentStage garment={d.garment} colorHex={colorById(d.color).hex} view="front" className="h-full w-full" />
+          </div>
         </div>
       </button>
       <div className="p-4">
@@ -37,7 +42,7 @@ function DesignCard({ d, onOpen, onRemix }: { d: MarketDesign; onOpen: () => voi
             <p className="font-display text-lg leading-tight text-ink">{d.name}</p>
             <p className="text-xs text-ink-faint">by @{d.creator}</p>
           </button>
-          <p className="whitespace-nowrap text-sm font-medium text-ink">₹{d.price.toLocaleString("en-IN")}</p>
+          <p className="whitespace-nowrap text-sm font-medium text-[#351c45]">₹{d.price.toLocaleString("en-IN")}</p>
         </div>
         <div className="mt-3 flex items-center justify-between">
           <span className="flex items-center gap-1 text-[11px] text-ink-faint">
@@ -45,7 +50,7 @@ function DesignCard({ d, onOpen, onRemix }: { d: MarketDesign; onOpen: () => voi
           </span>
           <button
             onClick={onRemix}
-            className="flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-soft transition-colors group-hover:border-ink group-hover:text-ink"
+            className="flex items-center gap-1.5 rounded-full border border-[#351c45]/25 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-soft transition-colors group-hover:border-[#351c45] group-hover:text-[#351c45]"
           >
             <IconRemix className="h-3 w-3" /> Remix
           </button>
@@ -57,8 +62,11 @@ function DesignCard({ d, onOpen, onRemix }: { d: MarketDesign; onOpen: () => voi
 
 function QuickView({ d, onClose, onRemix }: { d: MarketDesign; onClose: () => void; onRemix: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-4 backdrop-blur-sm animate-fade-in" onClick={onClose}>
-      <div className="relative grid max-h-[90vh] w-full max-w-3xl grid-cols-1 overflow-y-auto rounded-3xl bg-paper shadow-2xl animate-scale-in sm:grid-cols-2" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#17151a]/50 p-4 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+      <div
+        className="relative grid max-h-[90vh] w-full max-w-3xl grid-cols-1 overflow-y-auto rounded-3xl border border-[#d4af70]/30 bg-paper shadow-2xl animate-scale-in sm:grid-cols-2"
+        onClick={(e) => e.stopPropagation()}
+      >
         <button onClick={onClose} className="absolute right-4 top-4 z-10 text-ink-soft hover:text-ink">
           <IconClose className="h-5 w-5" />
         </button>
@@ -68,10 +76,10 @@ function QuickView({ d, onClose, onRemix }: { d: MarketDesign; onClose: () => vo
         <div className="p-8">
           <p className="text-xs uppercase tracking-[0.16em] text-ink-faint">by @{d.creator}</p>
           <h2 className="mt-1 font-display text-3xl text-ink">{d.name}</h2>
-          <p className="mt-1 text-lg text-ink-soft">₹{d.price.toLocaleString("en-IN")}</p>
+          <p className="mt-1 text-lg font-medium text-[#351c45]">₹{d.price.toLocaleString("en-IN")}</p>
           <p className="mt-3 text-sm leading-relaxed text-ink-soft">{d.story}</p>
 
-          <div className="mt-6 grid grid-cols-2 gap-4 rounded-2xl border border-line-soft bg-ivory-dim p-4 text-[13px]">
+          <div className="mt-6 grid grid-cols-2 gap-4 rounded-2xl border border-[#351c45]/15 bg-ivory-dim p-4 text-[13px]">
             <div><p className="text-[11px] uppercase tracking-[0.08em] text-ink-faint">Product</p><p className="text-ink">{garmentById(d.garment).label}</p></div>
             <div><p className="text-[11px] uppercase tracking-[0.08em] text-ink-faint">Colour</p><p className="text-ink">{colorById(d.color).label}</p></div>
             <div><p className="text-[11px] uppercase tracking-[0.08em] text-ink-faint">Material</p><p className="text-ink">{materialById(d.material).label}</p></div>
@@ -83,9 +91,9 @@ function QuickView({ d, onClose, onRemix }: { d: MarketDesign; onClose: () => vo
             <span className="flex items-center gap-1.5"><IconRemix className="h-4 w-4" /> {d.remixes} remixes</span>
           </div>
 
-          <button onClick={onRemix} className="mt-7 flex w-full items-center justify-center gap-2 rounded-full bg-ink py-3.5 text-[12.5px] font-medium uppercase tracking-[0.14em] text-ivory">
+          <GlowButton onClick={onRemix} className="mt-7 w-full justify-center">
             <IconRemix className="h-4 w-4" /> Remix This Design
-          </button>
+          </GlowButton>
           <p className="mt-3 text-center text-[12px] text-ink-faint">Discover → Remix → Make it your own.</p>
         </div>
       </div>
@@ -118,67 +126,70 @@ export default function Marketplace() {
   const activeTab = TABS.find((t) => t.id === tab)!;
 
   return (
-    <div className="mx-auto max-w-[1400px] px-5 pb-24 pt-12 sm:px-8 sm:pt-16">
-      <div className="max-w-xl">
-        <p className="mb-3 text-[12px] uppercase tracking-[0.3em] text-ink-faint">Marketplace</p>
-        <h1 className="font-display text-4xl text-ink sm:text-5xl">Discover what people are creating</h1>
-        <p className="mt-4 text-ink-soft">
-          Every piece here started the same way yours can — a blank canvas. Remix anything and make it your own.
-        </p>
-      </div>
-
-      <div className="mt-10 flex flex-wrap gap-2">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`rounded-full border px-4 py-2 text-[12px] font-medium uppercase tracking-[0.1em] transition-colors ${
-              tab === t.id ? "border-ink bg-ink text-ivory" : "border-line text-ink-soft hover:border-ink-soft"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {GARMENT_FILTERS.map((g) => (
-          <button
-            key={g.id}
-            onClick={() => setGarmentFilter(g.id)}
-            className={`rounded-full px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.08em] transition-colors ${
-              garmentFilter === g.id ? "text-ink underline underline-offset-4" : "text-ink-faint hover:text-ink-soft"
-            }`}
-          >
-            {g.label}
-          </button>
-        ))}
-      </div>
-
-      <section className="mt-8">
-        <div className="mb-6">
-          <h2 className="font-display text-2xl text-ink sm:text-3xl">{activeTab.label}</h2>
-          <p className="mt-1 text-sm text-ink-faint">{activeTab.sub}</p>
+    <div className="grain relative">
+      <GradientMesh fixed />
+      <div className="relative mx-auto max-w-[1400px] px-5 pb-24 pt-12 sm:px-8 sm:pt-16">
+        <div className="max-w-xl">
+          <p className="mb-3 text-[12px] uppercase tracking-[0.3em]" style={{ color: "#d4af70" }}>Marketplace</p>
+          <h1 className="font-display text-4xl text-ink sm:text-5xl">Discover what people are creating</h1>
+          <p className="mt-4 text-ink-soft">
+            Every piece here started the same way yours can — a blank canvas. Remix anything and make it your own.
+          </p>
         </div>
 
-        {items.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-line-soft py-16 text-center text-ink-faint">
-            Nothing here yet — try a different category.
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {items.map((d) => (
-              <DesignCard key={d.id} d={d} onOpen={() => setActive(d)} onRemix={() => goRemix(d)} />
-            ))}
-          </div>
-        )}
-
-        <div className="mt-8">
-          <MicroPrompt question="Would you buy from a marketplace like this?" eventName="marketplace_browse" />
+        <div className="mt-10 flex flex-wrap gap-2">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`rounded-full border px-4 py-2 text-[12px] font-medium uppercase tracking-[0.1em] transition-colors ${
+                tab === t.id ? "border-[#351c45] bg-[#351c45] text-[#d4af70]" : "border-line text-ink-soft hover:border-[#351c45]/40"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
-      </section>
 
-      {active && <QuickView d={active} onClose={() => setActive(null)} onRemix={() => goRemix(active)} />}
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {GARMENT_FILTERS.map((g) => (
+            <button
+              key={g.id}
+              onClick={() => setGarmentFilter(g.id)}
+              className={`rounded-full px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.08em] transition-colors ${
+                garmentFilter === g.id ? "text-[#351c45] underline underline-offset-4" : "text-ink-faint hover:text-ink-soft"
+              }`}
+            >
+              {g.label}
+            </button>
+          ))}
+        </div>
+
+        <section className="mt-8">
+          <div className="mb-6">
+            <h2 className="font-display text-2xl text-ink sm:text-3xl">{activeTab.label}</h2>
+            <p className="mt-1 text-sm text-ink-faint">{activeTab.sub}</p>
+          </div>
+
+          {items.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-line-soft py-16 text-center text-ink-faint">
+              Nothing here yet — try a different category.
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              {items.map((d) => (
+                <DesignCard key={d.id} d={d} onOpen={() => setActive(d)} onRemix={() => goRemix(d)} />
+              ))}
+            </div>
+          )}
+
+          <div className="mt-8">
+            <MicroPrompt question="Would you buy from a marketplace like this?" eventName="marketplace_browse" />
+          </div>
+        </section>
+
+        {active && <QuickView d={active} onClose={() => setActive(null)} onRemix={() => goRemix(active)} />}
+      </div>
     </div>
   );
 }

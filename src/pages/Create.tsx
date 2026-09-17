@@ -7,6 +7,7 @@ import { GarmentStage, PRINT_AREAS } from "../components/Garment";
 import { track } from "../lib/analytics";
 import { checkManufacturability, contextualTip } from "../lib/muse";
 
+import GradientMesh from "../components/GradientMesh";
 import CanvasPicker from "../components/studio/CanvasPicker";
 import EntryUpload from "../components/studio/EntryUpload";
 import EntryPrompt from "../components/studio/EntryPrompt";
@@ -351,7 +352,7 @@ export default function Create() {
 
   const GarmentCard = ({ size }: { size: "sm" | "lg" }) => (
     <div
-      className={`relative mx-auto w-full ${size === "lg" ? "max-w-[560px]" : "max-w-[420px]"} aspect-square rounded-[32px] border border-line-soft bg-paper shadow-[0_30px_80px_-45px_rgba(26,23,18,0.35)] grain`}
+      className={`relative mx-auto w-full ${size === "lg" ? "max-w-[560px]" : "max-w-[420px]"} aspect-square rounded-[32px] border border-[#d4af70]/25 bg-paper shadow-[0_30px_80px_-45px_rgba(53,28,69,0.35)] grain`}
       style={{ overflow: zoomed ? "hidden" : "visible" }}
     >
       <div
@@ -373,7 +374,7 @@ export default function Create() {
 
       <button
         onClick={() => setMuseOpen(true)}
-        className="absolute bottom-5 right-5 flex items-center gap-2 rounded-full bg-ink px-4 py-2.5 text-[11px] font-medium uppercase tracking-[0.14em] text-ivory shadow-[0_10px_30px_-10px_rgba(26,23,18,0.6)] transition-transform hover:-translate-y-0.5"
+        className="absolute bottom-5 right-5 flex items-center gap-2 rounded-full bg-[#351c45] px-4 py-2.5 text-[11px] font-medium uppercase tracking-[0.14em] text-[#d4af70] shadow-[0_10px_30px_-10px_rgba(53,28,69,0.6)] transition-transform hover:-translate-y-0.5"
       >
         <IconSparkle className="h-3.5 w-3.5" />
         Muse
@@ -392,7 +393,7 @@ export default function Create() {
           key={v.id}
           onClick={() => selectView(v.id)}
           className={`rounded-full px-4 py-1.5 text-[11px] font-medium uppercase tracking-[0.12em] transition-colors ${
-            activeViewTab === v.id ? "bg-ink text-ivory" : "text-ink-soft hover:text-ink"
+            activeViewTab === v.id ? "bg-[#351c45] text-[#d4af70]" : "text-ink-soft hover:text-ink"
           }`}
         >
           {v.label}
@@ -402,7 +403,8 @@ export default function Create() {
   );
 
   return (
-    <div className="lg:mx-auto lg:max-w-[1500px] lg:px-5 lg:pb-16 lg:pt-10 xl:px-8">
+    <div className="relative lg:mx-auto lg:max-w-[1500px] lg:px-5 lg:pb-16 lg:pt-10 xl:px-8">
+      <GradientMesh fixed className="opacity-70" />
       {/* ============================= DESKTOP (lg+) ============================= */}
       <div className="hidden lg:block">
         <div className="mb-8">
@@ -428,7 +430,7 @@ export default function Create() {
                   key={t.id}
                   onClick={() => setCategory(t.id)}
                   className={`rounded-xl px-4 py-2.5 text-left text-[13px] font-medium uppercase tracking-[0.08em] transition-colors ${
-                    category === t.id ? "bg-ink text-ivory" : "text-ink-soft hover:bg-ivory-dim"
+                    category === t.id ? "bg-[#351c45] text-[#d4af70]" : "text-ink-soft hover:bg-ivory-dim"
                   }`}
                 >
                   {t.label}
@@ -443,7 +445,7 @@ export default function Create() {
                     key={t.id}
                     onClick={() => setDesignSub(t.id)}
                     className={`flex flex-col items-center gap-1 rounded-lg border py-2 text-[10px] uppercase tracking-[0.04em] transition-colors ${
-                      designSub === t.id ? "border-ink text-ink" : "border-line-soft text-ink-faint hover:border-ink-soft"
+                      designSub === t.id ? "border-[#351c45] text-[#351c45]" : "border-line-soft text-ink-faint hover:border-ink-soft"
                     }`}
                   >
                     <t.icon className="h-3.5 w-3.5" />
@@ -518,10 +520,10 @@ export default function Create() {
 
           <button
             onClick={() => setReviewOpen(true)}
-            className="mt-5 flex w-full items-center justify-between rounded-2xl bg-ink px-5 py-4 text-ivory"
+            className="mt-5 flex w-full items-center justify-between rounded-2xl bg-[#351c45] px-5 py-4 text-[#d4af70]"
           >
             <span>
-              <span className="block text-[11px] uppercase tracking-[0.16em] text-ivory/60">Ready?</span>
+              <span className="block text-[11px] uppercase tracking-[0.16em] text-[#d4af70]/60">Ready?</span>
               <span className="font-display text-xl">Review &amp; Finish</span>
             </span>
             <IconArrowRight className="h-5 w-5" />

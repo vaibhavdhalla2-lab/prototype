@@ -55,7 +55,7 @@ export default function EntryPrompt({ onEnterStudio }: { onEnterStudio: (tab: st
           <button
             onClick={create}
             disabled={!text.trim() || thinking}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-ink py-3.5 text-[12.5px] font-medium uppercase tracking-[0.16em] text-ivory disabled:opacity-30"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[#351c45] py-3.5 text-[12.5px] font-medium uppercase tracking-[0.16em] text-[#d4af70] disabled:opacity-30"
           >
             {thinking ? (
               <>
@@ -102,7 +102,7 @@ export default function EntryPrompt({ onEnterStudio }: { onEnterStudio: (tab: st
           </div>
 
           <div className="mt-6 flex flex-wrap gap-2.5">
-            <button onClick={() => apply("design")} className="flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-[12px] uppercase tracking-[0.1em] text-ivory">
+            <button onClick={() => apply("design")} className="flex items-center gap-2 rounded-full bg-[#351c45] px-5 py-2.5 text-[12px] uppercase tracking-[0.1em] text-[#d4af70]">
               <IconCheck className="h-3.5 w-3.5" /> Use This
             </button>
             <button onClick={() => apply("color")} className="rounded-full border border-line px-5 py-2.5 text-[12px] uppercase tracking-[0.1em] text-ink-soft">

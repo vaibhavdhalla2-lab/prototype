@@ -73,7 +73,7 @@ export default function MusePanel() {
 
         {!applied ? (
           <div className="mt-4 flex gap-2">
-            <button onClick={apply} className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-ink py-2.5 text-[12px] uppercase tracking-[0.1em] text-ivory">
+            <button onClick={apply} className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#351c45] py-2.5 text-[12px] uppercase tracking-[0.1em] text-[#d4af70]">
               <IconCheck className="h-3.5 w-3.5" /> Use This
             </button>
             <button onClick={() => setConcept(null)} className="flex-1 rounded-full border border-line py-2.5 text-[12px] uppercase tracking-[0.1em] text-ink-soft">
@@ -113,7 +113,7 @@ export default function MusePanel() {
       <button
         onClick={() => create()}
         disabled={!text.trim() || thinking}
-        className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-ink py-3 text-[12.5px] font-medium uppercase tracking-[0.14em] text-ivory disabled:opacity-30"
+        className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[#351c45] py-3 text-[12.5px] font-medium uppercase tracking-[0.14em] text-[#d4af70] disabled:opacity-30"
       >
         {thinking ? (
           <>

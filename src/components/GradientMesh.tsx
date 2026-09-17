@@ -1,14 +1,13 @@
-const PEACH = "#ffb38a";
-const PINK = "#ff6fae";
-const GOLD = "#e5c07b";
+const LAVENDER = "#e9d5ff";
+const VIOLET = "#8b5cf6";
+const GOLD = "#d4af70";
 
 /**
- * Animated blurred color blobs — the "soft gradient background / layered
- * color fields" backdrop for the landing page's playful-luxury theme.
- * Purely decorative and non-interactive.
+ * Animated blurred color blobs — the "atmospheric lighting" backdrop for the
+ * atelier theme. Purely decorative and non-interactive.
  *
  * `variant="plum"` swaps in a palette that reads against the deep-plum
- * sections (marketplace preview, footer) instead of the cream/peach ones.
+ * sections (marketplace preview, footer) instead of the light ivory ones.
  *
  * `fixed` anchors the mesh to the viewport (ignores scroll) so it can sit
  * once at the top of the page and read as ambient atmosphere behind every
@@ -26,8 +25,8 @@ export default function GradientMesh({
   fixed?: boolean;
   variant?: "warm" | "plum";
 }) {
-  const colors = variant === "plum" ? [PINK, GOLD, "#fff4e6"] : [PEACH, PINK, GOLD];
-  const opacities = variant === "plum" ? [0.22, 0.16, 0.08] : [0.55, 0.4, 0.35];
+  const colors = variant === "plum" ? [VIOLET, GOLD, "#faf4ea"] : [LAVENDER, VIOLET, GOLD];
+  const opacities = variant === "plum" ? [0.2, 0.14, 0.06] : [0.55, 0.22, 0.3];
 
   return (
     <div className={`pointer-events-none inset-0 -z-10 overflow-hidden ${fixed ? "fixed" : "absolute"} ${className}`} aria-hidden="true">

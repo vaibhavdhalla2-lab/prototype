@@ -5,44 +5,45 @@
   --font-display-heavy: "Bebas Neue", "Archivo Black", Impact, sans-serif;
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
-  --color-ivory: #f6f3ec;
-  --color-ivory-dim: #efe9dc;
-  --color-paper: #fbf9f4;
-  --color-ink: #1a1712;
-  --color-ink-soft: #4a453d;
-  --color-ink-faint: #86806f;
-  --color-line: #ddd4bf;
-  --color-line-soft: #e8e1d0;
-  --color-clay: #9a6a43;
-  --color-clay-soft: #c99a6f;
-  --color-clay-deep: #6f4a2a;
+  /* "Luxury Creative Atelier" — FORMÉ's one brand identity, applied
+     everywhere (there is no separate "home theme" any more). Warm ivory
+     surfaces, ink-black type, and deep plum as the single brand anchor;
+     champagne gold marks luxury/reward moments, the violet end of the
+     plum→violet "creative gradient" marks AI/creative moments, and soft
+     lavender is the quiet secondary wash. `clay` is kept as the token name
+     (used all over as the site's accent role) but now resolves to plum. */
+  --color-ivory: #faf4ea;
+  --color-ivory-dim: #f1e6d5;
+  --color-paper: #fdfaf5;
+  --color-ink: #17151a;
+  --color-ink-soft: #4a4550;
+  --color-ink-faint: #8a8390;
+  --color-line: #ded4e0;
+  --color-line-soft: #ece4ef;
+  --color-clay: #351c45;
+  --color-clay-soft: #7c5b8f;
+  --color-clay-deep: #24102f;
   --color-success: #4a6a4a;
 
-  /* Editorial accent family — used selectively, one accent per moment, never all at once:
-     orange = create, red = marketplace/discover/sell, blue = MUSE, lime = coming soon/experimental. */
-  --color-accent-orange: #d9662b;
-  --color-accent-orange-deep: #a84a1c;
-  --color-accent-red: #b8272c;
-  --color-accent-red-deep: #841c20;
-  --color-accent-blue: #2647d6;
-  --color-accent-blue-deep: #1b34a3;
-  --color-accent-lime: #a6c93d;
-  --color-accent-lime-deep: #6f8a24;
+  /* Accent family — still one accent per moment, remapped onto the atelier
+     palette instead of a rainbow of category colors:
+     orange = create → gold, red = marketplace/discover/sell → plum,
+     blue = MUSE → violet (the AI/creative accent), lime = coming
+     soon/experimental → a quiet dusty lavender. */
+  --color-accent-orange: #d4af70;
+  --color-accent-orange-deep: #b8935a;
+  --color-accent-red: #351c45;
+  --color-accent-red-deep: #24102f;
+  --color-accent-blue: #8b5cf6;
+  --color-accent-blue-deep: #6d28d9;
+  --color-accent-lime: #9b8aa8;
+  --color-accent-lime-deep: #7a6b86;
 
-  /* "Playful luxury — a fashion creator studio" — the identity used on the
-     landing page only (Nav/Footer/Home switch into this via a `dark` prop —
-     historical name, it now means "home theme variant", not literal
-     darkness; the rest of the app keeps the paper/ink editorial theme
-     above). Warm cream/peach fields with plum as the brand anchor and
-     pink/gold as the two accents — never both at full strength in the same
-     spot; pink carries creative/playful moments, gold carries luxury/reward. */
-  --color-cream: #fff4e6;
-  --color-peach: #ffb38a;
   --color-plum: #351c45;
-  --color-plum-deep: #201129;
-  --color-pink: #ff6fae;
-  --color-gold: #e5c07b;
-  --color-espresso: #1a1518;
+  --color-plum-deep: #24102f;
+  --color-violet: #8b5cf6;
+  --color-gold: #d4af70;
+  --color-lavender: #e9d5ff;
 
   --animate-glow-pulse: glow-pulse 3.2s ease-in-out infinite;
   --animate-float-slow: float-slow 6s ease-in-out infinite;
@@ -175,8 +176,8 @@
   .grain-deep::after {
     opacity: 0.06;
   }
-  /* Frosted-glass card surface for the warm palette — cream-tinted, soft
-     gold-ish border, for the "soft glass card" hero/product-card treatment. */
+  /* Frosted-glass card surface for the ivory palette — for the "soft glass
+     card" treatment over light atelier sections. */
   .glass-warm {
     background: rgba(255, 255, 255, 0.55);
     -webkit-backdrop-filter: blur(20px);
@@ -189,5 +190,30 @@
     -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+  /* Brand headline treatment — the plum→violet "creative gradient" as text. */
+  .text-gradient-plum {
+    background-image: linear-gradient(100deg, var(--color-plum), var(--color-violet));
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+  /* The sitewide "premium object" card: glass surface, thin gold edge, soft
+     plum shadow, gentle lift on hover. Used for marketplace/profile/panel
+     cards so they read as collectible objects rather than flat UI tiles. */
+  .card-atelier {
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(212, 175, 112, 0.35);
+    border-radius: 1.5rem;
+    box-shadow: 0 24px 60px -34px rgba(53, 28, 69, 0.35);
+    transition:
+      transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.35s ease,
+      border-color 0.35s ease;
+  }
+  .card-atelier:hover {
+    transform: translateY(-4px);
+    border-color: rgba(212, 175, 112, 0.65);
+    box-shadow: 0 32px 70px -32px rgba(53, 28, 69, 0.45);
   }
 }

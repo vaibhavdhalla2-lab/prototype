@@ -23,7 +23,7 @@ export default function CanvasPicker({ onSelect }: { onSelect: (g: GarmentType) 
             style={{ animationDelay: `${180 + i * 80}ms` }}
             className={`group relative flex flex-col items-center overflow-hidden rounded-3xl border p-6 text-center transition-all duration-300 animate-fade-up ${
               g.available
-                ? "border-line bg-paper hover:-translate-y-1.5 hover:border-ink/40 hover:shadow-[0_24px_60px_-24px_rgba(26,23,18,0.35)] cursor-pointer"
+                ? "border-[#d4af70]/25 bg-paper hover:-translate-y-1.5 hover:border-[#d4af70]/60 hover:shadow-[0_24px_60px_-24px_rgba(53,28,69,0.35)] cursor-pointer"
                 : "border-line-soft bg-ivory-dim cursor-default"
             }`}
           >

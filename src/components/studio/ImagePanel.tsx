@@ -108,7 +108,7 @@ export default function ImagePanel() {
             <p className="text-ink">{analysis.graphic}</p>
           </div>
         </div>
-        <button onClick={applyRecommendations} className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-ink py-3 text-[12px] uppercase tracking-[0.14em] text-ivory">
+        <button onClick={applyRecommendations} className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[#351c45] py-3 text-[12px] uppercase tracking-[0.14em] text-[#d4af70]">
           <IconCheck className="h-4 w-4" /> Apply Recommendations
         </button>
         <button onClick={() => setAnalysis(null)} className="mt-2 w-full py-2 text-[12px] uppercase tracking-[0.1em] text-ink-faint hover:text-ink-soft">
@@ -124,7 +124,7 @@ export default function ImagePanel() {
         <p className="text-[11px] uppercase tracking-[0.25em] text-ink-faint">Image</p>
         <img src={staged} alt="Uploaded" className="mt-3 h-40 w-full rounded-xl object-cover" />
         <div className="mt-4 space-y-2">
-          <button onClick={useAsArtwork} className="w-full rounded-xl border border-ink bg-ink py-2.5 text-[12px] uppercase tracking-[0.1em] text-ivory">
+          <button onClick={useAsArtwork} className="w-full rounded-xl border border-[#351c45] bg-[#351c45] py-2.5 text-[12px] uppercase tracking-[0.1em] text-[#d4af70]">
             Use As Artwork
           </button>
           <button onClick={useAsInspiration} className="flex w-full items-center justify-center gap-2 rounded-xl border border-clay/40 py-2.5 text-[12px] uppercase tracking-[0.1em] text-clay-deep">

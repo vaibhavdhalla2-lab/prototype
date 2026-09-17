@@ -113,7 +113,7 @@ export default function MuseAssistant({ open, onClose }: { open: boolean; onClos
               <p className="mt-2 text-sm leading-relaxed text-ink-soft">{result.reason}</p>
               {!applied ? (
                 <div className="mt-5 flex gap-2">
-                  <button onClick={useThis} className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-ink py-2.5 text-[12px] uppercase tracking-[0.1em] text-ivory">
+                  <button onClick={useThis} className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[#351c45] py-2.5 text-[12px] uppercase tracking-[0.1em] text-[#d4af70]">
                     <IconCheck className="h-3.5 w-3.5" /> Use This
                   </button>
                   <button

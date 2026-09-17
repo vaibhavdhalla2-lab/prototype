@@ -100,7 +100,7 @@ export default function EntryUpload({ onEnterStudio }: { onEnterStudio: (tab: st
         <div className="mt-8 animate-scale-in">
           <img src={staged} alt="Uploaded" className="mx-auto h-56 w-56 rounded-2xl object-cover shadow-[0_20px_50px_-24px_rgba(26,23,18,0.4)]" />
           <div className="mx-auto mt-6 flex max-w-xs flex-col gap-2.5">
-            <button onClick={useAsArtwork} className="rounded-full bg-ink py-3 text-[12px] uppercase tracking-[0.12em] text-ivory">
+            <button onClick={useAsArtwork} className="rounded-full bg-[#351c45] py-3 text-[12px] uppercase tracking-[0.12em] text-[#d4af70]">
               Use As Artwork
             </button>
             <button onClick={useAsInspiration} className="flex items-center justify-center gap-2 rounded-full border border-clay/40 py-3 text-[12px] uppercase tracking-[0.12em] text-clay-deep">
@@ -140,7 +140,7 @@ export default function EntryUpload({ onEnterStudio }: { onEnterStudio: (tab: st
               <p className="text-ink">{analysis.graphic}</p>
             </div>
           </div>
-          <button onClick={applyRecommendations} className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-ink py-3 text-[12px] uppercase tracking-[0.14em] text-ivory">
+          <button onClick={applyRecommendations} className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-[#351c45] py-3 text-[12px] uppercase tracking-[0.14em] text-[#d4af70]">
             <IconCheck className="h-4 w-4" /> Apply Recommendations
           </button>
         </div>
