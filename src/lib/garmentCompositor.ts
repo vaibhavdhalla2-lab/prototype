@@ -297,6 +297,30 @@ export function getDesignLayer(designSrc: string, baseSrc: string, printArea: Pr
         const { dx, dy, dw, dh } = containFit(designImg.naturalWidth, designImg.naturalHeight, boxW, boxH);
         ctx.drawImage(designImg, boxX + dx, boxY + dy, dw, dh);
 
+        // Soften the drawn rectangle's own edges — some source art has no
+        // real alpha margin (a flat, edge-to-edge square export), which
+        // otherwise reads as a hard-edged sticker once clipped to the print
+        // area. A blurred rounded-rect mask gives every design a soft,
+        // printed-patch edge instead, whether or not its own alpha already
+        // faded out there. Blurred at the design's own (small) size, not the
+        // full base-photo canvas — filter blur cost scales with pixel count,
+        // and blurring a full 4500x3000 canvas per design is what actually
+        // made several designs on one page (e.g. the Marketplace) crash.
+        const feather = Math.min(dw, dh) * 0.06;
+        const pad = Math.ceil(feather * 3);
+        const edgeMask = document.createElement("canvas");
+        edgeMask.width = Math.ceil(dw + pad * 2);
+        edgeMask.height = Math.ceil(dh + pad * 2);
+        const mctx = edgeMask.getContext("2d")!;
+        mctx.filter = `blur(${feather}px)`;
+        mctx.fillStyle = "#fff";
+        mctx.beginPath();
+        mctx.roundRect(pad, pad, dw, dh, Math.min(dw, dh) * 0.08);
+        mctx.fill();
+        ctx.globalCompositeOperation = "destination-in";
+        ctx.drawImage(edgeMask, boxX + dx - pad, boxY + dy - pad);
+        ctx.globalCompositeOperation = "source-over";
+
         // Snapshot the design's own footprint before shading it — "multiply"
         // otherwise paints the grayscale map at full alpha wherever our own
         // alpha was 0 (the same Porter-Duff quirk recolorBase() clips away).
