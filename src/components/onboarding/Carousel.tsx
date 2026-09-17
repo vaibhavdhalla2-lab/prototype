@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode, type PointerEvent as ReactPointerEvent } from "react";
 import { IconArrowRight } from "../icons";
 
-const TOTAL = 4;
-
 interface CarouselProps {
   slides: ReactNode[];
   /** Called when Next is pressed/swiped past the last slide. If omitted, Next is disabled on the last slide. */
@@ -17,6 +15,7 @@ interface CarouselProps {
 }
 
 export default function Carousel({ slides, onFinish, onSkip, onIndexChange, resetKey, finishLabel = "Next", className }: CarouselProps) {
+  const total = slides.length;
   const [index, setIndex] = useState(0);
   const [dragPx, setDragPx] = useState(0);
   const dragging = useRef(false);
@@ -32,14 +31,14 @@ export default function Carousel({ slides, onFinish, onSkip, onIndexChange, rese
   }, [resetKey]);
 
   const goTo = (next: number) => {
-    const clamped = Math.min(TOTAL - 1, Math.max(0, next));
+    const clamped = Math.min(total - 1, Math.max(0, next));
     setIndex(clamped);
     setDragPx(0);
     onIndexChange?.(clamped);
   };
 
   const goNext = () => {
-    if (index === TOTAL - 1) {
+    if (index === total - 1) {
       if (onFinish) onFinish();
       else setDragPx(0);
       return;
@@ -75,7 +74,7 @@ export default function Carousel({ slides, onFinish, onSkip, onIndexChange, rese
     }
     if (intentRef.current !== "horizontal") return;
     const atStart = index === 0 && dx > 0;
-    const atEnd = index === TOTAL - 1 && dx < 0 && !onFinish;
+    const atEnd = index === total - 1 && dx < 0 && !onFinish;
     setDragPx(atStart || atEnd ? dx * 0.35 : dx);
   };
 
@@ -95,7 +94,7 @@ export default function Carousel({ slides, onFinish, onSkip, onIndexChange, rese
   };
 
   const isFirst = index === 0;
-  const isLast = index === TOTAL - 1;
+  const isLast = index === total - 1;
 
   return (
     <div className={`relative ${className ?? ""}`}>
@@ -120,13 +119,13 @@ export default function Carousel({ slides, onFinish, onSkip, onIndexChange, rese
         <div
           className="flex h-full"
           style={{
-            width: `${TOTAL * 100}%`,
-            transform: `translateX(calc(${(-index * 100) / TOTAL}% + ${dragPx}px))`,
+            width: `${total * 100}%`,
+            transform: `translateX(calc(${(-index * 100) / total}% + ${dragPx}px))`,
             transition: dragging.current ? "none" : "transform 0.5s cubic-bezier(0.22,1,0.36,1)",
           }}
         >
           {slides.map((slide, i) => (
-            <div key={i} className="h-full shrink-0" style={{ width: `${100 / TOTAL}%` }}>
+            <div key={i} className="h-full shrink-0" style={{ width: `${100 / total}%` }}>
               {slide}
             </div>
           ))}
@@ -182,7 +181,7 @@ export default function Carousel({ slides, onFinish, onSkip, onIndexChange, rese
       {/* indicator: dots + counter, bottom center */}
       <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex flex-col items-center gap-2 sm:bottom-6">
         <div className="pointer-events-auto flex items-center gap-1.5">
-          {Array.from({ length: TOTAL }).map((_, i) => (
+          {Array.from({ length: total }).map((_, i) => (
             <button
               key={i}
               onClick={() => goTo(i)}
@@ -194,7 +193,7 @@ export default function Carousel({ slides, onFinish, onSkip, onIndexChange, rese
           ))}
         </div>
         <p className="text-[10.5px] uppercase tracking-[0.2em] text-ink-faint">
-          {String(index + 1).padStart(2, "0")} / {String(TOTAL).padStart(2, "0")}
+          {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
         </p>
       </div>
     </div>

@@ -21,12 +21,14 @@ export interface GarmentDef {
   label: string;
   basePrice: number;
   blurb: string;
+  /** Whether this garment can currently be created from scratch. false = "Coming Soon" — shown, not selectable. */
+  available: boolean;
 }
 
 export const GARMENTS: GarmentDef[] = [
-  { id: "tshirt", label: "T-Shirt", basePrice: 1299, blurb: "The everyday canvas. Endlessly wearable." },
-  { id: "hoodie", label: "Hoodie", basePrice: 2199, blurb: "Structured comfort. Built to hold a statement." },
-  { id: "cap", label: "Cap", basePrice: 899, blurb: "A small canvas with an outsized presence." },
+  { id: "tshirt", label: "T-Shirt", basePrice: 1299, blurb: "The everyday canvas. Endlessly wearable.", available: true },
+  { id: "hoodie", label: "Hoodie", basePrice: 2199, blurb: "Structured comfort. Built to hold a statement.", available: false },
+  { id: "cap", label: "Cap", basePrice: 899, blurb: "A small canvas with an outsized presence.", available: false },
 ];
 
 export interface ColorDef {
