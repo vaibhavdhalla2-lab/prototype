@@ -5,6 +5,7 @@ import { GarmentStage } from "../Garment";
 import { GARMENTS, COLORS, colorById } from "../../data/catalog";
 import { MARKET_DESIGNS } from "../../data/marketplace";
 import { track } from "../../lib/analytics";
+import GlowButton from "./GlowButton";
 import {
   IconArrowRight,
   IconUpload,
@@ -41,34 +42,41 @@ function useLazyActive(active: boolean) {
 function Eyebrow({ children, tone }: { children: string; tone: string }) {
   return (
     <p className="mb-4 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.3em]" style={{ color: tone }}>
-      <span className="h-1.5 w-1.5 rounded-full" style={{ background: tone }} />
+      <span className="h-1.5 w-1.5 rounded-full" style={{ background: tone, boxShadow: `0 0 8px ${tone}` }} />
       {children}
     </p>
   );
 }
 
-function SlideCTA({ label, tone, onClick }: { label: string; tone: string; onClick: () => void }) {
+/** Lightweight stand-in shown until a slide's real photographic visual has been asked for at least once. */
+function VisualSkeleton({ className }: { className?: string }) {
+  return <div className={`animate-pulse rounded-2xl bg-white/[0.04] ${className ?? ""}`} />;
+}
+
+/** Glass card shell shared by every slide — dark surface, soft border, faint glow ring in the slide's accent. */
+function SlideShell({ tone, children }: { tone: string; children: React.ReactNode }) {
   return (
-    <button
-      onClick={onClick}
-      className="group mt-8 inline-flex w-fit items-center gap-2.5 rounded-full px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.16em] text-ivory transition-all hover:-translate-y-0.5"
-      style={{ background: tone, boxShadow: `0 16px 40px -16px ${tone}99` }}
+    <div
+      className="grain grain-invert glass-dark relative h-full overflow-hidden rounded-[28px] sm:mx-24 sm:rounded-[32px] lg:mx-28"
+      style={{ boxShadow: `0 0 0 1px rgba(255,255,255,0.06), 0 0 90px -30px ${tone}66, 0 40px 100px -50px rgba(0,0,0,0.8)` }}
     >
-      {label}
-      <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-    </button>
+      {children}
+    </div>
   );
 }
 
-/** Lightweight stand-in shown until a slide's real photographic visual has been asked for at least once. */
-function VisualSkeleton({ className }: { className?: string }) {
-  return <div className={`animate-pulse rounded-2xl bg-ink/[0.04] ${className ?? ""}`} />;
-}
-
-const ORANGE = "var(--color-accent-orange)";
-const RED = "var(--color-accent-red)";
-const BLUE = "var(--color-accent-blue)";
-const LIME_DEEP = "var(--color-accent-lime-deep)";
+/*
+ * Literal hex, not CSS var() references: these values get string-concatenated
+ * with alpha suffixes (`${LIME}55`) for translucent borders/glows, and fed
+ * straight into GarmentPreview's `color` prop, which lands in a canvas
+ * `fillStyle` — canvas can't resolve CSS custom properties, so a var()
+ * string there would silently fail to recolor anything. Keep in sync with
+ * the --color-lime/violet/coral/gold tokens in index.css.
+ */
+const LIME = "#c7ff2e";
+const VIOLET = "#8b5cff";
+const CORAL = "#ff5c5c";
+const GOLD = "#d6b36a";
 
 /* ----------------------------------------------------------------------- */
 /* SLIDE 1 — Create your own                                                */
@@ -78,48 +86,65 @@ export function SlideCreateFromScratch({ active }: SlideProps) {
   const navigate = useNavigate();
   const ready = useLazyActive(active);
   return (
-    <div className="grain relative h-full overflow-hidden rounded-[28px] border border-line-soft bg-paper sm:mx-24 sm:rounded-[32px] lg:mx-28">
+    <SlideShell tone={LIME}>
       <div className="grid h-full grid-cols-1 items-center gap-8 px-6 pt-9 pb-16 sm:px-10 sm:pt-12 sm:pb-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-6 lg:px-14">
         <div className="order-2 lg:order-1">
-          <Eyebrow tone={ORANGE}>Getting started</Eyebrow>
-          <h3 className="font-display-heavy text-[clamp(2.4rem,7.5vw,4.6rem)] uppercase leading-[0.86] tracking-tight text-ink">
+          <Eyebrow tone={LIME}>Getting started</Eyebrow>
+          <h3 className="font-display-heavy text-[clamp(2.4rem,7.5vw,4.6rem)] uppercase leading-[0.86] tracking-tight text-ivory">
             Create
             <br />
             your own.
           </h3>
-          <p className="mt-5 max-w-sm text-[15px] leading-relaxed text-ink-soft">
+          <p className="mt-5 max-w-sm text-[15px] leading-relaxed text-ivory/55">
             Start with a blank T-shirt and make it yours — no design experience required.
           </p>
-          <SlideCTA label="Start Creating" tone={ORANGE} onClick={() => { track("start_creating", { mode: "scratch", source: "home_carousel" }); navigate("/create", { state: { mode: "scratch" } }); }} />
+          <div className="mt-8">
+            <GlowButton
+              tone={LIME}
+              onClick={() => {
+                track("start_creating", { mode: "scratch", source: "home_carousel" });
+                navigate("/create", { state: { mode: "scratch" } });
+              }}
+            >
+              Start Creating
+              <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </GlowButton>
+          </div>
         </div>
 
         <div className="order-1 flex items-center justify-center gap-4 lg:order-2">
           <div className="relative w-[46%] max-w-[170px]">
-            <div className="flex aspect-[3/4] items-center justify-center overflow-hidden rounded-2xl border border-dashed border-line bg-ivory-dim/60 p-4">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" className="h-10 w-10 text-ink-faint/50">
+            <div className="flex aspect-[3/4] items-center justify-center overflow-hidden rounded-2xl border border-dashed border-white/15 bg-white/[0.03] p-4">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" className="h-10 w-10 text-ivory/25">
                 <path d="M8 3h8l2 4-1 2v10a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V9L6 7l2-4z" />
               </svg>
             </div>
-            <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-paper px-3 py-1 text-[9.5px] font-medium uppercase tracking-[0.12em] text-ink-faint shadow-sm">
+            <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/10 bg-[#15151a] px-3 py-1 text-[9.5px] font-medium uppercase tracking-[0.12em] text-ivory/50 shadow-sm">
               Blank canvas
             </span>
           </div>
-          <IconArrowRight className="h-5 w-5 shrink-0 text-ink-faint" />
-          <div className="relative w-[46%] max-w-[170px]">
-            <div className="aspect-[3/4] overflow-hidden rounded-2xl border p-4 shadow-[0_20px_50px_-24px_rgba(217,102,43,0.45)]" style={{ borderColor: `${ORANGE}55`, background: `${ORANGE}0f` }}>
+          <IconArrowRight className="h-5 w-5 shrink-0 text-ivory/25" />
+          <div className="relative w-[46%] max-w-[170px] animate-float-slow">
+            <div
+              className="aspect-[3/4] overflow-hidden rounded-2xl border p-4"
+              style={{ borderColor: `${LIME}55`, background: `${LIME}0f`, boxShadow: `0 0 40px -12px ${LIME}88` }}
+            >
               {ready ? (
-                <GarmentPreview garment="tshirt" color={COLORS[0].hex} className="h-full w-full" alt="Designed T-shirt" />
+                <GarmentPreview garment="tshirt" color={LIME} className="h-full w-full" alt="Designed T-shirt" />
               ) : (
                 <VisualSkeleton className="h-full w-full" />
               )}
             </div>
-            <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-3 py-1 text-[9.5px] font-medium uppercase tracking-[0.12em] text-ivory shadow-sm" style={{ background: ORANGE }}>
+            <span
+              className="absolute -bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full px-3 py-1 text-[9.5px] font-medium uppercase tracking-[0.12em] text-[#0d0d0f] shadow-sm"
+              style={{ background: LIME }}
+            >
               Made by you
             </span>
           </div>
         </div>
       </div>
-    </div>
+    </SlideShell>
   );
 }
 
@@ -128,18 +153,18 @@ export function SlideCreateFromScratch({ active }: SlideProps) {
 /* ----------------------------------------------------------------------- */
 
 const WAYS = [
-  { id: "image", label: "Upload", body: "Show us your inspiration.", icon: IconUpload, tone: "#1a1712" },
-  { id: "muse", label: "Muse", body: "Tell us what you're imagining.", icon: IconSparkle, tone: BLUE },
-  { id: "draw", label: "Draw", body: "Draw it yourself.", icon: IconDraw, tone: "#1a1712" },
+  { id: "image", label: "Upload", body: "Show us your inspiration.", icon: IconUpload, tone: "#e8e6f0" },
+  { id: "muse", label: "Muse", body: "Tell us what you're imagining.", icon: IconSparkle, tone: VIOLET },
+  { id: "draw", label: "Draw", body: "Draw it yourself.", icon: IconDraw, tone: "#e8e6f0" },
 ];
 
 export function SlideThreeWays({ active: _active }: SlideProps) {
   const navigate = useNavigate();
   return (
-    <div className="grain relative h-full overflow-hidden rounded-[28px] border border-line-soft bg-ivory-dim sm:mx-24 sm:rounded-[32px] lg:mx-28">
+    <SlideShell tone={VIOLET}>
       <div className="flex h-full flex-col px-6 pt-9 pb-16 sm:px-10 sm:pt-12 sm:pb-14 lg:px-14">
-        <Eyebrow tone={BLUE}>Three ways to design</Eyebrow>
-        <h3 className="font-display-heavy max-w-2xl text-[clamp(2rem,6vw,3.6rem)] uppercase leading-[0.9] tracking-tight text-ink">
+        <Eyebrow tone={VIOLET}>Three ways to design</Eyebrow>
+        <h3 className="font-display-heavy max-w-2xl text-[clamp(2rem,6vw,3.6rem)] uppercase leading-[0.9] tracking-tight text-ivory">
           How do you imagine it?
         </h3>
 
@@ -147,18 +172,21 @@ export function SlideThreeWays({ active: _active }: SlideProps) {
           {WAYS.map(({ id, label, body, icon: Icon, tone }) => (
             <button
               key={id}
-              onClick={() => { track("start_creating", { mode: id, source: "home_carousel" }); navigate("/create", { state: { mode: id === "image" ? "upload" : id === "muse" ? "prompt" : "scratch" } }); }}
-              className="group flex flex-col items-start rounded-2xl border border-line bg-paper p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_50px_-28px_rgba(26,23,18,0.4)] sm:p-6"
+              onClick={() => {
+                track("start_creating", { mode: id, source: "home_carousel" });
+                navigate("/create", { state: { mode: id === "image" ? "upload" : id === "muse" ? "prompt" : "scratch" } });
+              }}
+              className="group flex flex-col items-start rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.06] sm:p-6"
             >
               <span
                 className="flex h-11 w-11 items-center justify-center rounded-full transition-colors"
-                style={{ color: tone, border: `1.5px solid ${tone}55`, background: `${tone}0d` }}
+                style={{ color: tone, border: `1.5px solid ${tone}55`, background: `${tone}14` }}
               >
                 <Icon className="h-5 w-5" />
               </span>
-              <p className="mt-4 font-display text-xl text-ink">{label}</p>
-              <p className="mt-1 text-[13px] text-ink-soft">{body}</p>
-              <span className="mt-auto pt-4 inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-ink-faint transition-colors group-hover:text-ink">
+              <p className="mt-4 font-display text-xl text-ivory">{label}</p>
+              <p className="mt-1 text-[13px] text-ivory/50">{body}</p>
+              <span className="mt-auto pt-4 inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-ivory/40 transition-colors group-hover:text-ivory">
                 Try it
                 <IconArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
               </span>
@@ -166,7 +194,7 @@ export function SlideThreeWays({ active: _active }: SlideProps) {
           ))}
         </div>
       </div>
-    </div>
+    </SlideShell>
   );
 }
 
@@ -180,46 +208,51 @@ export function SlideDiscoverMarketplace({ active }: SlideProps) {
   const navigate = useNavigate();
   const ready = useLazyActive(active);
   return (
-    <div className="grain relative h-full overflow-hidden rounded-[28px] border border-line-soft bg-paper sm:mx-24 sm:rounded-[32px] lg:mx-28">
+    <SlideShell tone={CORAL}>
       <div className="flex h-full flex-col px-6 pt-9 pb-16 sm:px-10 sm:pt-12 sm:pb-14 lg:px-14">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <Eyebrow tone={RED}>Not here to design?</Eyebrow>
-            <h3 className="font-display-heavy max-w-lg text-[clamp(1.9rem,5.5vw,3.2rem)] uppercase leading-[0.9] tracking-tight text-ink">
+            <Eyebrow tone={CORAL}>Not here to design?</Eyebrow>
+            <h3 className="font-display-heavy max-w-lg text-[clamp(1.9rem,5.5vw,3.2rem)] uppercase leading-[0.9] tracking-tight text-ivory">
               Find something you love.
             </h3>
-            <p className="mt-3 max-w-sm text-[14px] text-ink-soft">Discover designs made by people like you. Buy it. Remix it. Make it yours.</p>
+            <p className="mt-3 max-w-sm text-[14px] text-ivory/55">Discover designs made by people like you. Buy it. Remix it. Make it yours.</p>
           </div>
         </div>
 
         <div className="mt-7 grid flex-1 grid-cols-3 gap-3 sm:gap-4">
           {DISCOVER_PICKS.map((d) => (
-            <div key={d.id} className="group relative flex flex-col overflow-hidden rounded-2xl border border-line bg-ivory-dim">
-              <div className="relative flex h-28 items-center justify-center p-4 sm:h-36" style={{ background: `${d.accent}14` }}>
+            <div key={d.id} className="group relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
+              <div className="relative flex h-28 items-center justify-center p-4 sm:h-36" style={{ background: `${CORAL}12` }}>
                 {ready ? (
                   <GarmentStage garment={d.garment} colorHex={colorById(d.color).hex} view="front" className="h-full w-full" />
                 ) : (
                   <VisualSkeleton className="h-full w-full" />
                 )}
-                <span className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-ink/85 px-2 py-1 text-[9px] font-medium uppercase tracking-[0.08em] text-ivory">
+                <span className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-[#0d0d0f]/85 px-2 py-1 text-[9px] font-medium uppercase tracking-[0.08em] text-ivory">
                   <IconRemix className="h-2.5 w-2.5" />
                   {d.remixes}
                 </span>
               </div>
               <div className="p-2.5 sm:p-3.5">
-                <p className="truncate font-display text-[13px] sm:text-base text-ink">{d.name}</p>
+                <p className="truncate font-display text-[13px] sm:text-base text-ivory">{d.name}</p>
                 <div className="mt-0.5 flex items-center justify-between">
-                  <p className="truncate text-[10.5px] text-ink-faint">@{d.creator}</p>
-                  <p className="shrink-0 text-[10.5px] font-medium text-ink">₹{d.price.toLocaleString("en-IN")}</p>
+                  <p className="truncate text-[10.5px] text-ivory/40">@{d.creator}</p>
+                  <p className="shrink-0 text-[10.5px] font-medium text-ivory/80">₹{d.price.toLocaleString("en-IN")}</p>
                 </div>
               </div>
             </div>
           ))}
         </div>
 
-        <SlideCTA label="Explore Marketplace" tone={RED} onClick={() => navigate("/marketplace")} />
+        <div className="mt-8">
+          <GlowButton tone={CORAL} onClick={() => navigate("/marketplace")}>
+            Explore Marketplace
+            <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </GlowButton>
+        </div>
       </div>
-    </div>
+    </SlideShell>
   );
 }
 
@@ -238,9 +271,9 @@ const EARN_FLOW = [
 export function SlideCreateShareEarn({ active: _active }: SlideProps) {
   const navigate = useNavigate();
   return (
-    <div className="grain relative h-full overflow-hidden rounded-[28px] border border-line-soft bg-ink sm:mx-24 sm:rounded-[32px] lg:mx-28">
+    <SlideShell tone={GOLD}>
       <div className="flex h-full flex-col px-6 pt-9 pb-16 sm:px-10 sm:pt-12 sm:pb-14 lg:px-14">
-        <Eyebrow tone={RED}>From idea to income</Eyebrow>
+        <Eyebrow tone={GOLD}>From idea to income</Eyebrow>
         <h3 className="font-display-heavy max-w-2xl text-[clamp(1.9rem,6vw,3.6rem)] uppercase leading-[0.9] tracking-tight text-ivory">
           Your design.
           <br />
@@ -250,27 +283,24 @@ export function SlideCreateShareEarn({ active: _active }: SlideProps) {
         <div className="mt-8 flex flex-1 flex-col justify-center gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
           {EARN_FLOW.map(({ label, icon: Icon }, i) => (
             <div key={label} className="flex items-center gap-2 sm:gap-3">
-              <div className="flex items-center gap-2.5 rounded-full border border-ivory/20 bg-ivory/[0.06] px-4 py-2.5">
-                <Icon className="h-3.5 w-3.5 text-ivory/70" />
+              <div className="flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2.5">
+                <Icon className="h-3.5 w-3.5" style={{ color: GOLD }} />
                 <span className="whitespace-nowrap text-[11.5px] font-medium uppercase tracking-[0.1em] text-ivory">{label}</span>
               </div>
-              {i < EARN_FLOW.length - 1 && <IconArrowRight className="hidden h-3.5 w-3.5 text-ivory/30 sm:block" />}
+              {i < EARN_FLOW.length - 1 && <IconArrowRight className="hidden h-3.5 w-3.5 text-ivory/25 sm:block" />}
             </div>
           ))}
         </div>
 
         <div className="mt-2 flex flex-wrap items-center justify-between gap-4">
-          <p className="text-[11px] italic text-ivory/50">Illustrative creator reward — subject to final FORMÉ terms.</p>
-          <button
-            onClick={() => navigate("/create")}
-            className="group inline-flex items-center gap-2.5 rounded-full bg-ivory px-6 py-3.5 text-[12px] font-medium uppercase tracking-[0.16em] text-ink transition-all hover:-translate-y-0.5"
-          >
+          <p className="text-[11px] italic text-ivory/40">Illustrative creator reward — subject to final FORMÉ terms.</p>
+          <GlowButton tone={GOLD} onClick={() => navigate("/create")}>
             Create &amp; Sell
             <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </button>
+          </GlowButton>
         </div>
       </div>
-    </div>
+    </SlideShell>
   );
 }
 
@@ -281,31 +311,31 @@ export function SlideCreateShareEarn({ active: _active }: SlideProps) {
 export function SlideFormeFuture({ active }: SlideProps) {
   const ready = useLazyActive(active);
   return (
-    <div className="grain relative h-full overflow-hidden rounded-[28px] border border-line-soft bg-paper sm:mx-24 sm:rounded-[32px] lg:mx-28">
+    <SlideShell tone={VIOLET}>
       <div className="flex h-full flex-col px-6 pt-9 pb-16 sm:px-10 sm:pt-12 sm:pb-14 lg:px-14">
-        <Eyebrow tone={LIME_DEEP}>The FORMÉ universe</Eyebrow>
-        <h3 className="font-display-heavy max-w-xl text-[clamp(2rem,6vw,3.6rem)] uppercase leading-[0.9] tracking-tight text-ink">
+        <Eyebrow tone={VIOLET}>The FORMÉ universe</Eyebrow>
+        <h3 className="font-display-heavy max-w-xl text-[clamp(2rem,6vw,3.6rem)] uppercase leading-[0.9] tracking-tight text-ivory">
           This is just the beginning.
         </h3>
 
         <div className="mt-6 grid flex-1 grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
           {GARMENTS.map((g) => (
-            <div key={g.id} className="relative flex flex-col overflow-hidden rounded-2xl border border-line bg-ivory-dim">
+            <div key={g.id} className="relative flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
               <div className={`flex h-24 items-center justify-center p-4 sm:h-32 ${g.available ? "" : "opacity-40 grayscale"}`}>
                 {ready ? (
-                  <GarmentStage garment={g.id} colorHex={COLORS[0].hex} view="front" className="h-full w-full" />
+                  <GarmentStage garment={g.id} colorHex={g.available ? LIME : COLORS[1].hex} view="front" className="h-full w-full" />
                 ) : (
                   <VisualSkeleton className="h-full w-full" />
                 )}
               </div>
               <div className="p-3 text-center">
-                <p className="font-display text-sm text-ink">{g.label}</p>
+                <p className="font-display text-sm text-ivory">{g.label}</p>
                 {g.available ? (
-                  <p className="mt-1 text-[9.5px] font-medium uppercase tracking-[0.12em]" style={{ color: LIME_DEEP }}>
+                  <p className="mt-1 text-[9.5px] font-medium uppercase tracking-[0.12em]" style={{ color: LIME }}>
                     Available now
                   </p>
                 ) : (
-                  <p className="mt-1 flex items-center justify-center gap-1 text-[9.5px] font-medium uppercase tracking-[0.1em] text-ink-faint">
+                  <p className="mt-1 flex items-center justify-center gap-1 text-[9.5px] font-medium uppercase tracking-[0.1em] text-ivory/35">
                     <IconLock className="h-2.5 w-2.5" /> Coming soon
                   </p>
                 )}
@@ -313,24 +343,24 @@ export function SlideFormeFuture({ active }: SlideProps) {
             </div>
           ))}
 
-          <div className="relative flex flex-col overflow-hidden rounded-2xl border border-dashed border-line bg-ivory-dim/60">
-            <div className="flex h-24 items-center justify-center p-4 sm:h-32 text-ink-faint">
-              <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.4" className="h-14 w-14 opacity-50">
+          <div className="relative flex flex-col overflow-hidden rounded-2xl border border-dashed border-white/10 bg-white/[0.02]">
+            <div className="flex h-24 items-center justify-center p-4 sm:h-32 text-ivory/25">
+              <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.4" className="h-14 w-14 opacity-60">
                 <path d="M14 6h20l2 8-3 3v25a2 2 0 0 1-2 2H17a2 2 0 0 1-2-2V17l-3-3 2-8z" />
                 <path d="M20 6c0 3 1.8 5 4 5s4-2 4-5" />
               </svg>
             </div>
             <div className="p-3 text-center">
-              <p className="font-display text-sm text-ink">Socks</p>
-              <p className="mt-1 flex items-center justify-center gap-1 text-[9.5px] font-medium uppercase tracking-[0.1em] text-ink-faint">
+              <p className="font-display text-sm text-ivory">Socks</p>
+              <p className="mt-1 flex items-center justify-center gap-1 text-[9.5px] font-medium uppercase tracking-[0.1em] text-ivory/35">
                 <IconLock className="h-2.5 w-2.5" /> Coming soon
               </p>
             </div>
           </div>
         </div>
 
-        <p className="mt-6 text-[13px] text-ink-soft">More ways to wear your imagination are coming.</p>
+        <p className="mt-6 text-[13px] text-ivory/45">More ways to wear your imagination are coming.</p>
       </div>
-    </div>
+    </SlideShell>
   );
 }

@@ -12,9 +12,11 @@ interface CarouselProps {
   resetKey?: unknown;
   finishLabel?: string;
   className?: string;
+  /** Recolors the arrows/dots for use over a dark (void-theme) background instead of the light editorial theme. */
+  dark?: boolean;
 }
 
-export default function Carousel({ slides, onFinish, onSkip, onIndexChange, resetKey, finishLabel = "Next", className }: CarouselProps) {
+export default function Carousel({ slides, onFinish, onSkip, onIndexChange, resetKey, finishLabel = "Next", className, dark = false }: CarouselProps) {
   const total = slides.length;
   const [index, setIndex] = useState(0);
   const [dragPx, setDragPx] = useState(0);
@@ -137,9 +139,9 @@ export default function Carousel({ slides, onFinish, onSkip, onIndexChange, rese
         onClick={goBack}
         disabled={isFirst}
         aria-label="Previous slide"
-        className={`absolute left-1 top-1/2 z-20 hidden -translate-y-1/2 items-center gap-2 rounded-full px-3 py-2.5 text-[11px] font-medium uppercase tracking-[0.14em] text-ink-soft transition-all hover:text-ink sm:flex sm:left-2 ${
-          isFirst ? "pointer-events-none opacity-0" : "opacity-100"
-        }`}
+        className={`absolute left-1 top-1/2 z-20 hidden -translate-y-1/2 items-center gap-2 rounded-full px-3 py-2.5 text-[11px] font-medium uppercase tracking-[0.14em] transition-all sm:flex sm:left-2 ${
+          dark ? "text-ivory/60 hover:text-ivory" : "text-ink-soft hover:text-ink"
+        } ${isFirst ? "pointer-events-none opacity-0" : "opacity-100"}`}
       >
         <IconArrowRight className="h-4 w-4 rotate-180" />
         Previous
@@ -148,9 +150,9 @@ export default function Carousel({ slides, onFinish, onSkip, onIndexChange, rese
         onClick={goNext}
         disabled={isLast && !onFinish}
         aria-label="Next slide"
-        className={`absolute right-1 top-1/2 z-20 hidden -translate-y-1/2 items-center gap-2 rounded-full px-3 py-2.5 text-[11px] font-medium uppercase tracking-[0.14em] text-ink-soft transition-all hover:text-ink sm:flex sm:right-2 ${
-          isLast && !onFinish ? "pointer-events-none opacity-0" : "opacity-100"
-        }`}
+        className={`absolute right-1 top-1/2 z-20 hidden -translate-y-1/2 items-center gap-2 rounded-full px-3 py-2.5 text-[11px] font-medium uppercase tracking-[0.14em] transition-all sm:flex sm:right-2 ${
+          dark ? "text-ivory/60 hover:text-ivory" : "text-ink-soft hover:text-ink"
+        } ${isLast && !onFinish ? "pointer-events-none opacity-0" : "opacity-100"}`}
       >
         {isLast ? finishLabel : "Next"}
         <IconArrowRight className="h-4 w-4" />
@@ -161,9 +163,9 @@ export default function Carousel({ slides, onFinish, onSkip, onIndexChange, rese
         onClick={goBack}
         disabled={isFirst}
         aria-label="Previous slide"
-        className={`absolute left-2 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-paper/80 text-ink-soft shadow-sm backdrop-blur transition-opacity sm:hidden ${
-          isFirst ? "pointer-events-none opacity-0" : "opacity-100"
-        }`}
+        className={`absolute left-2 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full shadow-sm backdrop-blur transition-opacity sm:hidden ${
+          dark ? "bg-white/10 text-ivory" : "bg-paper/80 text-ink-soft"
+        } ${isFirst ? "pointer-events-none opacity-0" : "opacity-100"}`}
       >
         <IconArrowRight className="h-4 w-4 rotate-180" />
       </button>
@@ -171,9 +173,9 @@ export default function Carousel({ slides, onFinish, onSkip, onIndexChange, rese
         onClick={goNext}
         disabled={isLast && !onFinish}
         aria-label="Next slide"
-        className={`absolute right-2 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-paper/80 text-ink-soft shadow-sm backdrop-blur transition-opacity sm:hidden ${
-          isLast && !onFinish ? "pointer-events-none opacity-0" : "opacity-100"
-        }`}
+        className={`absolute right-2 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full shadow-sm backdrop-blur transition-opacity sm:hidden ${
+          dark ? "bg-white/10 text-ivory" : "bg-paper/80 text-ink-soft"
+        } ${isLast && !onFinish ? "pointer-events-none opacity-0" : "opacity-100"}`}
       >
         <IconArrowRight className="h-4 w-4" />
       </button>
@@ -188,11 +190,21 @@ export default function Carousel({ slides, onFinish, onSkip, onIndexChange, rese
               aria-label={`Go to slide ${i + 1}`}
               className="group flex h-6 items-center px-0.5"
             >
-              <span className={`h-1 rounded-full transition-all duration-300 ${i === index ? "w-6 bg-ink" : "w-3 bg-ink/25 group-hover:bg-ink/40"}`} />
+              <span
+                className={`h-1 rounded-full transition-all duration-300 ${
+                  i === index
+                    ? dark
+                      ? "w-6 bg-lime"
+                      : "w-6 bg-ink"
+                    : dark
+                      ? "w-3 bg-ivory/25 group-hover:bg-ivory/40"
+                      : "w-3 bg-ink/25 group-hover:bg-ink/40"
+                }`}
+              />
             </button>
           ))}
         </div>
-        <p className="text-[10.5px] uppercase tracking-[0.2em] text-ink-faint">
+        <p className={`text-[10.5px] uppercase tracking-[0.2em] ${dark ? "text-ivory/40" : "text-ink-faint"}`}>
           {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
         </p>
       </div>

@@ -25,6 +25,7 @@ export default function FeatureCarousel() {
   return (
     <Carousel
       className="h-[660px] sm:h-[560px] lg:h-[500px]"
+      dark
       onIndexChange={setActiveIndex}
       slides={[
         <SlideCreateFromScratch key="create" active={activeIndex === 0} />,
