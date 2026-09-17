@@ -27,7 +27,7 @@ function Layout() {
   const isStudio = location.pathname === "/create";
   const isHome = location.pathname === "/";
   return (
-    <div className={`flex min-h-screen flex-col ${isHome ? "bg-[#0d0d0f]" : "bg-ivory"}`}>
+    <div className={`flex min-h-screen flex-col ${isHome ? "bg-[#fff4e6]" : "bg-ivory"}`}>
       <Nav />
       <main className="flex-1">
         <Routes>

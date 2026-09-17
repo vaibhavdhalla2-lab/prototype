@@ -29,20 +29,24 @@
   --color-accent-lime: #a6c93d;
   --color-accent-lime-deep: #6f8a24;
 
-  /* "Luxury streetwear + digital art studio" — the dark identity used on the
-     landing page only (Nav/Footer/Home switch into this via a `dark` mode;
-     the rest of the app keeps the paper/ink editorial theme above). One
-     accent per moment, same rule as the light palette: lime = create,
-     violet = MUSE/intelligence, coral = marketplace/discover, gold = reward. */
-  --color-void: #0d0d0f;
-  --color-void-soft: #15151a;
-  --color-lime: #c7ff2e;
-  --color-violet: #8b5cff;
-  --color-coral: #ff5c5c;
-  --color-gold: #d6b36a;
+  /* "Playful luxury — a fashion creator studio" — the identity used on the
+     landing page only (Nav/Footer/Home switch into this via a `dark` prop —
+     historical name, it now means "home theme variant", not literal
+     darkness; the rest of the app keeps the paper/ink editorial theme
+     above). Warm cream/peach fields with plum as the brand anchor and
+     pink/gold as the two accents — never both at full strength in the same
+     spot; pink carries creative/playful moments, gold carries luxury/reward. */
+  --color-cream: #fff4e6;
+  --color-peach: #ffb38a;
+  --color-plum: #351c45;
+  --color-plum-deep: #201129;
+  --color-pink: #ff6fae;
+  --color-gold: #e5c07b;
+  --color-espresso: #1a1518;
 
   --animate-glow-pulse: glow-pulse 3.2s ease-in-out infinite;
   --animate-float-slow: float-slow 6s ease-in-out infinite;
+  --animate-float-tilt: float-tilt 7s ease-in-out infinite;
   --animate-mesh-drift: mesh-drift 18s ease-in-out infinite;
   --animate-mesh-drift-slow: mesh-drift 26s ease-in-out infinite reverse;
 
@@ -92,6 +96,10 @@
   @keyframes float-slow {
     0%, 100% { transform: translateY(0) translateX(0); }
     50% { transform: translateY(-14px) translateX(6px); }
+  }
+  @keyframes float-tilt {
+    0%, 100% { transform: translateY(0) rotate(-2deg); }
+    50% { transform: translateY(-10px) rotate(2deg); }
   }
   @keyframes mesh-drift {
     0% { transform: translate(0, 0) scale(1); }
@@ -161,17 +169,25 @@
     mix-blend-mode: multiply;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
-  /* Combine with .grain (`className="grain grain-invert"`) on dark surfaces —
-     "multiply" blend disappears into black, so this swaps to "overlay" and
-     lifts the opacity slightly so the same noise texture reads on void backgrounds. */
-  .grain-invert::after {
+  /* Combine with .grain (`className="grain grain-deep"`) over saturated
+     plum/pink fields — plain "multiply" reads too faint there, so this adds
+     a touch more opacity while staying paper-textured rather than gritty. */
+  .grain-deep::after {
     opacity: 0.06;
-    mix-blend-mode: overlay;
   }
-  .glass-dark {
-    background: rgba(255, 255, 255, 0.045);
-    -webkit-backdrop-filter: blur(24px);
-    backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.09);
+  /* Frosted-glass card surface for the warm palette — cream-tinted, soft
+     gold-ish border, for the "soft glass card" hero/product-card treatment. */
+  .glass-warm {
+    background: rgba(255, 255, 255, 0.55);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+  }
+  /* Same frosted glass, for use over the deep-plum sections. */
+  .glass-plum {
+    background: rgba(255, 255, 255, 0.06);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
   }
 }
