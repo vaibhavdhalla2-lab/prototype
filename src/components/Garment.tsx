@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback, type PointerEvent as ReactPoi
 import type { GarmentType, ViewMode } from "../data/catalog";
 import { threadTone } from "../lib/color";
 import GarmentPreview from "./garment/GarmentPreview";
-import { GARMENT_ASSET_REGISTRY } from "../lib/garmentAssets";
+import { GARMENT_ASSET_REGISTRY, resolveGarmentAssets } from "../lib/garmentAssets";
 import { preloadGarmentAssets } from "../lib/garmentCompositor";
 
 const VIEW_BOX = "0 0 360 440";
@@ -399,10 +399,16 @@ function Face({ garment, colorHex, side, overlay, printArea, showPrintHint, acce
  * overlaid SVG sharing the same viewBox — so DrawLayer/ArtworkLayer's
  * `ownerSVGElement.getScreenCTM()` pointer math is unaffected.
  */
-function PhotographicFace({ colorHex, overlay, printArea, showPrintHint }: Pick<FaceProps, "colorHex" | "overlay" | "printArea" | "showPrintHint">) {
+function PhotographicFace({
+  colorHex,
+  side,
+  overlay,
+  printArea,
+  showPrintHint,
+}: Pick<FaceProps, "colorHex" | "overlay" | "printArea" | "showPrintHint"> & { side: "front" | "back" }) {
   return (
     <div className="relative h-full w-full">
-      <GarmentPreview garment="tshirt" color={colorHex} className="absolute inset-0 h-full w-full" alt="" />
+      <GarmentPreview garment="tshirt" view={side} color={colorHex} className="absolute inset-0 h-full w-full" alt="" />
       <svg viewBox={VIEW_BOX} className="absolute inset-0 h-full w-full overflow-visible">
         <g pointerEvents="auto">{overlay}</g>
         {showPrintHint && (
@@ -471,14 +477,15 @@ const FIT_SCALE: Record<NonNullable<GarmentStageProps["fit"]>, { x: number; y: n
 };
 
 export function GarmentStage({ garment, colorHex, view, frontOverlay, backOverlay, showPrintHint, accentTrim, pocketVisible, fit, className }: GarmentStageProps) {
-  const hasPhotoFront = garment === "tshirt" && Boolean(GARMENT_ASSET_REGISTRY.tshirt);
+  const hasPhoto = garment === "tshirt" && Boolean(GARMENT_ASSET_REGISTRY.tshirt);
   const [dragAngle, setDragAngle] = useState(-26);
 
   useEffect(() => {
-    if (!hasPhotoFront) return;
-    const assets = GARMENT_ASSET_REGISTRY.tshirt!;
-    preloadGarmentAssets([assets.base, assets.mask, assets.shadows, assets.highlights]);
-  }, [hasPhotoFront]);
+    if (!hasPhoto) return;
+    const front = resolveGarmentAssets("tshirt", "front");
+    const back = resolveGarmentAssets("tshirt", "back");
+    preloadGarmentAssets([front?.base, front?.mask, front?.shadows, front?.highlights, back?.base, back?.mask, back?.shadows, back?.highlights]);
+  }, [hasPhoto]);
   const dragging = useRef(false);
   const lastX = useRef(0);
   const startAngle = useRef(0);
@@ -525,14 +532,18 @@ export function GarmentStage({ garment, colorHex, view, frontOverlay, backOverla
         }}
       >
         <div className="absolute inset-0" style={{ backfaceVisibility: "hidden" }}>
-          {hasPhotoFront ? (
-            <PhotographicFace colorHex={colorHex} overlay={frontOverlay} printArea={PRINT_AREAS[garment].front} showPrintHint={showPrintHint} />
+          {hasPhoto ? (
+            <PhotographicFace colorHex={colorHex} side="front" overlay={frontOverlay} printArea={PRINT_AREAS[garment].front} showPrintHint={showPrintHint} />
           ) : (
             <Face garment={garment} colorHex={colorHex} side="front" overlay={frontOverlay} printArea={PRINT_AREAS[garment].front} showPrintHint={showPrintHint} accentTrim={accentTrim} pocketVisible={pocketVisible} />
           )}
         </div>
         <div className="absolute inset-0" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
-          <Face garment={garment} colorHex={colorHex} side="back" overlay={backOverlay} printArea={PRINT_AREAS[garment].back} showPrintHint={showPrintHint} accentTrim={accentTrim} pocketVisible={pocketVisible} />
+          {hasPhoto ? (
+            <PhotographicFace colorHex={colorHex} side="back" overlay={backOverlay} printArea={PRINT_AREAS[garment].back} showPrintHint={showPrintHint} />
+          ) : (
+            <Face garment={garment} colorHex={colorHex} side="back" overlay={backOverlay} printArea={PRINT_AREAS[garment].back} showPrintHint={showPrintHint} accentTrim={accentTrim} pocketVisible={pocketVisible} />
+          )}
         </div>
       </div>
     </div>

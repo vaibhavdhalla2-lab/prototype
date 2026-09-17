@@ -3,13 +3,13 @@ import GarmentPreview from "../components/garment/GarmentPreview";
 import GarmentColorSwatches from "../components/garment/GarmentColorSwatches";
 import { garmentColors } from "../lib/garmentColors";
 import { preloadGarmentAssets } from "../lib/garmentCompositor";
-import { GARMENT_ASSET_REGISTRY } from "../lib/garmentAssets";
+import { resolveGarmentAssets } from "../lib/garmentAssets";
 
 export default function GarmentLab() {
   const [color, setColor] = useState(garmentColors[0].value);
 
   useEffect(() => {
-    const assets = GARMENT_ASSET_REGISTRY.tshirt;
+    const assets = resolveGarmentAssets("tshirt", "front");
     if (assets) preloadGarmentAssets([assets.base, assets.mask, assets.shadows, assets.highlights]);
   }, []);
 

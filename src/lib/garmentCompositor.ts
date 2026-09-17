@@ -1,32 +1,44 @@
 /**
  * Canvas-based photographic garment recoloring.
  *
- * Pipeline (per the layer stack this is designed to grow into):
+ * Pipeline:
  *
- *   highlights                  <- drawn last, blend "screen"
- *   shadows                     <- drawn above the colored base, blend "multiply"
- *   [future: user artwork]      <- would slot in here, before shadows
- *   garment color + base fabric <- recolored in one pass, see recolorBase()
+ *   highlights   <- drawn last, blend "screen", very low strength (see HIGHLIGHT_STRENGTH)
+ *   shadows      <- drawn above the recolored base, blend "multiply", low strength (see SHADOW_STRENGTH)
+ *   [future: user artwork] <- would slot in here, before shadows
+ *   recolored base fabric  <- the photograph itself, see recolorBase()
  *
- * The recolor step never flattens the source photo to a solid fill. It reads
- * each pixel's own luminance from base.png as a per-pixel "how light or dark
- * is this bit of fabric" signal, then blends the target color against that
- * signal with the W3C soft-light formula — the same math Photoshop's
- * "Soft Light" blend mode uses. A pixel in a deep fold stays darker than the
- * flat target color; a pixel catching studio light stays lighter. Folds,
- * seams and weave texture all survive because they're baked into that
- * luminance signal, not into the flat color.
+ * The base photograph is the primary visual layer, not a light map to be
+ * amplified. recolorBase() converts the photo to grayscale — that grayscale
+ * *is* the photographed light/shadow map, used completely untouched — then
+ * multiplies the flat target color through it. A pixel in a deep fold stays
+ * proportionally darker than the flat target color; a pixel catching soft
+ * studio light stays proportionally lighter. Nothing renormalizes or
+ * stretches that brightness range, which is what previously produced a
+ * shiny/satin look: contrast-amplifying the photo's luminance before
+ * recoloring exaggerated bright spots into looking like specular highlights
+ * on synthetic fabric. The shadows/highlights mockup layers are then
+ * composited on top at deliberately low opacity — depth reinforcement, not
+ * the main light source.
  *
- * Everything here is plain Canvas 2D + typed-array pixel math — no CSS
- * filters, no WebGL, no image generation.
+ * Everything here is plain Canvas 2D compositing — no manual pixel loops for
+ * the recolor itself, no WebGL, no image generation.
  */
 
-const luminanceCache = new WeakMap<HTMLImageElement, number>();
 const imageCache = new Map<string, Promise<HTMLImageElement>>();
 const recolorCache = new Map<string, HTMLCanvasElement>();
 
-/** How strongly the base photo's own shadows/highlights push away from the flat target color. */
-const CONTRAST = 1.15;
+/**
+ * How much of the shadows.png / highlights.png mockup layers shows through,
+ * as globalAlpha (0–1) on top of their own blend mode. The base photograph
+ * already carries the real fold/light information (recolorBase preserves
+ * its luminance untouched) — these layers are only meant to add a last,
+ * subtle bit of depth, not to relight the garment. Turning either toward 0
+ * makes the shirt flatter/more matte; turning them up reintroduces the
+ * glossy/vertical-banding look these were dialed down to fix.
+ */
+const SHADOW_STRENGTH = 0.2;
+const HIGHLIGHT_STRENGTH = 0.08;
 
 /**
  * The shipped exports (base.png/shadow.png/highlight.png) aren't transparent
@@ -67,28 +79,6 @@ export function preloadGarmentAssets(paths: Array<string | undefined>): void {
   }
 }
 
-function hexToRgb01(hex: string): [number, number, number] {
-  const clean = hex.replace("#", "");
-  const full = clean.length === 3 ? clean.split("").map((c) => c + c).join("") : clean;
-  const int = parseInt(full, 16);
-  return [((int >> 16) & 255) / 255, ((int >> 8) & 255) / 255, (int & 255) / 255];
-}
-
-function luminance01(r: number, g: number, b: number): number {
-  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-}
-
-function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v;
-}
-
-/** W3C compositing-spec soft-light formula: cb = backdrop (target color) channel, cs = source (light map) value. */
-function softLight(cb: number, cs: number): number {
-  if (cs <= 0.5) return cb - (1 - 2 * cs) * cb * (1 - cb);
-  const d = cb <= 0.25 ? ((16 * cb - 12) * cb + 4) * cb : Math.sqrt(cb);
-  return cb + (2 * cs - 1) * (d - cb);
-}
-
 function drawToImageData(img: HTMLImageElement, w: number, h: number): ImageData {
   const canvas = document.createElement("canvas");
   canvas.width = w;
@@ -99,99 +89,77 @@ function drawToImageData(img: HTMLImageElement, w: number, h: number): ImageData
 }
 
 /**
- * The base photo's own average tone, sampled only where the mask says
- * "fabric" — so a dark collar rib sitting outside the mask can't skew it.
- * Normalizing around this (rather than a fixed 0.5) means the recolor looks
- * right whether the source photo was shot bright and high-key or more
- * neutrally lit; the *relative* shading is what gets preserved either way.
- */
-function midLuminance(base: ImageData): number {
-  const bd = base.data;
-  let sum = 0;
-  let count = 0;
-  for (let i = 0; i < bd.length; i += 4) {
-    if (bd[i + 3] <= BACKDROP_ALPHA_CUTOFF) continue;
-    sum += luminance01(bd[i], bd[i + 1], bd[i + 2]);
-    count++;
-  }
-  return count > 0 ? sum / count : 0.5;
-}
-
-/**
- * Recolors base.png's own non-transparent region, preserving every
- * fold/seam/weave-texture variation as relative light and dark. Pixels
- * outside the garment (base alpha 0) stay fully transparent.
+ * Recolors base.png's own non-transparent region the way garment mockup
+ * tools do it: convert the photo to grayscale — that grayscale *is* the
+ * photographed light/shadow map, completely untouched, no contrast curve,
+ * no renormalization — then multiply the flat target color through it
+ * (result = targetColor × grayscale, per channel). A deep photographed fold
+ * (low grayscale value) stays proportionally dark under any color; a lit
+ * area (high grayscale value) stays proportionally light. That's also why
+ * this is correct at both ends of the palette without special-casing them:
+ * a near-black target multiplied through *any* grayscale value stays dark
+ * (never a flat #000 — the grayscale variation still shows as subtle
+ * relative differences), and a nearly-white target multiplied through
+ * grayscale is ~= the grayscale itself, i.e. the photo's own natural grey
+ * shadows survive instead of blowing out to a flat white silhouette.
  *
- * mask.png is loaded and its alpha is available (`maskAlpha` below) for a
- * garment that legitimately needs to protect part of its own silhouette
- * from recoloring — e.g. a contrast-stitched collar on a future two-tone
- * hoodie. It is *not* used to gate the T-shirt recolor region here: measured
- * against the actual shipped assets, mask.png's silhouette sits tens to
- * ~150px (of 4500px) off from base.png's at several scanlines, non-uniformly
- * — a real export/alignment mismatch, not anti-aliasing noise. Since this
- * garment is a single uniform fabric with nothing that should stay
- * unrecolored, gating on that mask would just punch an unrecolored hole
- * wherever it falls short of base's true silhouette (exactly the white
- * sleeve patch seen in testing). Using base's own — inherently self-aligned
- * — alpha as the region instead fixes that outright. If a future garment
- * needs true partial exclusion, re-enable the `maskAlpha <=` gate below once
- * that garment's mask is verified pixel-aligned to its base.
+ * An earlier version used the canvas's native "color" blend mode (swap
+ * hue/saturation, keep the backdrop's luminosity) — that's provably wrong
+ * here: SetLum() discards the *source* color's own luminosity entirely, so
+ * every target color rendered at the photo's own natural brightness — a
+ * navy selection came out as pale washed-out blue, black came out nearly
+ * white. Multiplying through grayscale is what actually darkens or lightens
+ * the garment toward the chosen color while still tracking the photograph's
+ * real shading.
+ *
+ * `shape` is an alpha-only stencil of the true garment silhouette (see
+ * getGarmentShape) — used instead of mask.png to clip the result, because
+ * mask.png's silhouette measured tens to ~150px (of 4500px) off from
+ * base.png's at several scanlines, non-uniformly — a real export/alignment
+ * mismatch, not anti-aliasing noise. Gating on it would punch an unrecolored
+ * hole wherever it falls short of base's true silhouette (the white sleeve
+ * patch seen in earlier testing). base.png's own — inherently self-aligned
+ * — alpha doesn't have that problem. The clip is applied last because
+ * "multiply" can otherwise paint the flat color at full opacity wherever
+ * the backdrop had zero alpha (Porter-Duff falls back to plain source-over
+ * there), which would leak color outside the garment.
  */
-function recolorBase(baseImg: HTMLImageElement, colorHex: string): HTMLCanvasElement {
-  const w = baseImg.naturalWidth;
-  const h = baseImg.naturalHeight;
+function recolorBase(baseImg: HTMLImageElement, shape: HTMLCanvasElement, colorHex: string): HTMLCanvasElement {
+  const w = shape.width;
+  const h = shape.height;
 
-  const base = drawToImageData(baseImg, w, h);
-  const baseMid = luminanceCache.get(baseImg) ?? midLuminance(base);
-  luminanceCache.set(baseImg, baseMid);
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d")!;
+  ctx.filter = "grayscale(1)";
+  ctx.drawImage(baseImg, 0, 0, w, h);
+  ctx.filter = "none";
 
-  const [cr, cg, cb] = hexToRgb01(colorHex);
-  const bd = base.data;
+  ctx.globalCompositeOperation = "multiply";
+  ctx.fillStyle = colorHex;
+  ctx.fillRect(0, 0, w, h);
+  ctx.globalCompositeOperation = "source-over";
 
-  const outCanvas = document.createElement("canvas");
-  outCanvas.width = w;
-  outCanvas.height = h;
-  const outCtx = outCanvas.getContext("2d")!;
-  const out = outCtx.createImageData(w, h);
-  const od = out.data;
+  ctx.globalCompositeOperation = "destination-in";
+  ctx.drawImage(shape, 0, 0);
+  ctx.globalCompositeOperation = "source-over";
 
-  for (let i = 0; i < bd.length; i += 4) {
-    const baseAlpha = thresholdAlpha(bd[i + 3]);
-    if (baseAlpha === 0) {
-      od[i + 3] = 0;
-      continue;
-    }
-
-    const l = luminance01(bd[i], bd[i + 1], bd[i + 2]);
-    const lNorm = clamp01(0.5 + (l - baseMid) * CONTRAST);
-
-    const rr = softLight(cr, lNorm) * 255;
-    const gg = softLight(cg, lNorm) * 255;
-    const bb = softLight(cb, lNorm) * 255;
-
-    od[i] = rr;
-    od[i + 1] = gg;
-    od[i + 2] = bb;
-    od[i + 3] = baseAlpha;
-  }
-
-  outCtx.putImageData(out, 0, 0);
-  return outCanvas;
+  return canvas;
 }
 
 /**
- * Recolors (and caches) base for a given color — the expensive pixel pass
- * only runs once per combination. `maskSrc` is still loaded (so a missing
- * mask file surfaces as a clear load error) but its content currently isn't
- * used to gate the recolor region — see the comment on recolorBase().
+ * Recolors (and caches) base for a given color. `maskSrc` is still loaded
+ * (so a missing mask file surfaces as a clear load error) but its content
+ * isn't used to gate the recolor region — see the comment on recolorBase().
  */
 export async function getRecoloredBase(baseSrc: string, maskSrc: string, colorHex: string): Promise<HTMLCanvasElement> {
   const key = `${baseSrc}|${colorHex.toLowerCase()}`;
   const cached = recolorCache.get(key);
   if (cached) return cached;
 
-  const [baseImg] = await Promise.all([loadImageCached(baseSrc), loadImageCached(maskSrc)]);
-  const canvas = recolorBase(baseImg, colorHex);
+  const [baseImg, shape] = await Promise.all([loadImageCached(baseSrc), getGarmentShape(baseSrc), loadImageCached(maskSrc)]);
+  const canvas = recolorBase(baseImg, shape, colorHex);
   recolorCache.set(key, canvas);
   return canvas;
 }
@@ -270,6 +238,10 @@ export interface DrawGarmentOptions {
   highlights?: HTMLCanvasElement | HTMLImageElement | null;
   shadowBlendMode: GlobalCompositeOperation;
   highlightBlendMode: GlobalCompositeOperation;
+  /** 0–1 opacity for the shadow layer on top of its blend mode. Defaults to SHADOW_STRENGTH. */
+  shadowStrength?: number;
+  /** 0–1 opacity for the highlight layer on top of its blend mode. Defaults to HIGHLIGHT_STRENGTH. */
+  highlightStrength?: number;
   dpr: number;
 }
 
@@ -281,7 +253,16 @@ export interface DrawGarmentOptions {
  * always centered, aspect ratio intact.
  */
 export function drawGarmentToCanvas(canvas: HTMLCanvasElement, opts: DrawGarmentOptions): void {
-  const { recoloredBase, shadows, highlights, shadowBlendMode, highlightBlendMode, dpr } = opts;
+  const {
+    recoloredBase,
+    shadows,
+    highlights,
+    shadowBlendMode,
+    highlightBlendMode,
+    shadowStrength = SHADOW_STRENGTH,
+    highlightStrength = HIGHLIGHT_STRENGTH,
+    dpr,
+  } = opts;
   const cssW = canvas.clientWidth;
   const cssH = canvas.clientHeight;
   if (cssW === 0 || cssH === 0) return;
@@ -302,11 +283,15 @@ export function drawGarmentToCanvas(canvas: HTMLCanvasElement, opts: DrawGarment
 
   if (shadows) {
     ctx.globalCompositeOperation = shadowBlendMode;
+    ctx.globalAlpha = shadowStrength;
     ctx.drawImage(shadows, dx, dy, dw, dh);
+    ctx.globalAlpha = 1;
   }
   if (highlights) {
     ctx.globalCompositeOperation = highlightBlendMode;
+    ctx.globalAlpha = highlightStrength;
     ctx.drawImage(highlights, dx, dy, dw, dh);
+    ctx.globalAlpha = 1;
   }
   ctx.globalCompositeOperation = "source-over";
 }

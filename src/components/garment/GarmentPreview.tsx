@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { drawGarmentToCanvas, getMaskedLayer, getRecoloredBase } from "../../lib/garmentCompositor";
-import { GARMENT_ASSET_REGISTRY, type GarmentKind } from "../../lib/garmentAssets";
+import { resolveGarmentAssets, type GarmentKind } from "../../lib/garmentAssets";
 
 export interface GarmentPreviewProps {
   /** Looks up base/mask/shadows/highlights from the registry in garmentAssets.ts. */
   garment?: GarmentKind;
+  /** Which side to render. "back" falls back to the front assets until a real back photo exists. */
+  view?: "front" | "back";
   /** Target garment color as a hex string, e.g. "#182130". */
   color: string;
   /** Individually override any asset path instead of (or in addition to) `garment`. */
@@ -29,6 +31,7 @@ type Status = "loading" | "ready" | "error";
  */
 export default function GarmentPreview({
   garment,
+  view = "front",
   color,
   base: baseOverride,
   mask: maskOverride,
@@ -39,7 +42,7 @@ export default function GarmentPreview({
   className,
   alt = "Garment preview",
 }: GarmentPreviewProps) {
-  const preset = garment ? GARMENT_ASSET_REGISTRY[garment] : undefined;
+  const preset = garment ? resolveGarmentAssets(garment, view) : undefined;
   const base = baseOverride ?? preset?.base;
   const mask = maskOverride ?? preset?.mask;
   const shadows = shadowsOverride ?? preset?.shadows;

@@ -16,36 +16,74 @@ export interface GarmentAssetSet {
 }
 
 /**
- * Central place to register a garment's photographic asset set so
- * <GarmentPreview garment="tshirt" color="#..." /> can resolve file paths
- * without every call site repeating them.
- *
- * To add a new garment (e.g. a hoodie): drop its 4 PNGs (+ optional
- * reference image) under /public/garments/<kind>/ with the same filenames
- * as the T-shirt's, then add an entry here. No changes to GarmentPreview or
- * the compositor are needed — the whole pipeline is asset-driven.
+ * A garment's photographic assets, per view. `back` is nullable: until a
+ * real back-view photograph exists, resolveGarmentAssets() falls back to
+ * `front` so the same recolored photo renders for both tabs. Drop in a
+ * `back` set later and it takes over automatically — no component changes.
  */
-export const GARMENT_ASSET_REGISTRY: Partial<Record<GarmentKind, GarmentAssetSet>> = {
+export interface GarmentViewAssets {
+  front: GarmentAssetSet;
+  back?: GarmentAssetSet | null;
+}
+
+/**
+ * Central place to register a garment's photographic asset set so
+ * <GarmentPreview garment="tshirt" view="front" color="#..." /> can resolve
+ * file paths without every call site repeating them.
+ *
+ * To add a new garment (e.g. a hoodie): drop its front-view PNGs (+ optional
+ * reference image) under /public/garments/<kind>/front/, then add an entry
+ * here. No changes to GarmentPreview or the compositor are needed — the
+ * whole pipeline is asset-driven.
+ */
+export const GARMENT_ASSET_REGISTRY: Partial<Record<GarmentKind, GarmentViewAssets>> = {
   tshirt: {
-    base: "/garments/tshirt/base.png",
-    mask: "/garments/tshirt/mask.png",
-    shadows: "/garments/tshirt/shadow.png",
-    highlights: "/garments/tshirt/highlight.png",
+    front: {
+      base: "/garments/tshirt/base.png",
+      mask: "/garments/tshirt/mask.png",
+      shadows: "/garments/tshirt/shadow.png",
+      highlights: "/garments/tshirt/highlight.png",
+    },
+    // No back-view photograph yet — resolveGarmentAssets() falls back to `front`.
+    // Once one exists, drop it in and fill this the same shape as `front`:
+    // back: {
+    //   base: "/garments/tshirt/back/base.png",
+    //   mask: "/garments/tshirt/back/mask.png",
+    //   shadows: "/garments/tshirt/back/shadow.png",
+    //   highlights: "/garments/tshirt/back/highlight.png",
+    // },
+    back: null,
   },
 
   // hoodie: {
-  //   base: "/garments/hoodie/base.png",
-  //   mask: "/garments/hoodie/mask.png",
-  //   shadows: "/garments/hoodie/shadows.png",
-  //   highlights: "/garments/hoodie/highlights.png",
-  //   reference: "/garments/hoodie/reference.webp",
+  //   front: {
+  //     base: "/garments/hoodie/base.png",
+  //     mask: "/garments/hoodie/mask.png",
+  //     shadows: "/garments/hoodie/shadows.png",
+  //     highlights: "/garments/hoodie/highlights.png",
+  //     reference: "/garments/hoodie/reference.webp",
+  //   },
+  //   back: null,
   // },
 
   // cap: {
-  //   base: "/garments/cap/base.png",
-  //   mask: "/garments/cap/mask.png",
-  //   shadows: "/garments/cap/shadows.png",
-  //   highlights: "/garments/cap/highlights.png",
-  //   reference: "/garments/cap/reference.webp",
+  //   front: {
+  //     base: "/garments/cap/base.png",
+  //     mask: "/garments/cap/mask.png",
+  //     shadows: "/garments/cap/shadows.png",
+  //     highlights: "/garments/cap/highlights.png",
+  //     reference: "/garments/cap/reference.webp",
+  //   },
+  //   back: null,
   // },
 };
+
+/**
+ * Resolves the asset set for a garment/view pair, falling back to the front
+ * view whenever a dedicated back-view set hasn't been provided yet.
+ */
+export function resolveGarmentAssets(garment: GarmentKind, view: "front" | "back"): GarmentAssetSet | undefined {
+  const entry = GARMENT_ASSET_REGISTRY[garment];
+  if (!entry) return undefined;
+  return entry[view] ?? entry.front;
+}
