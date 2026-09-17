@@ -4,7 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "generate:designs": "node scripts/generate-designs.mjs",
+    "predev": "npm run generate:designs",
     "dev": "vite",
+    "prebuild": "npm run generate:designs",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview"

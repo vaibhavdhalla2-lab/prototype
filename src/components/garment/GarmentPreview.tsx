@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { drawGarmentToCanvas, getMaskedLayer, getRecoloredBase } from "../../lib/garmentCompositor";
-import { resolveGarmentAssets, type GarmentKind } from "../../lib/garmentAssets";
+import { drawGarmentToCanvas, getDesignLayer, getMaskedLayer, getRecoloredBase, type PrintAreaFraction } from "../../lib/garmentCompositor";
+import { resolveGarmentAssets, resolvePhotoPrintArea, type GarmentKind } from "../../lib/garmentAssets";
 
 export interface GarmentPreviewProps {
   /** Looks up base/mask/shadows/highlights from the registry in garmentAssets.ts. */
@@ -9,6 +9,10 @@ export interface GarmentPreviewProps {
   view?: "front" | "back";
   /** Target garment color as a hex string, e.g. "#182130". */
   color: string;
+  /** Artwork PNG to print onto the garment's print area (see getDesignLayer). Omit for a plain garment. */
+  design?: string | null;
+  /** Overrides the registry's print-area rectangle (fractions of the base photo). */
+  printArea?: PrintAreaFraction;
   /** Individually override any asset path instead of (or in addition to) `garment`. */
   base?: string;
   mask?: string;
@@ -33,6 +37,8 @@ export default function GarmentPreview({
   garment,
   view = "front",
   color,
+  design,
+  printArea: printAreaOverride,
   base: baseOverride,
   mask: maskOverride,
   shadows: shadowsOverride,
@@ -47,6 +53,7 @@ export default function GarmentPreview({
   const mask = maskOverride ?? preset?.mask;
   const shadows = shadowsOverride ?? preset?.shadows;
   const highlights = highlightsOverride ?? preset?.highlights;
+  const printArea = printAreaOverride ?? (garment ? resolvePhotoPrintArea(garment) : undefined);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -57,13 +64,15 @@ export default function GarmentPreview({
     if (!base || !mask || !canvasRef.current) return;
     try {
       const recolored = await getRecoloredBase(base, mask, color);
-      const [shadowImg, highlightImg] = await Promise.all([
+      const [designImg, shadowImg, highlightImg] = await Promise.all([
+        design && printArea ? getDesignLayer(design, base, printArea).catch(() => null) : Promise.resolve(null),
         shadows ? getMaskedLayer(shadows, base).catch(() => null) : Promise.resolve(null),
         highlights ? getMaskedLayer(highlights, base).catch(() => null) : Promise.resolve(null),
       ]);
       if (!canvasRef.current) return;
       drawGarmentToCanvas(canvasRef.current, {
         recoloredBase: recolored,
+        design: designImg,
         shadows: shadowImg,
         highlights: highlightImg,
         shadowBlendMode,
@@ -75,7 +84,7 @@ export default function GarmentPreview({
       setStatus("error");
       setErrorMessage(err instanceof Error ? err.message : "Failed to render garment.");
     }
-  }, [base, mask, shadows, highlights, color, shadowBlendMode, highlightBlendMode]);
+  }, [base, mask, shadows, highlights, design, printArea, color, shadowBlendMode, highlightBlendMode]);
 
   useEffect(() => {
     redraw();

@@ -16,6 +16,7 @@ export type AnalyticsEvent =
   | "make_it_real_clicked"
   | "publish_clicked"
   | "remix_clicked"
+  | "studio_print_selected"
   | "feedback_opened"
   | "feedback_submitted"
   | "micro_feedback";

@@ -87,3 +87,27 @@ export function resolveGarmentAssets(garment: GarmentKind, view: "front" | "back
   if (!entry) return undefined;
   return entry[view] ?? entry.front;
 }
+
+/** A print-safe rectangle expressed as fractions (0–1) of the *base photo's own* pixel dimensions. */
+export interface PhotoPrintArea {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Where user/marketplace artwork gets composited onto the photographed
+ * garment (see drawGarmentToCanvas in garmentCompositor.ts) — the chest
+ * print zone, measured directly off base.png's alpha silhouette (clear of
+ * the collar above and the waist taper below). Independent of `mask.png`
+ * for the same reason recolorBase() is: base.png's own alpha is the
+ * authoritative silhouette.
+ */
+export const PHOTO_PRINT_AREAS: Partial<Record<GarmentKind, PhotoPrintArea>> = {
+  tshirt: { x: 0.37, y: 0.3, width: 0.26, height: 0.26 },
+};
+
+export function resolvePhotoPrintArea(garment: GarmentKind): PhotoPrintArea {
+  return PHOTO_PRINT_AREAS[garment] ?? { x: 0.35, y: 0.3, width: 0.3, height: 0.3 };
+}

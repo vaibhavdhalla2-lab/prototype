@@ -15,6 +15,9 @@
 .env
 .env.local
 .env.*.local
+# Regenerated from public/garments/**/*.png by scripts/generate-designs.mjs
+# on every `npm run dev` / `npm run build` — see package.json's pre* hooks.
+src/data/designs.generated.ts
 .vscode/*
 dist
 dist-ssr

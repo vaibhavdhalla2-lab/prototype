@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { useDesign } from "../../lib/store";
 import { track } from "../../lib/analytics";
 import { colorById, materialById, fitById } from "../../data/catalog";
+import { designsFor } from "../../data/designs.generated";
 import { IconUpload, IconSparkle, IconCheck } from "../icons";
 
 interface Analysis {
@@ -16,6 +17,12 @@ export default function ImagePanel() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [staged, setStaged] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const studioPrints = designsFor("tshirt");
+
+  const pickStudioPrint = (src: string, name: string) => {
+    design.setArtwork({ src, x: 0.5, y: 0.5, scale: 1, rotation: 0 });
+    track("studio_print_selected", { name });
+  };
 
   const handleFile = (file: File) => {
     const reader = new FileReader();
@@ -153,6 +160,28 @@ export default function ImagePanel() {
         <span className="text-[11px] text-ink-faint">PNG or JPG, up to 10MB</span>
       </button>
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files && handleFile(e.target.files[0])} />
+
+      {studioPrints.length > 0 && (
+        <div className="mt-8">
+          <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.2em] text-ink-faint">
+            <IconSparkle className="h-3.5 w-3.5" /> Or start from a MUSE print
+          </p>
+          <div className="mt-3 grid grid-cols-3 gap-2.5">
+            {studioPrints.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => pickStudioPrint(p.image, p.name)}
+                className="group flex flex-col items-center gap-1.5 rounded-xl border border-line p-2 text-center transition-colors hover:border-[#351c45]/50"
+              >
+                <span className="flex h-14 w-14 items-center justify-center rounded-lg bg-ink/90">
+                  <img src={p.image} alt={p.name} className="h-11 w-11 object-contain" />
+                </span>
+                <span className="line-clamp-2 text-[10px] leading-tight text-ink-soft group-hover:text-ink">{p.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <p className="mt-6 text-[12px] leading-relaxed text-ink-faint">
         Only upload artwork or images you own or have permission to use commercially. Designs containing

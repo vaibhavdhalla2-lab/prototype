@@ -3,9 +3,9 @@
  *
  * Pipeline:
  *
- *   highlights   <- drawn last, blend "screen", very low strength (see HIGHLIGHT_STRENGTH)
- *   shadows      <- drawn above the recolored base, blend "multiply", low strength (see SHADOW_STRENGTH)
- *   [future: user artwork] <- would slot in here, before shadows
+ *   highlights     <- drawn last, blend "screen", very low strength (see HIGHLIGHT_STRENGTH)
+ *   shadows        <- drawn above the design, blend "multiply", low strength (see SHADOW_STRENGTH)
+ *   design artwork <- clipped to the print area, shaded by the base's own fold/light map (see getDesignLayer)
  *   recolored base fabric  <- the photograph itself, see recolorBase()
  *
  * The base photograph is the primary visual layer, not a light map to be
@@ -124,7 +124,7 @@ function drawToImageData(img: HTMLImageElement, w: number, h: number): ImageData
  * the backdrop had zero alpha (Porter-Duff falls back to plain source-over
  * there), which would leak color outside the garment.
  */
-function recolorBase(baseImg: HTMLImageElement, shape: HTMLCanvasElement, colorHex: string): HTMLCanvasElement {
+function recolorBase(grayscale: HTMLCanvasElement, shape: HTMLCanvasElement, colorHex: string): HTMLCanvasElement {
   const w = shape.width;
   const h = shape.height;
 
@@ -132,9 +132,7 @@ function recolorBase(baseImg: HTMLImageElement, shape: HTMLCanvasElement, colorH
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext("2d")!;
-  ctx.filter = "grayscale(1)";
-  ctx.drawImage(baseImg, 0, 0, w, h);
-  ctx.filter = "none";
+  ctx.drawImage(grayscale, 0, 0);
 
   ctx.globalCompositeOperation = "multiply";
   ctx.fillStyle = colorHex;
@@ -148,6 +146,35 @@ function recolorBase(baseImg: HTMLImageElement, shape: HTMLCanvasElement, colorH
   return canvas;
 }
 
+const grayscaleCache = new Map<string, Promise<HTMLCanvasElement>>();
+
+/**
+ * A grayscale copy of the base photograph, full resolution — this *is* the
+ * photographed fold/light map, unmodified. Shared by recolorBase() (colors
+ * the garment by multiplying a flat hue through it) and getDesignLayer()
+ * (shades printed artwork by the same map, so a print sitting in a fold
+ * darkens exactly as much as the fabric around it does).
+ */
+function getGrayscaleBase(baseSrc: string): Promise<HTMLCanvasElement> {
+  let pending = grayscaleCache.get(baseSrc);
+  if (!pending) {
+    pending = loadImageCached(baseSrc).then((baseImg) => {
+      const w = baseImg.naturalWidth;
+      const h = baseImg.naturalHeight;
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d")!;
+      ctx.filter = "grayscale(1)";
+      ctx.drawImage(baseImg, 0, 0, w, h);
+      ctx.filter = "none";
+      return canvas;
+    });
+    grayscaleCache.set(baseSrc, pending);
+  }
+  return pending;
+}
+
 /**
  * Recolors (and caches) base for a given color. `maskSrc` is still loaded
  * (so a missing mask file surfaces as a clear load error) but its content
@@ -158,8 +185,8 @@ export async function getRecoloredBase(baseSrc: string, maskSrc: string, colorHe
   const cached = recolorCache.get(key);
   if (cached) return cached;
 
-  const [baseImg, shape] = await Promise.all([loadImageCached(baseSrc), getGarmentShape(baseSrc), loadImageCached(maskSrc)]);
-  const canvas = recolorBase(baseImg, shape, colorHex);
+  const [grayscale, shape] = await Promise.all([getGrayscaleBase(baseSrc), getGarmentShape(baseSrc), loadImageCached(maskSrc)]);
+  const canvas = recolorBase(grayscale, shape, colorHex);
   recolorCache.set(key, canvas);
   return canvas;
 }
@@ -232,8 +259,73 @@ function containFit(srcW: number, srcH: number, boxW: number, boxH: number) {
   return { dx: (boxW - dw) / 2, dy: (boxH - dh) / 2, dw, dh };
 }
 
+export interface PrintAreaFraction {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+const designLayerCache = new Map<string, Promise<HTMLCanvasElement>>();
+
+/**
+ * Composites artwork onto the garment's print area, shaded by the base
+ * photo's own fold/light map — the same grayscale used to recolor the
+ * fabric (see getGrayscaleBase) — so the print reads as printed on the
+ * fabric rather than pasted over it: it darkens in a fold and catches light
+ * on a raised area exactly where the shirt itself does. Colour (hue) is
+ * left alone; only luminance is multiplied through, same principle as
+ * recolorBase(). Cached per (design, base, print-area) triple.
+ */
+export function getDesignLayer(designSrc: string, baseSrc: string, printArea: PrintAreaFraction): Promise<HTMLCanvasElement> {
+  const key = `${designSrc}|${baseSrc}|${printArea.x}|${printArea.y}|${printArea.width}|${printArea.height}`;
+  let pending = designLayerCache.get(key);
+  if (!pending) {
+    pending = Promise.all([loadImageCached(designSrc), getGrayscaleBase(baseSrc), getGarmentShape(baseSrc)]).then(
+      ([designImg, grayscale, shape]) => {
+        const w = shape.width;
+        const h = shape.height;
+        const boxX = printArea.x * w;
+        const boxY = printArea.y * h;
+        const boxW = printArea.width * w;
+        const boxH = printArea.height * h;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d")!;
+        const { dx, dy, dw, dh } = containFit(designImg.naturalWidth, designImg.naturalHeight, boxW, boxH);
+        ctx.drawImage(designImg, boxX + dx, boxY + dy, dw, dh);
+
+        // Snapshot the design's own footprint before shading it — "multiply"
+        // otherwise paints the grayscale map at full alpha wherever our own
+        // alpha was 0 (the same Porter-Duff quirk recolorBase() clips away).
+        const footprint = document.createElement("canvas");
+        footprint.width = w;
+        footprint.height = h;
+        footprint.getContext("2d")!.drawImage(canvas, 0, 0);
+
+        ctx.globalCompositeOperation = "multiply";
+        ctx.drawImage(grayscale, 0, 0, w, h);
+        ctx.globalCompositeOperation = "destination-in";
+        ctx.drawImage(footprint, 0, 0);
+        // Belt-and-braces: also clip to the true garment silhouette, in case
+        // a print area is ever sized wide enough to graze a real edge.
+        ctx.drawImage(shape, 0, 0);
+        ctx.globalCompositeOperation = "source-over";
+
+        return canvas;
+      },
+    );
+    designLayerCache.set(key, pending);
+  }
+  return pending;
+}
+
 export interface DrawGarmentOptions {
   recoloredBase: HTMLCanvasElement;
+  /** Artwork already composited onto the print area — see getDesignLayer(). Drawn above the base, below shadows/highlights. */
+  design?: HTMLCanvasElement | null;
   shadows?: HTMLCanvasElement | HTMLImageElement | null;
   highlights?: HTMLCanvasElement | HTMLImageElement | null;
   shadowBlendMode: GlobalCompositeOperation;
@@ -255,6 +347,7 @@ export interface DrawGarmentOptions {
 export function drawGarmentToCanvas(canvas: HTMLCanvasElement, opts: DrawGarmentOptions): void {
   const {
     recoloredBase,
+    design,
     shadows,
     highlights,
     shadowBlendMode,
@@ -280,6 +373,11 @@ export function drawGarmentToCanvas(canvas: HTMLCanvasElement, opts: DrawGarment
 
   ctx.globalCompositeOperation = "source-over";
   ctx.drawImage(recoloredBase, dx, dy, dw, dh);
+
+  if (design) {
+    ctx.globalCompositeOperation = "source-over";
+    ctx.drawImage(design, dx, dy, dw, dh);
+  }
 
   if (shadows) {
     ctx.globalCompositeOperation = shadowBlendMode;

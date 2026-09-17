@@ -8,7 +8,11 @@ interface GarmentColorSwatchesProps {
 
 export default function GarmentColorSwatches({ value, onChange, className }: GarmentColorSwatchesProps) {
   return (
-    <div className={`flex flex-wrap items-center justify-center gap-2.5 ${className ?? ""}`} role="radiogroup" aria-label="Garment colour">
+    <div
+      className={`flex flex-wrap items-center gap-2.5 ${className?.includes("justify-") ? className : `justify-center ${className ?? ""}`}`}
+      role="radiogroup"
+      aria-label="Garment colour"
+    >
       {garmentColors.map((c) => {
         const active = value.toLowerCase() === c.value.toLowerCase();
         return (
