@@ -17,6 +17,8 @@ const FEATURE_OPTIONS = [
   "Other",
 ];
 const INTENT_OPTIONS = ["Definitely", "Probably", "Maybe", "Probably not", "No"];
+const YES_NO_OPTIONS = ["Yes", "No"];
+const OUTPUT_OPTIONS = ["T-Shirts", "Hoodies", "Caps", "Mobile Covers", "Posters", "Mugs"];
 
 const TEXT_MAX = 100;
 const AREA_MAX = 600;
@@ -31,6 +33,8 @@ const EMPTY: FeedbackFormData = {
   purchaseIntent: null,
   creatorIntent: null,
   easeOfUse: null,
+  exciteMoreThanClothing: null,
+  excitingOutputs: [],
   likedMost: "",
   improvement: "",
   additionalFeedback: "",
@@ -131,6 +135,8 @@ export default function FeedbackWidget() {
         purchaseIntent: data.purchaseIntent,
         creatorIntent: data.creatorIntent,
         easeOfUse: data.easeOfUse,
+        exciteMoreThanClothing: data.exciteMoreThanClothing,
+        excitingOutputs: data.excitingOutputs,
       });
       setStage("success");
     } else {
@@ -303,6 +309,34 @@ export default function FeedbackWidget() {
                   <div>
                     <p className="mb-3 text-[13px] font-medium text-ink">How easy was it to understand how FORMÉ works?</p>
                     <Stars value={data.easeOfUse} onChange={(n) => set("easeOfUse", n)} ariaLabel="Ease of use rating" />
+                  </div>
+
+                  <div>
+                    <p className="mb-3 text-[13px] font-medium text-ink">Will FORMÉ products excite you more than clothing?</p>
+                    <RadioList
+                      name="Excite more than clothing"
+                      options={YES_NO_OPTIONS}
+                      value={data.exciteMoreThanClothing}
+                      onChange={(v) => set("exciteMoreThanClothing", v)}
+                    />
+                  </div>
+
+                  <div>
+                    <p className="mb-3 text-[13px] font-medium text-ink">Which FORMÉ output would excite you the most?</p>
+                    <div className="flex flex-wrap gap-2">
+                      {OUTPUT_OPTIONS.map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => set("excitingOutputs", toggle(data.excitingOutputs, opt))}
+                          className={`rounded-full border px-3.5 py-1.5 text-[12.5px] transition-colors ${
+                            data.excitingOutputs.includes(opt) ? "border-[#351c45] bg-[#351c45] text-[#d4af70]" : "border-line text-ink-soft hover:border-ink-soft"
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   <div>

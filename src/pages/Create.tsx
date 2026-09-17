@@ -8,6 +8,7 @@ import { track } from "../lib/analytics";
 import { checkManufacturability, contextualTip } from "../lib/muse";
 
 import GradientMesh from "../components/GradientMesh";
+import PrototypeNotice from "../components/PrototypeNotice";
 import CanvasPicker from "../components/studio/CanvasPicker";
 import EntryUpload from "../components/studio/EntryUpload";
 import EntryPrompt from "../components/studio/EntryPrompt";
@@ -419,6 +420,7 @@ export default function Create() {
           </button>
           <h1 className="font-display text-4xl text-ink">FORMÉ Studio</h1>
           <p className="mt-1.5 max-w-md text-sm text-ink-soft">Your canvas. Your rules.</p>
+          <PrototypeNotice className="mt-4 max-w-lg" />
         </div>
 
         <div className="grid grid-cols-[210px_1fr_280px] items-start gap-5 xl:grid-cols-[280px_1fr_360px] xl:gap-8">
@@ -508,6 +510,7 @@ export default function Create() {
         </div>
 
         <div className="px-4 pb-40 pt-16">
+          <PrototypeNotice className="mb-4" />
           <ViewTabRow />
           <div className="mt-5">
             <GarmentCard size="sm" />

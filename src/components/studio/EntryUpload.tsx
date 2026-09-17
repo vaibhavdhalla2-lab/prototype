@@ -3,6 +3,7 @@ import { GARMENTS, colorById, materialById, fitById } from "../../data/catalog";
 import type { GarmentType } from "../../data/catalog";
 import { useDesign } from "../../lib/store";
 import { track } from "../../lib/analytics";
+import PrototypeNotice from "../PrototypeNotice";
 import { IconUpload, IconSparkle, IconCheck } from "../icons";
 
 interface Analysis {
@@ -57,6 +58,8 @@ export default function EntryUpload({ onEnterStudio }: { onEnterStudio: (tab: st
       <p className="mb-3 text-center text-[12px] uppercase tracking-[0.3em] text-ink-faint animate-fade-up">Upload an image</p>
       <h1 className="text-center font-display text-4xl text-ink animate-fade-up [animation-delay:60ms]">Have something in mind?</h1>
       <p className="mx-auto mt-3 max-w-sm text-center text-ink-soft animate-fade-up [animation-delay:120ms]">Show us — MUSE can turn it into artwork or use it purely as inspiration.</p>
+
+      <PrototypeNotice className="mx-auto mt-7" />
 
       {!analysis && (
         <div className="mt-9 animate-fade-up [animation-delay:180ms]">

@@ -1,22 +1,15 @@
 import { useRef, useState, useCallback, useEffect, type PointerEvent as ReactPointerEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { GarmentStage } from "../components/Garment";
-import FeatureCarousel from "../components/home/FeatureCarousel";
+import Carousel from "../components/onboarding/Carousel";
+import { SlideThreeWays, SlideDiscoverMarketplace, SlideCreateShareEarn } from "../components/home/HomeCarouselSlides";
 import GradientMesh from "../components/GradientMesh";
 import GlowButton from "../components/GlowButton";
 import LazyMount from "../components/LazyMount";
 import { MARKET_DESIGNS } from "../data/marketplace";
 import { COLORS, GARMENTS, colorById } from "../data/catalog";
 import { useDesign } from "../lib/store";
-import {
-  IconArrowRight,
-  IconUpload,
-  IconSparkle,
-  IconPencil,
-  IconRemix,
-  IconStore,
-  IconLock,
-} from "../components/icons";
+import { IconArrowRight, IconPencil, IconRemix, IconStore, IconLock } from "../components/icons";
 import MicroPrompt from "../components/MicroPrompt";
 import { track } from "../lib/analytics";
 
@@ -49,17 +42,23 @@ function HeroReveal() {
     setPct(Math.min(96, Math.max(4, raw)));
   }, []);
 
+  // Slide 1 of the hero carousel — stopPropagation keeps this drag gesture
+  // from also being read as a swipe-to-change-slide gesture by the parent
+  // Carousel, which listens for the same pointer events on its viewport.
   const onDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     dragging.current = true;
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
     updateFromClientX(e.clientX);
+    e.stopPropagation();
   };
   const onMove = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (!dragging.current) return;
     updateFromClientX(e.clientX);
+    e.stopPropagation();
   };
-  const onUp = () => {
+  const onUp = (e: ReactPointerEvent<HTMLDivElement>) => {
     dragging.current = false;
+    e.stopPropagation();
   };
 
   return (
@@ -133,41 +132,45 @@ function HeroReveal() {
 }
 
 /* ----------------------------------------------------------------------- */
-/* WAYS TO CREATE                                                           */
+/* HERO CAROUSEL — slide 1 is the hero itself, unchanged                    */
 /* ----------------------------------------------------------------------- */
 
-const CREATE_WAYS = [
-  {
-    id: "image",
-    n: "01",
-    title: "Upload",
-    body: "Show us your inspiration or artwork — a photo, a screenshot, anything that captures the idea.",
-    cta: "Upload An Image",
-    icon: IconUpload,
-    mode: "upload" as const,
-    tone: GOLD,
-  },
-  {
-    id: "muse",
-    n: "02",
-    title: "Muse",
-    body: "Describe the aesthetic you're imagining. You don't have to know the fashion terms — MUSE does.",
-    cta: "Tell MUSE",
-    icon: IconSparkle,
-    mode: "prompt" as const,
-    tone: VIOLET,
-  },
-  {
-    id: "draw",
-    n: "03",
-    title: "Draw",
-    body: "Start with a blank canvas. Draw it rough — FORMÉ helps refine it without losing your idea.",
-    cta: "Draw It",
-    icon: IconPencil,
-    mode: "scratch" as const,
-    tone: GOLD,
-  },
-];
+function SlideHeroIntro() {
+  const navigate = useNavigate();
+  return (
+    <div className="mx-auto grid h-full max-w-[1400px] grid-cols-1 items-center gap-10 px-5 sm:px-8 lg:grid-cols-2 lg:gap-10 lg:px-8">
+      <div className="order-2 lg:order-1">
+        <p className="mb-5 text-[12px] uppercase tracking-[0.3em] text-[#17151a]/40 animate-fade-up">FORMÉ — a design prototype</p>
+        <h1 className="font-display-heavy text-[clamp(2.6rem,8vw,5.4rem)] uppercase leading-[0.88] tracking-tight text-[#17151a] animate-fade-up [animation-delay:80ms]">
+          You can
+          <br />
+          <span className="text-[clamp(3.1rem,9.5vw,6.6rem)]">create.</span>
+          <br />
+          <span className="text-gradient-plum">Your own world.</span>
+        </h1>
+        <p className="mt-7 max-w-md text-balance text-lg leading-relaxed text-[#17151a]/60 animate-fade-up [animation-delay:160ms]">
+          Create it from scratch. Find something you love. Remix it. Make it yours.
+        </p>
+        <div className="mt-9 flex flex-wrap items-center gap-4 animate-fade-up [animation-delay:240ms]">
+          <GlowButton onClick={() => navigate("/create")}>
+            Start Creating
+            <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </GlowButton>
+          <GlowButton variant="secondary" onClick={() => navigate("/marketplace")}>
+            Explore Marketplace
+          </GlowButton>
+        </div>
+        <p className="mt-6 max-w-sm text-[13px] uppercase tracking-[0.1em] text-[#17151a]/35 animate-fade-up [animation-delay:320ms]">
+          T-shirts available now · Hoodies, caps &amp; more coming soon
+        </p>
+      </div>
+
+      <div className="order-1 flex justify-center lg:order-2">
+        <HeroReveal />
+      </div>
+    </div>
+  );
+}
 
 /* ----------------------------------------------------------------------- */
 /* CREATOR ECONOMY FLOW                                                     */
@@ -183,6 +186,7 @@ const EARN_FLOW = [
 export default function Home() {
   const navigate = useNavigate();
   const design = useDesign();
+  const [heroSlide, setHeroSlide] = useState(0);
   const marketPicks = MARKET_DESIGNS.filter((d) => d.garment === "tshirt").slice(0, 6);
 
   useEffect(() => {
@@ -199,99 +203,30 @@ export default function Home() {
     <div className="grain relative bg-[#faf4ea] text-[#17151a]">
       <GradientMesh fixed />
 
-      {/* HERO — ivory + purple atmospheric glow */}
-      <section className="relative mx-auto grid max-w-[1400px] grid-cols-1 items-center gap-14 px-5 pb-16 pt-10 sm:px-8 sm:pt-16 lg:grid-cols-2 lg:gap-10 lg:pb-24 lg:pt-20">
-        <div className="order-2 lg:order-1">
-          <p className="mb-5 text-[12px] uppercase tracking-[0.3em] text-[#17151a]/40 animate-fade-up">FORMÉ — a design prototype</p>
-          <h1 className="font-display-heavy text-[clamp(2.6rem,8vw,5.4rem)] uppercase leading-[0.88] tracking-tight text-[#17151a] animate-fade-up [animation-delay:80ms]">
-            You can
-            <br />
-            <span className="text-[clamp(3.1rem,9.5vw,6.6rem)]">create.</span>
-            <br />
-            <span className="text-gradient-plum">Your own world.</span>
-          </h1>
-          <p className="mt-7 max-w-md text-balance text-lg leading-relaxed text-[#17151a]/60 animate-fade-up [animation-delay:160ms]">
-            Create it from scratch. Find something you love. Remix it. Make it yours.
-          </p>
-          <div className="mt-9 flex flex-wrap items-center gap-4 animate-fade-up [animation-delay:240ms]">
-            <GlowButton onClick={() => navigate("/create")}>
-              Start Creating
-              <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </GlowButton>
-            <GlowButton variant="secondary" onClick={() => navigate("/marketplace")}>
-              Explore Marketplace
-            </GlowButton>
-          </div>
-          <p className="mt-6 max-w-sm text-[13px] uppercase tracking-[0.1em] text-[#17151a]/35 animate-fade-up [animation-delay:320ms]">
-            T-shirts available now · Hoodies, caps &amp; more coming soon
-          </p>
-        </div>
-
-        <div className="order-1 flex justify-center lg:order-2">
-          <HeroReveal />
-        </div>
-      </section>
-
-      {/* FEATURE CAROUSEL — soft lavender wash */}
-      <section
-        className="relative border-t border-[#351c45]/10 py-14 sm:py-20"
-        style={{ background: "linear-gradient(180deg, rgba(250,244,234,0.5) 0%, rgba(233,213,255,0.4) 50%, rgba(250,244,234,0.5) 100%)" }}
-      >
+      {/* HERO CAROUSEL — slide 1 is the hero (ivory + purple atmospheric glow),
+          slides 2-4 carry the "how FORMÉ works" story that used to be a
+          separate widget further down the page. */}
+      <section className="relative pb-10 pt-10 sm:pt-16">
         <div className="mx-auto max-w-[1400px] px-0 sm:px-4">
-          <div className="mb-8 px-5 sm:px-4">
-            <p className="text-[12px] uppercase tracking-[0.3em] text-[#351c45]/50">The FORMÉ concept, in five slides</p>
-          </div>
-          <FeatureCarousel />
+          <Carousel
+            className="h-[1080px] sm:h-[1000px] lg:h-[760px]"
+            onIndexChange={setHeroSlide}
+            slides={[
+              <SlideHeroIntro key="hero" />,
+              <SlideThreeWays key="ways" active={heroSlide === 1} />,
+              <SlideDiscoverMarketplace key="discover" active={heroSlide === 2} />,
+              <SlideCreateShareEarn key="earn" active={heroSlide === 3} />,
+            ]}
+          />
         </div>
       </section>
 
-      {/* WAYS TO CREATE — deep plum "creation studio" */}
-      <section
-        className="grain grain-deep relative overflow-hidden border-t border-white/10 py-20 text-[#faf4ea] sm:py-28"
-        style={{ background: `linear-gradient(155deg, ${PLUM} 0%, ${PLUM_DEEP} 100%)` }}
-      >
-        <GradientMesh variant="plum" />
-        <div className="relative mx-auto max-w-[1400px] px-5 sm:px-8">
-          <div className="mb-14 max-w-xl">
-            <p className="mb-3 text-[12px] uppercase tracking-[0.3em]" style={{ color: GOLD }}>Getting started</p>
-            <h2 className="font-display-heavy text-[clamp(2rem,5.5vw,3.6rem)] uppercase leading-[0.92] text-[#faf4ea]">How do you imagine it?</h2>
-          </div>
-
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-            {CREATE_WAYS.map(({ id, n, title, body, cta, icon: Icon, mode, tone }) => (
-              <button
-                key={id}
-                onClick={() => {
-                  track("start_creating", { mode });
-                  navigate("/create", { state: { mode } });
-                }}
-                className="glass-plum group relative flex flex-col items-start overflow-hidden rounded-3xl border border-white/10 p-8 text-left transition-all duration-300 hover:-translate-y-1.5 hover:border-white/25 sm:p-9"
-              >
-                <span className="font-display text-sm text-[#faf4ea]/30">{n}</span>
-                <div
-                  className="mt-6 flex h-12 w-12 items-center justify-center rounded-full transition-colors"
-                  style={{ color: tone, border: `1.5px solid ${tone}55`, background: `${tone}1a` }}
-                >
-                  <Icon className="h-5 w-5" />
-                </div>
-                <h3 className="mt-6 font-display text-2xl text-[#faf4ea]">{title}</h3>
-                <p className="mt-2 text-sm text-[#faf4ea]/55">{body}</p>
-                <span className="mt-7 inline-flex items-center gap-2 text-[11.5px] font-medium uppercase tracking-[0.14em] text-[#faf4ea]/85">
-                  {cta}
-                  <IconArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
-                </span>
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-10">
-            <MicroPrompt
-              question="Would a platform like this excite you?"
-              eventName="homepage_concept"
-              className="max-w-2xl"
-              dark
-            />
-          </div>
+      {/* QUICK PULSE — the "how it works" explainer now lives in the hero
+          carousel above (slide 2), so this is just a lightweight check-in
+          rather than a second full section repeating the same content. */}
+      <section className="relative border-t border-[#351c45]/10 py-14 sm:py-16">
+        <div className="mx-auto max-w-[1400px] px-5 sm:px-8">
+          <MicroPrompt question="Would a platform like this excite you?" eventName="homepage_concept" className="max-w-2xl" />
         </div>
       </section>
 

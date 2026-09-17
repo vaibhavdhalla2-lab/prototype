@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MARKET_DESIGNS, type MarketDesign } from "../data/marketplace";
-import { garmentById, colorById, materialById, fitById, GARMENTS } from "../data/catalog";
-import type { GarmentType } from "../data/catalog";
+import { garmentById, colorById, materialById, fitById } from "../data/catalog";
 import { useDesign } from "../lib/store";
 import { track } from "../lib/analytics";
 import { GarmentStage } from "../components/Garment";
@@ -20,10 +19,10 @@ const TABS: { id: Tab; label: string; sub: string }[] = [
   { id: "most-remixed", label: "Most Remixed", sub: "Designs the community keeps building on" },
 ];
 
-const GARMENT_FILTERS: { id: GarmentType | "all"; label: string }[] = [
-  { id: "all", label: "All" },
-  ...GARMENTS.map((g) => ({ id: g.id, label: `${g.label}s` })),
-];
+// Only T-shirts are live right now — hoodies/caps stay "Coming Soon" (see
+// CanvasPicker), so the marketplace only ever shows what people can actually
+// make and buy today.
+const TSHIRT_DESIGNS = MARKET_DESIGNS.filter((d) => d.garment === "tshirt");
 
 /** A collectible-object product card — glass surface, thin gold edge, soft plum shadow, gentle lift on hover. */
 function DesignCard({ d, onOpen, onRemix }: { d: MarketDesign; onOpen: () => void; onRemix: () => void }) {
@@ -101,15 +100,15 @@ function QuickView({ d, onClose, onRemix }: { d: MarketDesign; onClose: () => vo
   );
 }
 
-// A fixed shuffle so "For You" doesn't feel like a literal re-sort of the catalog.
+// A fixed shuffle (by id) so "For You" doesn't feel like a literal re-sort of the catalog.
 const FOR_YOU_ORDER = [3, 11, 0, 15, 7, 18, 4, 9, 2, 16, 20, 12, 6, 19, 1, 14, 8, 17, 5, 13, 10];
+const FOR_YOU_TSHIRTS = FOR_YOU_ORDER.map((i) => MARKET_DESIGNS[i]).filter((d): d is MarketDesign => d?.garment === "tshirt");
 
 export default function Marketplace() {
   const navigate = useNavigate();
   const design = useDesign();
   const [active, setActive] = useState<MarketDesign | null>(null);
   const [tab, setTab] = useState<Tab>("foryou");
-  const [garmentFilter, setGarmentFilter] = useState<GarmentType | "all">("all");
 
   const goRemix = (d: MarketDesign) => {
     design.loadFromMarketDesign(d);
@@ -117,12 +116,7 @@ export default function Marketplace() {
     navigate("/create", { state: { mode: "remix" } });
   };
 
-  const base =
-    tab === "foryou"
-      ? FOR_YOU_ORDER.filter((i) => i < MARKET_DESIGNS.length).map((i) => MARKET_DESIGNS[i])
-      : MARKET_DESIGNS.filter((d) => d.section === tab);
-
-  const items = garmentFilter === "all" ? base : base.filter((d) => d.garment === garmentFilter);
+  const items = tab === "foryou" ? FOR_YOU_TSHIRTS : TSHIRT_DESIGNS.filter((d) => d.section === tab);
   const activeTab = TABS.find((t) => t.id === tab)!;
 
   return (
@@ -147,20 +141,6 @@ export default function Marketplace() {
               }`}
             >
               {t.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {GARMENT_FILTERS.map((g) => (
-            <button
-              key={g.id}
-              onClick={() => setGarmentFilter(g.id)}
-              className={`rounded-full px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.08em] transition-colors ${
-                garmentFilter === g.id ? "text-[#351c45] underline underline-offset-4" : "text-ink-faint hover:text-ink-soft"
-              }`}
-            >
-              {g.label}
             </button>
           ))}
         </div>

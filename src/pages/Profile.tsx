@@ -55,20 +55,24 @@ function DesignCard({ d }: { d: MyDesign }) {
   );
 }
 
+// Only T-shirts are live right now — hoodies/caps stay "Coming Soon" (see
+// CanvasPicker), so nothing you could actually order for them shows up here.
+const TSHIRT_ONLY = MY_DESIGNS.filter((d) => d.garment === "tshirt");
+
 export default function Profile() {
   const [tab, setTab] = useState<TabId>("all");
   const navigate = useNavigate();
   const { open: replayOnboarding } = useOnboarding();
 
-  const filtered = tab === "all" ? MY_DESIGNS : MY_DESIGNS.filter((d) => d.status === tab);
+  const filtered = tab === "all" ? TSHIRT_ONLY : TSHIRT_ONLY.filter((d) => d.status === tab);
   const counts = {
-    all: MY_DESIGNS.length,
-    draft: MY_DESIGNS.filter((d) => d.status === "draft").length,
-    published: MY_DESIGNS.filter((d) => d.status === "published").length,
-    ordered: MY_DESIGNS.filter((d) => d.status === "ordered").length,
+    all: TSHIRT_ONLY.length,
+    draft: TSHIRT_ONLY.filter((d) => d.status === "draft").length,
+    published: TSHIRT_ONLY.filter((d) => d.status === "published").length,
+    ordered: TSHIRT_ONLY.filter((d) => d.status === "ordered").length,
   };
 
-  const totalEarnings = MY_DESIGNS.reduce((sum, d) => sum + (d.stats?.earnings ?? 0), 0);
+  const totalEarnings = TSHIRT_ONLY.reduce((sum, d) => sum + (d.stats?.earnings ?? 0), 0);
 
   return (
     <div className="grain relative">
@@ -79,7 +83,7 @@ export default function Profile() {
           <div>
             <p className="text-[11px] uppercase tracking-[0.3em]" style={{ color: "#d4af70" }}>Your archive</p>
             <h1 className="font-display text-3xl text-ink">Your Studio</h1>
-            <p className="text-sm text-ink-soft">{MY_DESIGNS.length} creations · ₹{totalEarnings.toLocaleString("en-IN")} in creator earnings</p>
+            <p className="text-sm text-ink-soft">{TSHIRT_ONLY.length} creations · ₹{totalEarnings.toLocaleString("en-IN")} in creator earnings</p>
             <button
               onClick={replayOnboarding}
               className="mt-1.5 inline-flex items-center gap-1.5 text-[12px] font-medium uppercase tracking-[0.1em] text-ink-faint transition-colors hover:text-ink-soft"

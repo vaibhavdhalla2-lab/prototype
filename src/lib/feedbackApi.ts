@@ -7,6 +7,8 @@ export interface FeedbackFormData {
   purchaseIntent: string | null;
   creatorIntent: string | null;
   easeOfUse: number | null;
+  exciteMoreThanClothing: string | null;
+  excitingOutputs: string[];
   likedMost: string;
   improvement: string;
   additionalFeedback: string;
@@ -28,6 +30,18 @@ const ENDPOINT = import.meta.env.VITE_FEEDBACK_ENDPOINT;
  * Script web apps don't handle the OPTIONS preflight a JSON content-type
  * would trigger, so a "simple request" content-type keeps this a plain
  * POST while the body itself remains JSON — Code.gs parses it as such.
+ *
+ * Request mode is "no-cors" rather than the default "cors" — Apps Script's
+ * /exec URL responds with a redirect to a script.googleusercontent.com
+ * URL that doesn't reliably carry CORS headers back, which previously left
+ * the fetch promise either rejecting inconsistently or the UI reading it
+ * as still-pending well after the row had already been appended (the
+ * "submitting..." button spinning forever even though the sheet updated).
+ * We never needed to read the response body anyway — the row append either
+ * happens server-side or the request never reaches the server — so an
+ * opaque no-cors response is enough, and the AbortController timeout below
+ * guarantees the UI always settles into an error state if the request
+ * itself stalls for any other reason.
  */
 export async function submitFeedback(data: FeedbackFormData): Promise<SubmitFeedbackResult> {
   if (!ENDPOINT) {
@@ -53,35 +67,31 @@ export async function submitFeedback(data: FeedbackFormData): Promise<SubmitFeed
     purchaseIntent: data.purchaseIntent,
     creatorIntent: data.creatorIntent,
     easeOfUse: data.easeOfUse,
+    exciteMoreThanClothing: data.exciteMoreThanClothing,
+    excitingOutputs: data.excitingOutputs.join("; "),
     likedMost: data.likedMost.trim(),
     improvement: data.improvement.trim(),
     additionalFeedback: data.additionalFeedback.trim(),
   };
 
-  let res: Response;
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 12000);
+
   try {
-    res = await fetch(ENDPOINT, {
+    await fetch(ENDPOINT, {
       method: "POST",
+      mode: "no-cors",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(payload),
+      signal: controller.signal,
     });
-  } catch {
-    return { ok: false, reason: "network", message: "Couldn't reach the server. Check your connection and try again." };
-  }
-
-  if (!res.ok) {
-    return { ok: false, reason: "server", message: `The server responded with an error (${res.status}).` };
-  }
-
-  // Apps Script always returns 200 on a normal exception, so also check the
-  // response body for an explicit failure flag when one is present.
-  try {
-    const json = await res.json();
-    if (json && json.status === "error") {
-      return { ok: false, reason: "server", message: json.message || "The server rejected the submission." };
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      return { ok: false, reason: "network", message: "The request took too long to respond. Please try again." };
     }
-  } catch {
-    // Non-JSON 2xx body — treat as success.
+    return { ok: false, reason: "network", message: "Couldn't reach the server. Check your connection and try again." };
+  } finally {
+    window.clearTimeout(timeoutId);
   }
 
   return { ok: true };

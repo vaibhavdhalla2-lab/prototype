@@ -12,13 +12,15 @@ export interface MyDesign {
   stats?: { views: number; remixes: number; purchases: number; earnings: number };
 }
 
+// Only T-shirts are live right now — hoodies/caps stay "Coming Soon" (see
+// CanvasPicker), so every demo creation here is a tee too.
 export const MY_DESIGNS: MyDesign[] = [
   {
     id: "my-midnight-tokyo",
     name: "Midnight Tokyo",
-    garment: "hoodie",
+    garment: "tshirt",
     color: "black",
-    material: "french-terry",
+    material: "heavyweight-cotton",
     fit: "oversized",
     status: "draft",
     updatedAt: "2 days ago",
@@ -35,9 +37,9 @@ export const MY_DESIGNS: MyDesign[] = [
     stats: { views: 1240, remixes: 18, purchases: 6, earnings: 210 },
   },
   {
-    id: "my-blackout-hoodie",
-    name: "Blackout Hoodie",
-    garment: "hoodie",
+    id: "my-blackout-tee",
+    name: "Blackout Tee",
+    garment: "tshirt",
     color: "black",
     material: "heavyweight-cotton",
     fit: "oversized",
@@ -46,10 +48,10 @@ export const MY_DESIGNS: MyDesign[] = [
   },
   {
     id: "my-quiet-stone",
-    name: "Quiet Stone Cap",
-    garment: "cap",
+    name: "Quiet Stone Tee",
+    garment: "tshirt",
     color: "stone",
-    material: "tri-blend",
+    material: "organic-jersey",
     fit: "regular",
     status: "published",
     updatedAt: "1 month ago",

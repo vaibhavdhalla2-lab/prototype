@@ -72,6 +72,15 @@ The first option is almost always what you want.
   (`OPTIONS`) request a `application/json` content-type would trigger from
   a browser, so `text/plain` is used to keep it a "simple request" (no
   preflight) while the body itself is still parsed as JSON in `doPost`.
+- The fetch itself uses `mode: "no-cors"`. Apps Script's `/exec` URL
+  redirects to a `script.googleusercontent.com` URL for the actual
+  response, and that redirected response doesn't reliably carry CORS
+  headers back — reading it from a normal `cors` fetch was causing the
+  "Submitting..." button to spin forever in some browsers even though the
+  row had already been appended. Since the frontend never needed to read
+  the response body anyway, requesting an opaque `no-cors` response sidesteps
+  that entirely, and a client-side timeout guarantees the UI always settles
+  into an error state if the request stalls for any other reason.
 - `doPost` validates the required fields, stamps the timestamp
   **server-side** (never trusts the browser's clock), and uses
   `LockService` so two near-simultaneous submissions can't race each other

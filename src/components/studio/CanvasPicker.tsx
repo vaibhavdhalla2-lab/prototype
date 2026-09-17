@@ -1,6 +1,7 @@
 import { GARMENTS, COLORS } from "../../data/catalog";
 import type { GarmentType } from "../../data/catalog";
 import { GarmentStage } from "../Garment";
+import PrototypeNotice from "../PrototypeNotice";
 import { IconArrowRight, IconLock } from "../icons";
 
 export default function CanvasPicker({ onSelect }: { onSelect: (g: GarmentType) => void }) {
@@ -14,7 +15,9 @@ export default function CanvasPicker({ onSelect }: { onSelect: (g: GarmentType) 
         Start with a blank canvas. We'll help you turn your imagination into something real.
       </p>
 
-      <div className="mt-14 grid grid-cols-1 gap-5 sm:grid-cols-3">
+      <PrototypeNotice className="mx-auto mt-8 max-w-md" />
+
+      <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-3">
         {GARMENTS.map((g, i) => (
           <button
             key={g.id}

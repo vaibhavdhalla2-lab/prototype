@@ -3,6 +3,7 @@ import { useDesign } from "../../lib/store";
 import { interpretPrompt, type MuseConcept } from "../../lib/muse";
 import { colorById, materialById, fitById, garmentById } from "../../data/catalog";
 import { track } from "../../lib/analytics";
+import PrototypeNotice from "../PrototypeNotice";
 import { IconSparkle, IconCheck } from "../icons";
 
 const EXAMPLE = "I want an oversized black hoodie with a minimal futuristic design inspired by Tokyo nightlife.";
@@ -42,6 +43,8 @@ export default function EntryPrompt({ onEnterStudio }: { onEnterStudio: (tab: st
       <p className="mx-auto mt-3 max-w-sm text-center text-ink-soft animate-fade-up [animation-delay:120ms]">
         Tell MUSE what you're picturing — a mood, a colour, a feeling. We'll turn it into a starting point.
       </p>
+
+      <PrototypeNotice className="mt-7" />
 
       {!concept && (
         <div className="mt-9 animate-fade-up [animation-delay:180ms]">

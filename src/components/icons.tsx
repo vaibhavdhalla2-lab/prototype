@@ -182,6 +182,16 @@ export function IconTrash(props: IconProps) {
   );
 }
 
+export function IconInfo(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" {...base} {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v5.5" />
+      <circle cx="12" cy="8" r="0.9" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 export function IconStar(props: IconProps & { filled?: boolean }) {
   const { filled, ...rest } = props;
   return (
