@@ -14,9 +14,27 @@ interface CarouselProps {
   className?: string;
   /** Recolors the arrows/dots in plum for use over the home page's multi-panel feature carousel. */
   dark?: boolean;
+  /**
+   * Reserves this many px of clear space at the bottom of every slide for
+   * the dots/counter indicator, so a slide's own bottom-most content can
+   * never sit underneath it. Opt-in (default 0 = unchanged) — only usages
+   * with little vertical headroom (see About.tsx) need it; fullscreen
+   * carousels already have plenty of room without it.
+   */
+  indicatorGutter?: number;
 }
 
-export default function Carousel({ slides, onFinish, onSkip, onIndexChange, resetKey, finishLabel = "Next", className, dark = false }: CarouselProps) {
+export default function Carousel({
+  slides,
+  onFinish,
+  onSkip,
+  onIndexChange,
+  resetKey,
+  finishLabel = "Next",
+  className,
+  dark = false,
+  indicatorGutter = 0,
+}: CarouselProps) {
   const total = slides.length;
   const [index, setIndex] = useState(0);
   const [dragPx, setDragPx] = useState(0);
@@ -127,7 +145,7 @@ export default function Carousel({ slides, onFinish, onSkip, onIndexChange, rese
           }}
         >
           {slides.map((slide, i) => (
-            <div key={i} className="h-full shrink-0" style={{ width: `${100 / total}%` }}>
+            <div key={i} className="h-full shrink-0" style={{ width: `${100 / total}%`, paddingBottom: indicatorGutter || undefined }}>
               {slide}
             </div>
           ))}

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFeedback } from "../lib/feedback";
 import { track } from "../lib/analytics";
 import { submitFeedback, type FeedbackFormData } from "../lib/feedbackApi";
@@ -95,11 +95,18 @@ function RadioList({ options, value, onChange, name }: { options: string[]; valu
 type Stage = "form" | "submitting" | "success" | "error";
 
 export default function FeedbackWidget() {
-  const { isOpen, open, close } = useFeedback();
+  const { isOpen, open, close, prefill } = useFeedback();
   const [stage, setStage] = useState<Stage>("form");
   const [errorMessage, setErrorMessage] = useState("");
   const [data, setData] = useState<FeedbackFormData>(EMPTY);
   const submittingRef = useRef(false);
+
+  // Carries in whatever the opener already knows (e.g. a homepage Yes/No
+  // click) without disturbing anything the person has already typed.
+  useEffect(() => {
+    if (isOpen && prefill) setData((d) => ({ ...d, ...prefill }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   const set = <K extends keyof FeedbackFormData>(key: K, value: FeedbackFormData[K]) => setData((d) => ({ ...d, [key]: value }));
 
@@ -149,7 +156,7 @@ export default function FeedbackWidget() {
     <>
       {!isOpen && (
         <button
-          onClick={open}
+          onClick={() => open()}
           className="fixed right-0 top-1/2 z-30 hidden -translate-y-1/2 items-center gap-2 rounded-l-xl border border-r-0 border-[#d4af70]/30 bg-paper px-3 py-4 shadow-[0_8px_24px_-12px_rgba(53,28,69,0.3)] transition-all hover:pr-4 hover:bg-[#351c45] hover:text-[#d4af70] md:flex"
           style={{ writingMode: "vertical-rl" }}
         >
@@ -160,7 +167,7 @@ export default function FeedbackWidget() {
       {!isOpen && (
         <button
           data-mobile-chrome
-          onClick={open}
+          onClick={() => open()}
           aria-label="Tell us what you think"
           className="fixed bottom-24 right-4 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-line bg-paper text-ink shadow-[0_8px_20px_-10px_rgba(26,23,18,0.4)] md:hidden"
         >

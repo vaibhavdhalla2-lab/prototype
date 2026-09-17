@@ -9,9 +9,11 @@ interface MicroPromptProps {
   className?: string;
   /** Recolors for use over the home page's deep-plum "creation studio" section instead of the light editorial theme. */
   dark?: boolean;
+  /** Called with the picked option in addition to the default local "noted" state — e.g. to open the full feedback form with this answer carried in. */
+  onAnswer?: (answer: string) => void;
 }
 
-export default function MicroPrompt({ question, options = ["Yes", "Maybe", "No"], eventName, className = "", dark = false }: MicroPromptProps) {
+export default function MicroPrompt({ question, options = ["Yes", "Maybe", "No"], eventName, className = "", dark = false, onAnswer }: MicroPromptProps) {
   const [answered, setAnswered] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
@@ -33,6 +35,7 @@ export default function MicroPrompt({ question, options = ["Yes", "Maybe", "No"]
                 onClick={() => {
                   setAnswered(opt);
                   track("micro_feedback", { question, answer: opt, eventName });
+                  onAnswer?.(opt);
                 }}
                 className={`rounded-full border px-3.5 py-1.5 text-[11px] font-medium uppercase tracking-[0.08em] transition-colors ${
                   dark

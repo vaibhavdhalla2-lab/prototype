@@ -12,6 +12,7 @@ import { useDesign } from "../lib/store";
 import { IconArrowRight, IconPencil, IconRemix, IconStore, IconLock } from "../components/icons";
 import MicroPrompt from "../components/MicroPrompt";
 import { track } from "../lib/analytics";
+import { useFeedback } from "../lib/feedback";
 
 /*
  * Literal hex, not CSS var() references — see the matching note in
@@ -183,9 +184,48 @@ const EARN_FLOW = [
   { n: "04", title: "Earn", body: "Every eligible sale or remix of your design earns you a creator reward.", icon: IconArrowRight },
 ];
 
+/* ----------------------------------------------------------------------- */
+/* BEYOND CLOTHING — conceptual future products, not real SKUs               */
+/* ----------------------------------------------------------------------- */
+
+const FUTURE_PRODUCTS = [
+  {
+    label: "Phone Case",
+    icon: (
+      <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.4" className="h-16 w-16 opacity-60">
+        <rect x="14" y="4" width="20" height="40" rx="4" />
+        <circle cx="24" cy="11" r="1.4" fill="currentColor" stroke="none" />
+        <rect x="19" y="34" width="10" height="2.4" rx="1.2" fill="currentColor" stroke="none" opacity="0.5" />
+      </svg>
+    ),
+  },
+  {
+    label: "Poster",
+    icon: (
+      <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.4" className="h-16 w-16 opacity-60">
+        <rect x="8" y="5" width="32" height="38" rx="1.5" />
+        <path d="M13 27l6.5-8 5.5 6 4-4.5L35 27" />
+        <circle cx="17" cy="14" r="2.4" />
+        <path d="M13 35h22" opacity="0.5" />
+      </svg>
+    ),
+  },
+  {
+    label: "Mug",
+    icon: (
+      <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.4" className="h-16 w-16 opacity-60">
+        <path d="M10 14h20v18a6 6 0 0 1-6 6h-8a6 6 0 0 1-6-6V14z" />
+        <path d="M30 18h3a5 5 0 0 1 0 10h-3" />
+        <path d="M14 14c0-3 1.5-5 1.5-7M20 14c0-3 1.5-5 1.5-7" opacity="0.5" />
+      </svg>
+    ),
+  },
+];
+
 export default function Home() {
   const navigate = useNavigate();
   const design = useDesign();
+  const { open: openFeedback } = useFeedback();
   const [heroSlide, setHeroSlide] = useState(0);
   const marketPicks = MARKET_DESIGNS.filter((d) => d.garment === "tshirt").slice(0, 6);
 
@@ -226,7 +266,12 @@ export default function Home() {
           rather than a second full section repeating the same content. */}
       <section className="relative border-t border-[#351c45]/10 py-14 sm:py-16">
         <div className="mx-auto max-w-[1400px] px-5 sm:px-8">
-          <MicroPrompt question="Would a platform like this excite you?" eventName="homepage_concept" className="max-w-2xl" />
+          <MicroPrompt
+            question="Would a platform like this excite you?"
+            eventName="homepage_concept"
+            className="max-w-2xl"
+            onAnswer={(answer) => openFeedback({ exciteMoreThanClothing: answer === "Yes" ? "Yes" : "No" })}
+          />
         </div>
       </section>
 
@@ -340,9 +385,11 @@ export default function Home() {
           <div className="mb-12 max-w-xl">
             <p className="mb-3 text-[12px] uppercase tracking-[0.3em]" style={{ color: PLUM }}>What's next</p>
             <h2 className="font-display-heavy text-[clamp(2rem,5.5vw,3.6rem)] uppercase leading-[0.92] text-[#17151a]">
-              The FORMÉ universe is growing.
+              The FORMÉ universe will grow.
             </h2>
-            <p className="mt-4 text-[15px] text-[#17151a]/55">More ways to wear your imagination are coming.</p>
+            <p className="mt-4 text-[15px] text-[#17151a]/55">
+              T-shirts are the starting point, not the whole story. More ways to wear your imagination are coming.
+            </p>
           </div>
 
           <LazyMount className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -381,6 +428,47 @@ export default function Home() {
               </div>
             </div>
           </LazyMount>
+        </div>
+      </section>
+
+      {/* BEYOND CLOTHING — tests interest in the FORMÉ concept applied to non-apparel objects. Purely conceptual: no purchase flow, clearly labelled as future ideas. */}
+      <section className="relative border-t border-[#351c45]/10 py-20 sm:py-28">
+        <div className="mx-auto max-w-[1400px] px-5 sm:px-8">
+          <div className="mb-12 flex flex-wrap items-end justify-between gap-6">
+            <div className="max-w-xl">
+              <p className="mb-3 text-[12px] uppercase tracking-[0.3em]" style={{ color: VIOLET }}>Beyond clothing</p>
+              <h2 className="font-display-heavy text-[clamp(2rem,5.5vw,3.6rem)] uppercase leading-[0.92] text-[#17151a]">
+                What else would you create with FORMÉ?
+              </h2>
+              <p className="mt-4 max-w-md text-[15px] text-[#17151a]/55">
+                Clothing is where we're starting — not where the idea ends. Here's what else the same canvas could become.
+              </p>
+            </div>
+            <button
+              onClick={() => openFeedback()}
+              className="inline-flex items-center gap-2 text-[12.5px] font-medium uppercase tracking-[0.14em] text-[#17151a]/60 hover:text-[#17151a]"
+            >
+              Tell Us What Excites You
+              <IconArrowRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {FUTURE_PRODUCTS.map(({ label, icon }) => (
+              <div
+                key={label}
+                className="relative flex flex-col overflow-hidden rounded-3xl border border-dashed border-[#351c45]/20 bg-white/25 transition-colors hover:border-[#351c45]/35"
+              >
+                <div className="flex aspect-[4/5] items-center justify-center p-6 text-[#351c45]/25 sm:aspect-square">{icon}</div>
+                <div className="p-4 text-center">
+                  <p className="font-display text-lg text-[#17151a]">{label}</p>
+                  <p className="mt-1 flex items-center justify-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-[#17151a]/35">
+                    <IconLock className="h-3 w-3" /> Coming soon · Future idea
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

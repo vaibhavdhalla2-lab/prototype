@@ -10,10 +10,12 @@ import { useOnboarding } from "../lib/onboarding";
 
 type TabId = "all" | "draft" | "published" | "ordered";
 
+// "Published" is intentionally not a tab here — published designs still show
+// under "My Creations" (see STATUS_LABEL/STATUS_TONE on each card) and the
+// data/counts below are untouched; this only changes what's navigable.
 const TABS: { id: TabId; label: string }[] = [
   { id: "all", label: "My Creations" },
   { id: "draft", label: "Drafts" },
-  { id: "published", label: "Published" },
   { id: "ordered", label: "Orders" },
 ];
 
