@@ -8,8 +8,10 @@ import GlowButton from "../components/GlowButton";
 import LazyMount from "../components/LazyMount";
 import { MARKET_DESIGNS } from "../data/marketplace";
 import { COLORS, GARMENTS, colorById } from "../data/catalog";
+import { PRODUCTS } from "../data/products";
+import ProductStage from "../components/products/ProductStage";
 import { useDesign } from "../lib/store";
-import { IconArrowRight, IconPencil, IconRemix, IconStore, IconLock } from "../components/icons";
+import { IconArrowRight, IconPencil, IconRemix, IconStore, IconLock, IconSparkle, IconType, IconUpload, IconDraw, IconHeart } from "../components/icons";
 import MicroPrompt from "../components/MicroPrompt";
 import { track } from "../lib/analytics";
 import { useFeedback } from "../lib/feedback";
@@ -160,9 +162,16 @@ function SlideHeroIntro() {
           <GlowButton variant="secondary" onClick={() => navigate("/marketplace")}>
             Explore Marketplace
           </GlowButton>
+          <button
+            onClick={() => navigate("/create", { state: { mode: "gift" } })}
+            className="inline-flex items-center gap-2 text-[12.5px] font-medium uppercase tracking-[0.14em] text-[#351c45] underline decoration-[#d4af70] decoration-2 underline-offset-4 transition-opacity hover:opacity-70"
+          >
+            Design A Gift
+            <IconArrowRight className="h-3.5 w-3.5" />
+          </button>
         </div>
         <p className="mt-6 max-w-sm text-[13px] uppercase tracking-[0.1em] text-[#17151a]/35 animate-fade-up [animation-delay:320ms]">
-          T-shirts available now · Hoodies, caps &amp; more coming soon
+          Six products to customize · Hoodies, caps &amp; more coming soon
         </p>
       </div>
 
@@ -185,41 +194,25 @@ const EARN_FLOW = [
 ];
 
 /* ----------------------------------------------------------------------- */
-/* BEYOND CLOTHING — conceptual future products, not real SKUs               */
+/* HOW DO YOU WANT TO CREATE — the 5 entry points into the studio            */
 /* ----------------------------------------------------------------------- */
 
-const FUTURE_PRODUCTS = [
-  {
-    label: "Phone Case",
-    icon: (
-      <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.4" className="h-16 w-16 opacity-60">
-        <rect x="14" y="4" width="20" height="40" rx="4" />
-        <circle cx="24" cy="11" r="1.4" fill="currentColor" stroke="none" />
-        <rect x="19" y="34" width="10" height="2.4" rx="1.2" fill="currentColor" stroke="none" opacity="0.5" />
-      </svg>
-    ),
-  },
-  {
-    label: "Poster",
-    icon: (
-      <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.4" className="h-16 w-16 opacity-60">
-        <rect x="8" y="5" width="32" height="38" rx="1.5" />
-        <path d="M13 27l6.5-8 5.5 6 4-4.5L35 27" />
-        <circle cx="17" cy="14" r="2.4" />
-        <path d="M13 35h22" opacity="0.5" />
-      </svg>
-    ),
-  },
-  {
-    label: "Mug",
-    icon: (
-      <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.4" className="h-16 w-16 opacity-60">
-        <path d="M10 14h20v18a6 6 0 0 1-6 6h-8a6 6 0 0 1-6-6V14z" />
-        <path d="M30 18h3a5 5 0 0 1 0 10h-3" />
-        <path d="M14 14c0-3 1.5-5 1.5-7M20 14c0-3 1.5-5 1.5-7" opacity="0.5" />
-      </svg>
-    ),
-  },
+const CREATION_METHODS: { id: "prompt" | "manual" | "upload" | "draw" | "gift"; label: string; body: string; icon: typeof IconSparkle }[] = [
+  { id: "prompt", label: "Write A Prompt", body: "Describe it — MUSE turns words into a starting point.", icon: IconSparkle },
+  { id: "manual", label: "Manual Design", body: "Blank canvas — arrange text, shapes and graphics yourself.", icon: IconType },
+  { id: "upload", label: "Upload A Graphic", body: "Show us your artwork, logo or photo.", icon: IconUpload },
+  { id: "draw", label: "Freehand Draw", body: "Sketch it rough. We'll help make it real.", icon: IconDraw },
+  { id: "gift", label: "Describe A Person", body: "Gift mode — MUSE suggests concepts for someone else.", icon: IconHeart },
+];
+
+/* ----------------------------------------------------------------------- */
+/* GIFTING — example prompts shown on the homepage gifting teaser           */
+/* ----------------------------------------------------------------------- */
+
+const GIFT_EXAMPLES = [
+  { who: "For a partner · Anniversary", prompt: "She loves warm colours, old film cameras, and quiet mornings.", result: "→ Suggested: a burgundy tee + a matching desk pad" },
+  { who: "For a friend · Just because", prompt: "He's into vinyl records, cold brew, and Wes Anderson movies.", result: "→ Suggested: a mug + a framed poster" },
+  { who: "For a colleague · Farewell", prompt: "Loud, funny, always the one making the group chat laugh.", result: "→ Suggested: a phone case + a bottle" },
 ];
 
 export default function Home() {
@@ -258,6 +251,67 @@ export default function Home() {
               <SlideCreateShareEarn key="earn" active={heroSlide === 3} />,
             ]}
           />
+        </div>
+      </section>
+
+      {/* SIX PRODUCTS — the real V1 product range, all live today. Every card goes straight into the studio pre-set to that product. */}
+      <section className="relative border-t border-[#351c45]/10 py-20 sm:py-28">
+        <div className="mx-auto max-w-[1400px] px-5 sm:px-8">
+          <div className="mb-12 max-w-xl">
+            <p className="mb-3 text-[12px] uppercase tracking-[0.3em]" style={{ color: GOLD }}>The FORMÉ canvas</p>
+            <h2 className="font-display-heavy text-[clamp(2rem,5.5vw,3.6rem)] uppercase leading-[0.92] text-[#17151a]">
+              Six products. One canvas.
+            </h2>
+            <p className="mt-4 max-w-md text-[15px] text-[#17151a]/55">Pick a product, then design it your way.</p>
+          </div>
+
+          <LazyMount className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+            {PRODUCTS.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => {
+                  design.startFresh();
+                  design.setGarment(p.id);
+                  track("garment_selected", { garment: p.id, source: "home_products" });
+                  navigate("/create");
+                }}
+                className="card-atelier group flex flex-col items-center overflow-hidden p-4 text-center transition-all duration-300 hover:-translate-y-1"
+              >
+                <div className="flex h-24 w-full items-center justify-center sm:h-28">
+                  <ProductStage product={p.id} colorHex={COLORS[1].hex} view="front" variants={{}} className="h-full w-full" />
+                </div>
+                <p className="mt-3 font-display text-base text-[#17151a]">{p.label}</p>
+                <p className="mt-1 text-[11px] uppercase tracking-[0.1em] text-[#17151a]/40">From ₹{p.basePrice.toLocaleString("en-IN")}</p>
+              </button>
+            ))}
+          </LazyMount>
+
+          {/* how do you want to create — the 5 entry points, surfaced beyond the hero carousel's 3 */}
+          <div className="mt-16">
+            <p className="mb-6 text-center text-[12px] uppercase tracking-[0.25em] text-[#17151a]/40">How do you want to create?</p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+              {CREATION_METHODS.map(({ id, label, body, icon: Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => {
+                    track("start_creating", { mode: id, source: "home_methods" });
+                    const routeMode = id === "prompt" || id === "upload" || id === "gift" ? id : "scratch";
+                    navigate("/create", { state: { mode: routeMode } });
+                  }}
+                  className="group flex flex-col items-start rounded-2xl border border-[#351c45]/12 bg-white/50 p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:bg-white/80"
+                >
+                  <span
+                    className="flex h-10 w-10 items-center justify-center rounded-full"
+                    style={{ color: PLUM, border: `1.5px solid ${GOLD}88`, background: `${GOLD}1a` }}
+                  >
+                    <Icon className="h-4.5 w-4.5" />
+                  </span>
+                  <p className="mt-3.5 font-display text-lg text-[#17151a]">{label}</p>
+                  <p className="mt-1 text-[12.5px] leading-snug text-[#17151a]/55">{body}</p>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -388,7 +442,7 @@ export default function Home() {
               The FORMÉ universe will grow.
             </h2>
             <p className="mt-4 text-[15px] text-[#17151a]/55">
-              T-shirts are the starting point, not the whole story. More ways to wear your imagination are coming.
+              Six products live today. More apparel — and more than apparel — is on the way.
             </p>
           </div>
 
@@ -431,43 +485,42 @@ export default function Home() {
         </div>
       </section>
 
-      {/* BEYOND CLOTHING — tests interest in the FORMÉ concept applied to non-apparel objects. Purely conceptual: no purchase flow, clearly labelled as future ideas. */}
-      <section className="relative border-t border-[#351c45]/10 py-20 sm:py-28">
+      {/* GIFTING — a dedicated showcase for the Describe-a-Person flow, the platform's clearest differentiator. */}
+      <section
+        className="grain grain-deep relative overflow-hidden border-t border-white/10 py-20 text-[#faf4ea] sm:py-28"
+        style={{ background: `linear-gradient(155deg, ${PLUM_DEEP} 0%, ${PLUM} 100%)` }}
+      >
         <div className="mx-auto max-w-[1400px] px-5 sm:px-8">
-          <div className="mb-12 flex flex-wrap items-end justify-between gap-6">
-            <div className="max-w-xl">
-              <p className="mb-3 text-[12px] uppercase tracking-[0.3em]" style={{ color: VIOLET }}>Beyond clothing</p>
-              <h2 className="font-display-heavy text-[clamp(2rem,5.5vw,3.6rem)] uppercase leading-[0.92] text-[#17151a]">
-                What else would you create with FORMÉ?
-              </h2>
-              <p className="mt-4 max-w-md text-[15px] text-[#17151a]/55">
-                Clothing is where we're starting — not where the idea ends. Here's what else the same canvas could become.
+          <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2">
+            <div>
+              <p className="mb-3 flex items-center gap-2 text-[12px] uppercase tracking-[0.3em]" style={{ color: GOLD }}>
+                <IconHeart className="h-3.5 w-3.5" /> Gifting
               </p>
+              <h2 className="font-display-heavy text-[clamp(2rem,5.5vw,3.6rem)] uppercase leading-[0.92] text-[#faf4ea]">
+                Create a gift by describing the person.
+              </h2>
+              <p className="mt-4 max-w-md text-[15px] text-[#faf4ea]/60">
+                Tell MUSE who it's for, their vibe, what they love. It comes back with gift concepts across every product — pick one and make it real.
+              </p>
+              <div className="mt-8">
+                <GlowButton onClick={() => navigate("/create", { state: { mode: "gift" } })}>
+                  Design A Gift
+                  <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </GlowButton>
+              </div>
             </div>
-            <button
-              onClick={() => openFeedback()}
-              className="inline-flex items-center gap-2 text-[12.5px] font-medium uppercase tracking-[0.14em] text-[#17151a]/60 hover:text-[#17151a]"
-            >
-              Tell Us What Excites You
-              <IconArrowRight className="h-3.5 w-3.5" />
-            </button>
-          </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {FUTURE_PRODUCTS.map(({ label, icon }) => (
-              <div
-                key={label}
-                className="relative flex flex-col overflow-hidden rounded-3xl border border-dashed border-[#351c45]/20 bg-white/25 transition-colors hover:border-[#351c45]/35"
-              >
-                <div className="flex aspect-[4/5] items-center justify-center p-6 text-[#351c45]/25 sm:aspect-square">{icon}</div>
-                <div className="p-4 text-center">
-                  <p className="font-display text-lg text-[#17151a]">{label}</p>
-                  <p className="mt-1 flex items-center justify-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-[#17151a]/35">
-                    <IconLock className="h-3 w-3" /> Coming soon · Future idea
+            <div className="space-y-3">
+              {GIFT_EXAMPLES.map((ex) => (
+                <div key={ex.who} className="glass-plum rounded-2xl border border-white/10 p-4">
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-[#faf4ea]/45">{ex.who}</p>
+                  <p className="mt-1.5 text-[14px] italic leading-relaxed text-[#faf4ea]/85">"{ex.prompt}"</p>
+                  <p className="mt-2 flex items-center gap-1.5 text-[11.5px] text-[#faf4ea]/55">
+                    <IconArrowRight className="h-3 w-3" style={{ color: GOLD }} /> {ex.result}
                   </p>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </section>

@@ -1,4 +1,5 @@
 import { materialsFor } from "../../data/catalog";
+import { isApparel } from "../../data/products";
 import { useDesign } from "../../lib/store";
 import { track } from "../../lib/analytics";
 import { IconSparkle } from "../icons";
@@ -15,7 +16,7 @@ function Bars({ value }: { value: number }) {
 
 export default function MaterialPanel({ onOpenMuse }: { onOpenMuse: () => void }) {
   const design = useDesign();
-  if (!design.garment) return null;
+  if (!design.garment || !isApparel(design.garment)) return null;
   const materials = materialsFor(design.garment);
 
   return (

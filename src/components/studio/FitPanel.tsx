@@ -1,10 +1,11 @@
 import { fitsFor } from "../../data/catalog";
+import { isApparel } from "../../data/products";
 import { useDesign } from "../../lib/store";
 import { track } from "../../lib/analytics";
 
 export default function FitPanel() {
   const design = useDesign();
-  if (!design.garment) return null;
+  if (!design.garment || !isApparel(design.garment)) return null;
   const fits = fitsFor(design.garment);
 
   return (

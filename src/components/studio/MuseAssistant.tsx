@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useDesign } from "../../lib/store";
 import { museMaterialRecommendation, MUSE_PROMPT_CHIPS } from "../../lib/muse";
 import { materialById } from "../../data/catalog";
+import { isApparel } from "../../data/products";
 import { track } from "../../lib/analytics";
 import { IconClose, IconSparkle, IconCheck } from "../icons";
 import MicroPrompt from "../MicroPrompt";
@@ -19,7 +20,8 @@ export default function MuseAssistant({ open, onClose }: { open: boolean; onClos
   }, [open]);
 
   if (!open) return null;
-  if (!design.garment) return null;
+  if (!design.garment || !isApparel(design.garment)) return null;
+  const garment = design.garment;
 
   const ask = (text: string) => {
     setGoal(text);
@@ -27,7 +29,7 @@ export default function MuseAssistant({ open, onClose }: { open: boolean; onClos
     setResult(null);
     setApplied(false);
     window.setTimeout(() => {
-      const rec = museMaterialRecommendation(text, design.garment!, design.fit);
+      const rec = museMaterialRecommendation(text, garment, design.fit);
       setResult(rec);
       setThinking(false);
     }, 700);

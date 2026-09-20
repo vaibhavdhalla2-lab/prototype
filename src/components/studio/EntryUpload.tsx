@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { GARMENTS, colorById, materialById, fitById } from "../../data/catalog";
 import type { GarmentType } from "../../data/catalog";
+import { isApparel } from "../../data/products";
 import { useDesign } from "../../lib/store";
 import { track } from "../../lib/analytics";
 import PrototypeNotice from "../PrototypeNotice";
@@ -16,7 +17,7 @@ interface Analysis {
 export default function EntryUpload({ onEnterStudio }: { onEnterStudio: (tab: string) => void }) {
   const design = useDesign();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [garment, setGarment] = useState<GarmentType>(design.garment ?? "tshirt");
+  const [garment, setGarment] = useState<GarmentType>(design.garment && isApparel(design.garment) ? design.garment : "tshirt");
   const [staged, setStaged] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
 

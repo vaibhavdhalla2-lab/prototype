@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useDesign, type DrawStroke } from "../../lib/store";
 import { MOTIFS, motifPathD, motifIconD } from "../../lib/motifs";
-import { PRINT_AREAS } from "../Garment";
+import { printAreaFor } from "../products/ProductStage";
 import { track } from "../../lib/analytics";
 import { threadTone } from "../../lib/color";
 import { colorById } from "../../data/catalog";
@@ -15,7 +15,7 @@ export default function GraphicsPanel() {
 
   if (!design.garment) return null;
   const side = design.view === "back" ? "back" : "front";
-  const area = PRINT_AREAS[design.garment][side];
+  const area = printAreaFor(design.garment, side);
   const cx = area.x + area.width / 2;
   const cy = area.y + area.height / 2;
 

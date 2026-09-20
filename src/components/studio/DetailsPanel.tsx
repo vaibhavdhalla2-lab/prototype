@@ -1,4 +1,5 @@
 import { useDesign } from "../../lib/store";
+import { isApparel } from "../../data/products";
 import { track } from "../../lib/analytics";
 
 const TRIM_LABEL: Record<string, { on: string; off: string }> = {
@@ -21,7 +22,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
 
 export default function DetailsPanel() {
   const design = useDesign();
-  if (!design.garment) return null;
+  if (!design.garment || !isApparel(design.garment)) return null;
   const labels = TRIM_LABEL[design.garment];
 
   return (

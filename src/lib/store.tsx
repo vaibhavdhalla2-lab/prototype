@@ -2,13 +2,23 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 import {
   type ColorId,
   type FitId,
-  type GarmentType,
   type MaterialId,
   type ViewMode,
   materialsFor,
   fitsFor,
 } from "../data/catalog";
+import { isApparel, defaultVariantsFor, type ProductId } from "../data/products";
 import type { MarketDesign } from "../data/marketplace";
+
+/** Structured "describe a person" context captured by the Gift flow, carried into the studio so it can be shown/edited alongside the design. */
+export interface GiftContext {
+  recipientName: string;
+  relationship: string;
+  occasion: string;
+  interests: string;
+  personality: string;
+  message: string;
+}
 
 export interface ArtworkState {
   src: string;
@@ -41,11 +51,14 @@ export type Finish = "print" | "embroidery";
 
 export interface DesignState {
   name: string;
-  garment: GarmentType | null;
+  /** Any of the 6 FORMÉ products — apparel ids (tshirt/hoodie/cap) additionally use color/material/fit below; everything else uses `variants`. */
+  garment: ProductId | null;
   view: ViewMode;
   color: ColorId;
   material: MaterialId;
   fit: FitId;
+  /** Generic per-product variant choices (mug size/finish, poster orientation/frame, etc.) — keyed by VariantGroup.key from data/products.ts. */
+  variants: Record<string, string>;
   artwork: ArtworkState | null;
   strokesFront: DrawStroke[];
   strokesBack: DrawStroke[];
@@ -57,6 +70,8 @@ export interface DesignState {
   accentTrim: boolean;
   finish: Finish;
   pocketVisible: boolean;
+  /** Set when this design started from the Gift / Describe-a-Person flow. */
+  giftContext: GiftContext | null;
 }
 
 const DEFAULT_STATE: DesignState = {
@@ -66,6 +81,7 @@ const DEFAULT_STATE: DesignState = {
   color: "offwhite",
   material: "lightweight-cotton",
   fit: "regular",
+  variants: {},
   artwork: null,
   strokesFront: [],
   strokesBack: [],
@@ -77,14 +93,17 @@ const DEFAULT_STATE: DesignState = {
   accentTrim: false,
   finish: "print",
   pocketVisible: true,
+  giftContext: null,
 };
 
 interface DesignStore extends DesignState {
-  setGarment: (g: GarmentType) => void;
+  setGarment: (g: ProductId) => void;
   setView: (v: ViewMode) => void;
   setColor: (c: ColorId) => void;
   setMaterial: (m: MaterialId) => void;
   setFit: (f: FitId) => void;
+  setVariant: (key: string, value: string) => void;
+  setGiftContext: (g: GiftContext | null) => void;
   setArtwork: (a: ArtworkState | null) => void;
   setText: (t: TextState | null) => void;
   addStroke: (side: GarmentSide, stroke: DrawStroke) => void;
@@ -111,13 +130,17 @@ export function DesignProvider({ children }: { children: ReactNode }) {
   const [redoFront, setRedoFront] = useState<DrawStroke[]>([]);
   const [redoBack, setRedoBack] = useState<DrawStroke[]>([]);
 
-  const setGarment = useCallback((g: GarmentType) => {
+  const setGarment = useCallback((g: ProductId) => {
     setState((s) => {
+      if (!isApparel(g)) {
+        return { ...s, garment: g, variants: defaultVariantsFor(g) };
+      }
       const mats = materialsFor(g);
       const fits = fitsFor(g);
       return {
         ...s,
         garment: g,
+        variants: {},
         material: mats.some((m) => m.id === s.material) ? s.material : mats[0].id,
         fit: fits.some((f) => f.id === s.fit) ? s.fit : fits[0].id,
       };
@@ -128,6 +151,8 @@ export function DesignProvider({ children }: { children: ReactNode }) {
   const setColor = useCallback((c: ColorId) => setState((s) => ({ ...s, color: c })), []);
   const setMaterial = useCallback((m: MaterialId) => setState((s) => ({ ...s, material: m })), []);
   const setFit = useCallback((f: FitId) => setState((s) => ({ ...s, fit: f })), []);
+  const setVariant = useCallback((key: string, value: string) => setState((s) => ({ ...s, variants: { ...s.variants, [key]: value } })), []);
+  const setGiftContext = useCallback((g: GiftContext | null) => setState((s) => ({ ...s, giftContext: g })), []);
   const setArtwork = useCallback((a: ArtworkState | null) => setState((s) => ({ ...s, artwork: a })), []);
   const setText = useCallback((t: TextState | null) => setState((s) => ({ ...s, text: t })), []);
   const setName = useCallback((n: string) => setState((s) => ({ ...s, name: n })), []);
@@ -220,6 +245,8 @@ export function DesignProvider({ children }: { children: ReactNode }) {
       setColor,
       setMaterial,
       setFit,
+      setVariant,
+      setGiftContext,
       setArtwork,
       setText,
       addStroke,
@@ -238,7 +265,33 @@ export function DesignProvider({ children }: { children: ReactNode }) {
       loadFromMarketDesign,
       applyPartial,
     }),
-    [state, setGarment, setView, setColor, setMaterial, setFit, setArtwork, setText, addStroke, undoStroke, redoStroke, clearStrokes, canUndo, canRedo, setRefined, setName, setSourceMode, setAccentTrim, setFinish, setPocketVisible, startFresh, loadFromMarketDesign, applyPartial],
+    [
+      state,
+      setGarment,
+      setView,
+      setColor,
+      setMaterial,
+      setFit,
+      setVariant,
+      setGiftContext,
+      setArtwork,
+      setText,
+      addStroke,
+      undoStroke,
+      redoStroke,
+      clearStrokes,
+      canUndo,
+      canRedo,
+      setRefined,
+      setName,
+      setSourceMode,
+      setAccentTrim,
+      setFinish,
+      setPocketVisible,
+      startFresh,
+      loadFromMarketDesign,
+      applyPartial,
+    ],
   );
 
   return <DesignContext.Provider value={value}>{children}</DesignContext.Provider>;

@@ -1,8 +1,9 @@
 import { useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDesign } from "../../lib/store";
-import { colorById, materialById, fitById, garmentById, estimatePrice, DELIVERY_ESTIMATE } from "../../data/catalog";
-import { GarmentStage } from "../Garment";
+import { colorById, materialById, fitById, estimatePrice, DELIVERY_ESTIMATE } from "../../data/catalog";
+import { isApparel, productById, variantGroupsFor, variantPriceImpact } from "../../data/products";
+import ProductStage from "../products/ProductStage";
 import { track } from "../../lib/analytics";
 import { IconCheck, IconSparkle, IconArrowRight } from "../icons";
 import MicroPrompt from "../MicroPrompt";
@@ -26,21 +27,31 @@ export default function SummaryPanel({ onJump, previewFrontOverlay, previewBackO
   const [published, setPublished] = useState(false);
 
   if (!design.garment) return null;
-  const garment = garmentById(design.garment);
+  const productId = design.garment;
+  const apparel = isApparel(productId);
+  const product = productById(productId);
   const color = colorById(design.color);
-  const material = materialById(design.material);
-  const fit = fitById(design.fit);
   const hasGraphic = !!design.artwork || design.strokesFront.length > 0 || design.strokesBack.length > 0;
-  const price = estimatePrice({ garment: design.garment, material: design.material, hasGraphic, hasText: !!design.text });
+
+  const price = apparel
+    ? estimatePrice({ garment: productId, material: design.material, hasGraphic, hasText: !!design.text })
+    : product.basePrice + variantPriceImpact(productId, design.variants) + (hasGraphic ? 250 : 0) + (design.text ? 100 : 0);
 
   const rows: { label: string; value: string; category: string | null; sub?: string }[] = [
-    { label: "Product", value: garment.label, category: null },
+    { label: "Product", value: product.label, category: null },
     { label: "Colour", value: color.label, category: "color" },
-    { label: "Material", value: material.label, category: "material" },
-    { label: "Fit", value: fit.label, category: "fit" },
-    { label: "Design", value: hasGraphic ? "Custom graphic" : design.text ? "Text only" : "Plain", category: "design", sub: "draw" },
-    { label: "Details", value: design.accentTrim ? "Contrast trim" : "Tonal trim", category: "details" },
   ];
+  if (apparel) {
+    rows.push({ label: "Material", value: materialById(design.material).label, category: "material" });
+    rows.push({ label: "Fit", value: fitById(design.fit).label, category: "fit" });
+  } else {
+    for (const group of variantGroupsFor(productId)) {
+      const chosen = group.options.find((o) => o.id === design.variants[group.key]) ?? group.options[0];
+      rows.push({ label: group.label, value: chosen.label, category: "fit" });
+    }
+  }
+  rows.push({ label: "Design", value: hasGraphic ? "Custom graphic" : design.text ? "Text only" : "Plain", category: "design", sub: "draw" });
+  if (apparel) rows.push({ label: "Details", value: design.accentTrim ? "Contrast trim" : "Tonal trim", category: "details" });
 
   const goToFinal = () => {
     setStage("final");
@@ -103,11 +114,12 @@ export default function SummaryPanel({ onJump, previewFrontOverlay, previewBackO
 
       <p className="text-[11px] uppercase tracking-[0.25em] text-ink-faint">Your creation</p>
       <div className="mt-3 aspect-[5/3] w-full overflow-hidden rounded-2xl border border-line-soft bg-paper p-4">
-        <GarmentStage
-          garment={design.garment}
+        <ProductStage
+          product={productId}
           colorHex={color.hex}
           view="front"
-          fit={design.fit}
+          variants={design.variants}
+          fit={apparel ? design.fit : undefined}
           accentTrim={design.accentTrim}
           pocketVisible={design.pocketVisible}
           frontOverlay={previewFrontOverlay}

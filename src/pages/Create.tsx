@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDesign } from "../lib/store";
 import type { DrawTool } from "../lib/store";
-import { colorById, garmentById, materialById } from "../data/catalog";
-import { GarmentStage, PRINT_AREAS } from "../components/Garment";
+import { colorById, materialById, type GarmentType } from "../data/catalog";
+import { isApparel, productById } from "../data/products";
+import ProductStage, { printAreaFor, hasSecondaryView, secondaryViewLabel } from "../components/products/ProductStage";
 import { track } from "../lib/analytics";
 import { checkManufacturability, contextualTip } from "../lib/muse";
 
@@ -12,9 +13,11 @@ import PrototypeNotice from "../components/PrototypeNotice";
 import CanvasPicker from "../components/studio/CanvasPicker";
 import EntryUpload from "../components/studio/EntryUpload";
 import EntryPrompt from "../components/studio/EntryPrompt";
+import GiftFlow from "../components/studio/GiftFlow";
 import ColorPanel from "../components/studio/ColorPanel";
 import MaterialPanel from "../components/studio/MaterialPanel";
 import FitPanel from "../components/studio/FitPanel";
+import OptionsPanel from "../components/studio/OptionsPanel";
 import TextPanel from "../components/studio/TextPanel";
 import ImagePanel from "../components/studio/ImagePanel";
 import DrawPanel from "../components/studio/DrawPanel";
@@ -29,18 +32,28 @@ import ArtworkLayer from "../components/studio/ArtworkLayer";
 import RefineDrawing from "../components/studio/RefineDrawing";
 import { IconSparkle, IconArrowRight, IconClose, IconPencil, IconType, IconUpload, IconLayers } from "../components/icons";
 
-type Stage = "pick" | "upload" | "prompt" | "studio";
-type Category = "design" | "material" | "color" | "fit" | "details";
+type Stage = "pick" | "upload" | "prompt" | "gift" | "studio";
+type Category = "design" | "material" | "color" | "fit" | "options" | "details";
 type DesignSub = "image" | "muse" | "draw" | "text" | "graphics";
 type ViewTab = "front" | "back" | "detail" | "3d";
 
-const CATEGORY_TABS: { id: Category; label: string }[] = [
-  { id: "design", label: "Design" },
-  { id: "material", label: "Material" },
-  { id: "color", label: "Colour" },
-  { id: "fit", label: "Fit" },
-  { id: "details", label: "Details" },
-];
+/** Apparel keeps its full 5-tab breakdown; every other product collapses material+fit into one generic "Options" tab (its own variant schema) and drops apparel-only "Details" (stitching/embroidery). */
+function categoryTabsFor(apparel: boolean): { id: Category; label: string }[] {
+  if (apparel) {
+    return [
+      { id: "design", label: "Design" },
+      { id: "material", label: "Material" },
+      { id: "color", label: "Colour" },
+      { id: "fit", label: "Fit" },
+      { id: "details", label: "Details" },
+    ];
+  }
+  return [
+    { id: "design", label: "Design" },
+    { id: "color", label: "Colour" },
+    { id: "options", label: "Options" },
+  ];
+}
 
 // Order matters: Image, Muse, Draw are the three primary creation methods —
 // Text and Graphics remain available but secondary (reachable via "More").
@@ -150,6 +163,11 @@ export default function Create() {
       setStage("prompt");
       return;
     }
+    if (mode === "gift") {
+      design.startFresh();
+      setStage("gift");
+      return;
+    }
     setStage(design.garment ? "studio" : "pick");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -197,12 +215,21 @@ export default function Create() {
   if (stage === "pick") {
     return (
       <CanvasPicker
-        onSelect={(g) => {
+        onSelectProduct={(g) => {
           design.setGarment(g);
           track("garment_selected", { garment: g });
           setStage("studio");
           setCategory("color");
         }}
+        onSelectMethod={(method, g) => {
+          design.setGarment(g);
+          track("garment_selected", { garment: g });
+          setStage("studio");
+          setCategory("design");
+          setDesignSub(method);
+          setDesignChooserOpen(false);
+        }}
+        onStartGift={() => setStage("gift")}
       />
     );
   }
@@ -232,21 +259,47 @@ export default function Create() {
     );
   }
 
-  if (!design.garment) {
+  if (stage === "gift") {
     return (
-      <CanvasPicker
-        onSelect={(g) => {
-          design.setGarment(g);
+      <GiftFlow
+        onBack={() => setStage("pick")}
+        onEnterStudio={(productId) => {
+          design.setGarment(productId);
+          track("garment_selected", { garment: productId, source: "gift" });
           setStage("studio");
-          setCategory("color");
+          setCategory("design");
+          setDesignSub("image");
+          setDesignChooserOpen(false);
         }}
       />
     );
   }
 
+  if (!design.garment) {
+    return (
+      <CanvasPicker
+        onSelectProduct={(g) => {
+          design.setGarment(g);
+          setStage("studio");
+          setCategory("color");
+        }}
+        onSelectMethod={(method, g) => {
+          design.setGarment(g);
+          setStage("studio");
+          setCategory("design");
+          setDesignSub(method);
+          setDesignChooserOpen(false);
+        }}
+        onStartGift={() => setStage("gift")}
+      />
+    );
+  }
+
+  const apparel = isApparel(design.garment);
+  const apparelGarment = apparel ? (design.garment as GarmentType) : null;
   const colorHex = colorById(design.color).hex;
-  const printArea = PRINT_AREAS[design.garment].front;
-  const backPrintArea = PRINT_AREAS[design.garment].back;
+  const printArea = printAreaFor(design.garment, "front");
+  const backPrintArea = printAreaFor(design.garment, "back");
   const textColor = ["offwhite", "stone"].includes(design.color) ? "#1a1712" : "#f6f3ec";
 
   const frontContent = (
@@ -296,8 +349,8 @@ export default function Create() {
   const backOverlay =
     design.finish === "embroidery" ? <g filter={`url(#embroidery-${design.garment}-back)`}>{backContent}</g> : backContent;
 
-  const issue = checkManufacturability({ garment: design.garment, material: design.material, fit: design.fit, finish: design.finish });
-  const tip = !issue ? contextualTip({ garment: design.garment, material: design.material, fit: design.fit, finish: design.finish }) : null;
+  const issue = apparelGarment ? checkManufacturability({ garment: apparelGarment, material: design.material, fit: design.fit, finish: design.finish }) : null;
+  const tip = apparelGarment && !issue ? contextualTip({ garment: apparelGarment, material: design.material, fit: design.fit, finish: design.finish }) : null;
 
   const quickSave = () => {
     setSavedFlash(true);
@@ -306,6 +359,7 @@ export default function Create() {
   };
 
   const startRefine = () => {
+    if (!apparel) return;
     const side = design.view === "back" ? "back" : "front";
     const strokes = side === "back" ? design.strokesBack : design.strokesFront;
     const alreadyRefined = side === "back" ? design.refinedBack : design.refinedFront;
@@ -323,6 +377,7 @@ export default function Create() {
     if (category === "material") return <MaterialPanel onOpenMuse={() => setMuseOpen(true)} />;
     if (category === "color") return <ColorPanel />;
     if (category === "fit") return <FitPanel />;
+    if (category === "options") return <OptionsPanel />;
     return <DetailsPanel />;
   };
 
@@ -344,12 +399,21 @@ export default function Create() {
     </div>
   ) : null;
 
-  const viewTabs: { id: ViewTab; label: string }[] = [
-    { id: "front", label: "Front" },
-    { id: "back", label: "Back" },
-    { id: "detail", label: "Detail" },
-    { id: "3d", label: "3D View" },
-  ];
+  const secondaryLabel = secondaryViewLabel(design.garment);
+  const showSecondary = hasSecondaryView(design.garment);
+  const viewTabs: { id: ViewTab; label: string }[] = apparel
+    ? [
+        { id: "front", label: "Front" },
+        { id: "back", label: "Back" },
+        { id: "detail", label: "Detail" },
+        { id: "3d", label: "3D View" },
+      ]
+    : showSecondary
+      ? [
+          { id: "front", label: "Front" },
+          { id: "back", label: secondaryLabel },
+        ]
+      : [{ id: "front", label: "Front" }];
 
   const GarmentCard = ({ size }: { size: "sm" | "lg" }) => (
     <div
@@ -360,11 +424,12 @@ export default function Create() {
         className="h-full w-full p-8 transition-transform duration-500 ease-out"
         style={{ transform: zoomed ? "scale(1.85)" : "scale(1)", transformOrigin: "56% 42%" }}
       >
-        <GarmentStage
-          garment={design.garment!}
+        <ProductStage
+          product={design.garment!}
           colorHex={colorHex}
           view={design.view}
-          fit={design.fit}
+          variants={design.variants}
+          fit={apparel ? design.fit : undefined}
           accentTrim={design.accentTrim}
           pocketVisible={design.pocketVisible}
           frontOverlay={frontOverlay}
@@ -387,21 +452,26 @@ export default function Create() {
     </div>
   );
 
-  const ViewTabRow = () => (
-    <div className="mx-auto flex w-fit items-center gap-1.5 rounded-full border border-line bg-paper p-1">
-      {viewTabs.map((v) => (
-        <button
-          key={v.id}
-          onClick={() => selectView(v.id)}
-          className={`rounded-full px-4 py-1.5 text-[11px] font-medium uppercase tracking-[0.12em] transition-colors ${
-            activeViewTab === v.id ? "bg-[#351c45] text-[#d4af70]" : "text-ink-soft hover:text-ink"
-          }`}
-        >
-          {v.label}
-        </button>
-      ))}
-    </div>
-  );
+  const caption = apparel
+    ? `${productById(design.garment).label} · ${colorById(design.color).label} · ${materialById(design.material).label}`
+    : `${productById(design.garment).label} · ${colorById(design.color).label}`;
+
+  const ViewTabRow = () =>
+    viewTabs.length < 2 ? null : (
+      <div className="mx-auto flex w-fit items-center gap-1.5 rounded-full border border-line bg-paper p-1">
+        {viewTabs.map((v) => (
+          <button
+            key={v.id}
+            onClick={() => selectView(v.id)}
+            className={`rounded-full px-4 py-1.5 text-[11px] font-medium uppercase tracking-[0.12em] transition-colors ${
+              activeViewTab === v.id ? "bg-[#351c45] text-[#d4af70]" : "text-ink-soft hover:text-ink"
+            }`}
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
+    );
 
   return (
     <div className="relative lg:mx-auto lg:max-w-[1500px] lg:px-5 lg:pb-16 lg:pt-10 xl:px-8">
@@ -427,7 +497,7 @@ export default function Create() {
           {/* LEFT: tools */}
           <div>
             <div className="flex flex-col gap-1.5">
-              {CATEGORY_TABS.map((t) => (
+              {categoryTabsFor(apparel).map((t) => (
                 <button
                   key={t.id}
                   onClick={() => setCategory(t.id)}
@@ -467,7 +537,7 @@ export default function Create() {
               <GarmentCard size="lg" />
             </div>
             <p className="mt-5 text-center text-sm text-ink-soft">
-              {garmentById(design.garment).label} · {colorById(design.color).label} · {materialById(design.material).label}
+              {caption}
             </p>
             {IssueOrTip && <div className="mx-auto mt-5 max-w-md">{IssueOrTip}</div>}
           </div>
@@ -516,7 +586,7 @@ export default function Create() {
             <GarmentCard size="sm" />
           </div>
           <p className="mt-4 text-center text-[13px] text-ink-soft">
-            {garmentById(design.garment).label} · {colorById(design.color).label} · {materialById(design.material).label}
+            {caption}
           </p>
 
           {IssueOrTip && <div className="mt-4">{IssueOrTip}</div>}
@@ -535,7 +605,7 @@ export default function Create() {
 
         {/* bottom toolbar */}
         <div className="fixed inset-x-0 bottom-0 z-40 flex items-stretch justify-around border-t border-line-soft bg-paper/95 px-1 pt-1.5 pb-[max(6px,env(safe-area-inset-bottom))] backdrop-blur-md">
-          {(["design", "material", "color", "fit"] as Category[]).map((c) => (
+          {(apparel ? (["design", "material", "color", "fit"] as Category[]) : (["design", "color", "options"] as Category[])).map((c) => (
             <button
               key={c}
               onClick={() => openCategory(c)}
@@ -543,7 +613,7 @@ export default function Create() {
                 sheetOpen && category === c ? "bg-ivory-dim text-ink" : "text-ink-soft"
               }`}
             >
-              {CATEGORY_TABS.find((t) => t.id === c)!.label}
+              {categoryTabsFor(apparel).find((t) => t.id === c)!.label}
             </button>
           ))}
           <button
@@ -566,7 +636,7 @@ export default function Create() {
               ? designChooserOpen
                 ? "Design"
                 : `Design · ${DESIGN_SUB_TABS.find((t) => t.id === designSub)!.label}`
-              : CATEGORY_TABS.find((t) => t.id === category)!.label
+              : categoryTabsFor(apparel).find((t) => t.id === category)!.label
           }
           onClose={() => setSheetOpen(false)}
         >
@@ -614,11 +684,12 @@ export default function Create() {
             </div>
             <div className="flex flex-1 items-center justify-center overflow-hidden p-4">
               <div className="relative aspect-square w-full max-w-[480px] rounded-[28px] border border-line-soft bg-paper p-6 shadow-[0_20px_60px_-30px_rgba(26,23,18,0.35)]">
-                <GarmentStage
-                  garment={design.garment!}
+                <ProductStage
+                  product={design.garment!}
                   colorHex={colorHex}
                   view={design.view === "back" ? "back" : "front"}
-                  fit={design.fit}
+                  variants={design.variants}
+                  fit={apparel ? design.fit : undefined}
                   accentTrim={design.accentTrim}
                   pocketVisible={design.pocketVisible}
                   frontOverlay={frontOverlay}
@@ -633,9 +704,9 @@ export default function Create() {
           </div>
         )}
 
-        {refiningOpen && design.garment && (
+        {refiningOpen && apparelGarment && (
           <RefineDrawing
-            garment={design.garment}
+            garment={apparelGarment}
             colorHex={colorHex}
             side={design.view === "back" ? "back" : "front"}
             fit={design.fit}
@@ -658,7 +729,7 @@ export default function Create() {
             {[
               { id: "design" as Category, sub: "text" as DesignSub, label: "Text", icon: IconType },
               { id: "design" as Category, sub: "graphics" as DesignSub, label: "Graphics", icon: IconLayers },
-              { id: "details" as Category, sub: undefined, label: "Details", icon: IconSparkle },
+              ...(apparel ? [{ id: "details" as Category, sub: undefined, label: "Details", icon: IconSparkle }] : []),
             ].map((item) => (
               <button
                 key={item.label}
