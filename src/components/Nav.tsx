@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { IconMenu, IconClose, IconStore, IconUser, IconPlus } from "./icons";
-import { LogoMark } from "./Logo";
 
 const LINK_CLS = ({ isActive }: { isActive: boolean }) =>
   `relative py-1 text-[13px] tracking-[0.14em] uppercase transition-colors ${
@@ -34,12 +33,7 @@ export default function Nav() {
         }`}
       >
         <div className="mx-auto flex max-w-[1400px] items-center justify-between px-5 py-4 sm:px-8">
-          <NavLink
-            to="/"
-            className="flex items-center gap-2.5 font-display text-2xl tracking-tight text-[#17151a]"
-            onClick={() => setMobileOpen(false)}
-          >
-            <LogoMark className="h-8 w-8 sm:h-9 sm:w-9" variant="dark" />
+          <NavLink to="/" className="font-display text-2xl tracking-tight text-[#17151a]" onClick={() => setMobileOpen(false)}>
             FORM<span className="text-[#c8a96b]">É</span>
           </NavLink>
 
