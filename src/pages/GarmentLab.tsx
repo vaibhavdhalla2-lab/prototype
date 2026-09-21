@@ -37,7 +37,7 @@ export default function GarmentLab() {
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => setDesignId(null)}
-            className={`rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-[0.08em] ${!designId ? "border-[#351c45] bg-[#351c45] text-[#d4af70]" : "border-line text-ink-soft"}`}
+            className={`rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-[0.08em] ${!designId ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-line text-ink-soft"}`}
           >
             No print
           </button>
@@ -45,7 +45,7 @@ export default function GarmentLab() {
             <button
               key={d.id}
               onClick={() => setDesignId(d.id)}
-              className={`rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-[0.08em] ${designId === d.id ? "border-[#351c45] bg-[#351c45] text-[#d4af70]" : "border-line text-ink-soft"}`}
+              className={`rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-[0.08em] ${designId === d.id ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-line text-ink-soft"}`}
             >
               {d.name}
             </button>

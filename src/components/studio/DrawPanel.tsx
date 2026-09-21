@@ -106,7 +106,7 @@ export default function DrawPanel({ tool, setTool, color, setColor, onRefine }: 
         <button
           onClick={onRefine}
           disabled={strokes.length === 0 || isRefined}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#351c45] py-2.5 text-[12px] font-medium uppercase tracking-[0.1em] text-[#d4af70] transition-opacity disabled:opacity-30"
+          className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#c8a96b] py-2.5 text-[12px] font-medium uppercase tracking-[0.1em] text-[#241f1a] transition-opacity disabled:opacity-30"
         >
           {isRefined ? (
             <>

@@ -3,8 +3,8 @@ import { useLocation } from "react-router-dom";
 import { useDesign } from "../lib/store";
 import type { DrawTool } from "../lib/store";
 import { colorById, materialById, type GarmentType } from "../data/catalog";
-import { isApparel, productById } from "../data/products";
-import ProductStage, { printAreaFor, hasSecondaryView, secondaryViewLabel } from "../components/products/ProductStage";
+import { isApparel, productById, type ProductId } from "../data/products";
+import ProductStage, { printAreaFor, hasSecondaryView, secondaryViewLabel, primaryViewLabel } from "../components/products/ProductStage";
 import { track } from "../lib/analytics";
 import { checkManufacturability, contextualTip } from "../lib/muse";
 
@@ -14,6 +14,8 @@ import CanvasPicker from "../components/studio/CanvasPicker";
 import EntryUpload from "../components/studio/EntryUpload";
 import EntryPrompt from "../components/studio/EntryPrompt";
 import GiftFlow from "../components/studio/GiftFlow";
+import ProductSwitcher from "../components/studio/ProductSwitcher";
+import DeviceSelector from "../components/studio/DeviceSelector";
 import ColorPanel from "../components/studio/ColorPanel";
 import MaterialPanel from "../components/studio/MaterialPanel";
 import FitPanel from "../components/studio/FitPanel";
@@ -24,21 +26,26 @@ import DrawPanel from "../components/studio/DrawPanel";
 import DetailsPanel from "../components/studio/DetailsPanel";
 import GraphicsPanel from "../components/studio/GraphicsPanel";
 import SummaryPanel from "../components/studio/SummaryPanel";
-import MuseAssistant from "../components/studio/MuseAssistant";
 import MusePanel from "../components/studio/MusePanel";
+import { MagnifierLens, MagnifiedView, type LensPos } from "../components/studio/Magnifier";
 import BottomSheet from "../components/studio/BottomSheet";
 import DrawLayer from "../components/studio/DrawLayer";
 import ArtworkLayer from "../components/studio/ArtworkLayer";
 import RefineDrawing from "../components/studio/RefineDrawing";
-import { IconSparkle, IconArrowRight, IconClose, IconPencil, IconType, IconUpload, IconLayers } from "../components/icons";
+import { IconSparkle, IconArrowRight, IconClose, IconPencil, IconType, IconUpload, IconLayers, IconEye } from "../components/icons";
 
 type Stage = "pick" | "upload" | "prompt" | "gift" | "studio";
-type Category = "design" | "material" | "color" | "fit" | "options" | "details";
-type DesignSub = "image" | "muse" | "draw" | "text" | "graphics";
-type ViewTab = "front" | "back" | "detail" | "3d";
+type ViewTab = "front" | "back" | "detail" | "3d" | "wrap";
 
-/** Apparel keeps its full 5-tab breakdown; every other product collapses material+fit into one generic "Options" tab (its own variant schema) and drops apparel-only "Details" (stitching/embroidery). */
-function categoryTabsFor(apparel: boolean): { id: Category; label: string }[] {
+interface TabDef {
+  id: string;
+  label: string;
+  /** For dynamic, data-driven variant-group tabs (mug Finish, poster Frame, etc.) — omitted for the fixed apparel/design/colour/details tabs. */
+  groupKeys?: string[];
+}
+
+/** Object-specific left-panel information architecture — every product keeps its own terminology and its own set of sections, never a generic one-size-fits-all menu. */
+function leftPanelTabsFor(product: ProductId, apparel: boolean): TabDef[] {
   if (apparel) {
     return [
       { id: "design", label: "Design" },
@@ -48,54 +55,76 @@ function categoryTabsFor(apparel: boolean): { id: Category; label: string }[] {
       { id: "details", label: "Details" },
     ];
   }
+  if (product === "mug") {
+    return [
+      { id: "design", label: "Design" },
+      { id: "material", label: "Material", groupKeys: ["material"] },
+      { id: "finish", label: "Finish", groupKeys: ["finish"] },
+      { id: "size", label: "Size", groupKeys: ["size"] },
+      { id: "color", label: "Colour" },
+      { id: "details", label: "Details" },
+    ];
+  }
+  if (product === "poster") {
+    return [
+      { id: "design", label: "Design" },
+      { id: "size-orientation", label: "Size & Orientation", groupKeys: ["orientation", "size"] },
+      { id: "paper", label: "Paper", groupKeys: ["paper"] },
+      { id: "frame", label: "Frame", groupKeys: ["frame"] },
+      { id: "details", label: "Details" },
+    ];
+  }
+  if (product === "bottle") {
+    return [
+      { id: "design", label: "Design" },
+      { id: "material", label: "Material", groupKeys: ["material"] },
+      { id: "capacity", label: "Capacity", groupKeys: ["capacity"] },
+      { id: "lid", label: "Cap / Lid", groupKeys: ["lid"] },
+      { id: "color", label: "Colour" },
+      { id: "details", label: "Details" },
+    ];
+  }
+  if (product === "deskpad") {
+    return [
+      { id: "design", label: "Design" },
+      { id: "size", label: "Size", groupKeys: ["size"] },
+      { id: "surface", label: "Surface", groupKeys: ["surface"] },
+      { id: "edge", label: "Edge", groupKeys: ["edge"] },
+      { id: "base", label: "Base", groupKeys: ["base"] },
+      { id: "details", label: "Details" },
+    ];
+  }
+  if (product === "phonecase") {
+    return [
+      { id: "device", label: "Device", groupKeys: ["model"] },
+      { id: "design", label: "Design" },
+      { id: "casetype", label: "Case Type", groupKeys: ["type"] },
+      { id: "finish", label: "Finish", groupKeys: ["finish"] },
+      { id: "color", label: "Colour" },
+      { id: "details", label: "Details" },
+    ];
+  }
   return [
     { id: "design", label: "Design" },
     { id: "color", label: "Colour" },
-    { id: "options", label: "Options" },
+    { id: "details", label: "Details" },
   ];
 }
 
-// Order matters: Image, Muse, Draw are the three primary creation methods —
-// Text and Graphics remain available but secondary (reachable via "More").
+function initialCategoryFor(product: ProductId): string {
+  return product === "phonecase" ? "device" : "design";
+}
+
+type DesignSub = "muse" | "image" | "draw" | "text" | "graphics";
+
+// MUSE leads — it's a primary creation mode, not a secondary assistant.
 const DESIGN_SUB_TABS: { id: DesignSub; label: string; icon: typeof IconPencil }[] = [
-  { id: "image", label: "Image", icon: IconUpload },
   { id: "muse", label: "Muse", icon: IconSparkle },
+  { id: "image", label: "Upload", icon: IconUpload },
   { id: "draw", label: "Draw", icon: IconPencil },
   { id: "text", label: "Text", icon: IconType },
   { id: "graphics", label: "Graphics", icon: IconLayers },
 ];
-
-const PRIMARY_METHODS: { id: DesignSub; title: string; body: string; icon: typeof IconPencil }[] = [
-  { id: "image", title: "Upload An Image", body: "Show us your inspiration or artwork.", icon: IconUpload },
-  { id: "muse", title: "Tell MUSE", body: "Describe the aesthetic you're imagining.", icon: IconSparkle },
-  { id: "draw", title: "Draw It", body: "Start with a blank canvas.", icon: IconPencil },
-];
-
-function DesignChooser({ onSelect }: { onSelect: (sub: DesignSub) => void }) {
-  return (
-    <div className="animate-fade-in">
-      <p className="text-[11px] uppercase tracking-[0.25em] text-ink-faint">How do you want to create?</p>
-      <div className="mt-4 flex flex-col gap-2.5">
-        {PRIMARY_METHODS.map((m) => (
-          <button
-            key={m.id}
-            onClick={() => onSelect(m.id)}
-            className="group flex items-center gap-4 rounded-2xl border border-line bg-paper p-4 text-left transition-all hover:-translate-y-0.5 hover:border-ink/40 hover:shadow-[0_16px_36px_-24px_rgba(26,23,18,0.35)]"
-          >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-line-soft text-ink transition-colors group-hover:border-ink group-hover:bg-ink group-hover:text-ivory">
-              <m.icon className="h-5 w-5" />
-            </span>
-            <span className="flex-1">
-              <span className="block text-[15px] font-medium text-ink">{m.title}</span>
-              <span className="mt-0.5 block text-[12.5px] text-ink-soft">{m.body}</span>
-            </span>
-            <IconArrowRight className="h-4 w-4 shrink-0 text-ink-faint transition-transform group-hover:translate-x-1 group-hover:text-ink" />
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 function TextOverlay({
   content,
@@ -123,13 +152,15 @@ export default function Create() {
   const initialized = useRef(false);
 
   const [stage, setStage] = useState<Stage>("studio");
-  const [category, setCategory] = useState<Category>("design");
-  const [designSub, setDesignSub] = useState<DesignSub>("draw");
-  const [designChooserOpen, setDesignChooserOpen] = useState(true);
-  const [museOpen, setMuseOpen] = useState(false);
+  const [category, setCategory] = useState<string>("design");
+  const [designSub, setDesignSub] = useState<DesignSub>("muse");
   const [drawTool, setDrawTool] = useState<DrawTool>("marker");
   const [drawColor, setDrawColor] = useState("#1a1712");
   const [zoomed, setZoomed] = useState(false);
+  const [wrapView, setWrapView] = useState(false);
+  const [inspecting, setInspecting] = useState(false);
+  const [lens, setLens] = useState<LensPos>({ x: 0.5, y: 0.42 });
+  const [lensZoom, setLensZoom] = useState(2.5);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -183,34 +214,51 @@ export default function Create() {
     return () => document.documentElement.classList.remove("studio-active");
   }, [stage]);
 
+  // keeps the left panel + view state honest whenever the product changes — including a
+  // switch made from inside the studio via the product switcher, not just on first entry.
+  useEffect(() => {
+    if (!design.garment) return;
+    const validIds = leftPanelTabsFor(design.garment, isApparel(design.garment)).map((t) => t.id);
+    setCategory((c) => (validIds.includes(c) ? c : initialCategoryFor(design.garment!)));
+    setWrapView(false);
+    setZoomed(false);
+    setInspecting(false);
+    design.setView("front"); // every product starts on its primary view — a stale "back"/"3d" from a previous product should never carry over
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [design.garment]);
+
   const selectView = (tab: ViewTab) => {
+    if (tab === "wrap") {
+      setWrapView(true);
+      setZoomed(false);
+      return;
+    }
+    setWrapView(false);
     if (tab === "detail") {
       design.setView("front");
       setZoomed(true);
     } else {
-      design.setView(tab);
+      design.setView(tab as "front" | "back" | "3d");
       setZoomed(false);
     }
   };
-  const activeViewTab: ViewTab = zoomed ? "detail" : design.view;
+  const activeViewTab: ViewTab = wrapView ? "wrap" : zoomed ? "detail" : design.view;
 
   const jump = (cat: string, sub?: string) => {
-    setCategory(cat as Category);
-    if (sub) {
-      setDesignSub(sub as DesignSub);
-      setDesignChooserOpen(false);
-    }
+    setCategory(cat);
+    if (sub) setDesignSub(sub as DesignSub);
     setSheetOpen(true);
     setReviewOpen(false);
   };
+  const jumpToMuse = () => jump("design", "muse");
 
-  const openCategory = (cat: Category) => {
+  const openCategory = (cat: string) => {
     setCategory(cat);
     setSheetOpen(true);
     setMoreOpen(false);
   };
 
-  const drawExpanded = sheetOpen && category === "design" && designSub === "draw" && !designChooserOpen;
+  const drawExpanded = sheetOpen && category === "design" && designSub === "draw";
 
   if (stage === "pick") {
     return (
@@ -219,15 +267,7 @@ export default function Create() {
           design.setGarment(g);
           track("garment_selected", { garment: g });
           setStage("studio");
-          setCategory("color");
-        }}
-        onSelectMethod={(method, g) => {
-          design.setGarment(g);
-          track("garment_selected", { garment: g });
-          setStage("studio");
-          setCategory("design");
-          setDesignSub(method);
-          setDesignChooserOpen(false);
+          setCategory(initialCategoryFor(g));
         }}
         onStartGift={() => setStage("gift")}
       />
@@ -241,7 +281,6 @@ export default function Create() {
           setStage("studio");
           setCategory("design");
           setDesignSub("image");
-          setDesignChooserOpen(false);
         }}
       />
     );
@@ -253,7 +292,6 @@ export default function Create() {
         onEnterStudio={(tab) => {
           setStage("studio");
           setCategory(tab === "color" ? "color" : "design");
-          setDesignChooserOpen(false);
         }}
       />
     );
@@ -267,9 +305,8 @@ export default function Create() {
           design.setGarment(productId);
           track("garment_selected", { garment: productId, source: "gift" });
           setStage("studio");
-          setCategory("design");
-          setDesignSub("image");
-          setDesignChooserOpen(false);
+          setCategory(initialCategoryFor(productId));
+          setDesignSub("muse");
         }}
       />
     );
@@ -281,14 +318,7 @@ export default function Create() {
         onSelectProduct={(g) => {
           design.setGarment(g);
           setStage("studio");
-          setCategory("color");
-        }}
-        onSelectMethod={(method, g) => {
-          design.setGarment(g);
-          setStage("studio");
-          setCategory("design");
-          setDesignSub(method);
-          setDesignChooserOpen(false);
+          setCategory(initialCategoryFor(g));
         }}
         onStartGift={() => setStage("gift")}
       />
@@ -302,11 +332,13 @@ export default function Create() {
   const backPrintArea = printAreaFor(design.garment, "back");
   const textColor = ["offwhite", "stone"].includes(design.color) ? "#1a1712" : "#f6f3ec";
 
+  const drawInteractive = !wrapView; // the wraparound view is a read-only composite reference, not a third canvas
+
   const frontContent = (
     <>
       <DrawLayer
         strokes={design.strokesFront}
-        interactive={category === "design" && designSub === "draw" && design.view === "front"}
+        interactive={drawInteractive && category === "design" && designSub === "draw" && design.view === "front"}
         tool={drawTool}
         color={drawColor}
         eraseColor={colorHex}
@@ -321,7 +353,7 @@ export default function Create() {
         <ArtworkLayer
           artwork={design.artwork}
           printArea={printArea}
-          interactive={category === "design" && designSub === "image"}
+          interactive={drawInteractive && category === "design" && designSub === "image"}
           onChange={(p) => design.setArtwork({ ...design.artwork!, ...p })}
         />
       )}
@@ -331,7 +363,7 @@ export default function Create() {
   const backContent = (
     <DrawLayer
       strokes={design.strokesBack}
-      interactive={category === "design" && designSub === "draw" && design.view === "back"}
+      interactive={drawInteractive && category === "design" && designSub === "draw" && design.view === "back"}
       tool={drawTool}
       color={drawColor}
       eraseColor={colorHex}
@@ -366,6 +398,9 @@ export default function Create() {
     if (strokes.length > 0 && !alreadyRefined) setRefiningOpen(true);
   };
 
+  const tabs = leftPanelTabsFor(design.garment, apparel);
+  const activeTabDef = tabs.find((t) => t.id === category);
+
   const renderPanel = () => {
     if (category === "design") {
       if (designSub === "draw") return <DrawPanel tool={drawTool} setTool={setDrawTool} color={drawColor} setColor={setDrawColor} onRefine={startRefine} />;
@@ -374,11 +409,13 @@ export default function Create() {
       if (designSub === "image") return <ImagePanel />;
       return <GraphicsPanel />;
     }
-    if (category === "material") return <MaterialPanel onOpenMuse={() => setMuseOpen(true)} />;
+    if (category === "material" && apparel) return <MaterialPanel onOpenMuse={jumpToMuse} />;
     if (category === "color") return <ColorPanel />;
-    if (category === "fit") return <FitPanel />;
-    if (category === "options") return <OptionsPanel />;
-    return <DetailsPanel />;
+    if (category === "fit" && apparel) return <FitPanel />;
+    if (category === "details") return <DetailsPanel />;
+    if (category === "device") return <DeviceSelector />;
+    if (activeTabDef?.groupKeys) return <OptionsPanel groupKeys={activeTabDef.groupKeys} title={activeTabDef.label} />;
+    return null;
   };
 
   const IssueOrTip = issue ? (
@@ -399,6 +436,7 @@ export default function Create() {
     </div>
   ) : null;
 
+  const isMug = design.garment === "mug";
   const secondaryLabel = secondaryViewLabel(design.garment);
   const showSecondary = hasSecondaryView(design.garment);
   const viewTabs: { id: ViewTab; label: string }[] = apparel
@@ -408,45 +446,49 @@ export default function Create() {
         { id: "detail", label: "Detail" },
         { id: "3d", label: "3D View" },
       ]
-    : showSecondary
+    : isMug
       ? [
           { id: "front", label: "Front" },
-          { id: "back", label: secondaryLabel },
+          { id: "back", label: "Back" },
+          { id: "wrap", label: "Wraparound" },
         ]
-      : [{ id: "front", label: "Front" }];
+      : showSecondary
+        ? [
+            { id: "front", label: primaryViewLabel(design.garment) },
+            { id: "back", label: secondaryLabel },
+          ]
+        : [{ id: "front", label: primaryViewLabel(design.garment) }];
+
+  const stageElement = () => (
+    <ProductStage
+      product={design.garment!}
+      colorHex={colorHex}
+      view={wrapView ? "wrap" : design.view}
+      variants={design.variants}
+      fit={apparel ? design.fit : undefined}
+      accentTrim={design.accentTrim}
+      pocketVisible={design.pocketVisible}
+      frontOverlay={frontOverlay}
+      backOverlay={backOverlay}
+      className="h-full w-full"
+    />
+  );
 
   const GarmentCard = ({ size }: { size: "sm" | "lg" }) => (
     <div
-      className={`relative mx-auto w-full ${size === "lg" ? "max-w-[560px]" : "max-w-[420px]"} aspect-square rounded-[32px] border border-[#d4af70]/25 bg-paper shadow-[0_30px_80px_-45px_rgba(53,28,69,0.35)] grain`}
+      className={`relative mx-auto w-full ${size === "lg" ? "max-w-[560px]" : "max-w-[420px]"} aspect-square rounded-[32px] border border-[#d4af70]/25 bg-paper shadow-[0_30px_80px_-45px_rgba(36,31,26,0.35)] grain`}
       style={{ overflow: zoomed ? "hidden" : "visible" }}
     >
       <div
         className="h-full w-full p-8 transition-transform duration-500 ease-out"
         style={{ transform: zoomed ? "scale(1.85)" : "scale(1)", transformOrigin: "56% 42%" }}
       >
-        <ProductStage
-          product={design.garment!}
-          colorHex={colorHex}
-          view={design.view}
-          variants={design.variants}
-          fit={apparel ? design.fit : undefined}
-          accentTrim={design.accentTrim}
-          pocketVisible={design.pocketVisible}
-          frontOverlay={frontOverlay}
-          backOverlay={backOverlay}
-          className="h-full w-full"
-        />
+        {stageElement()}
       </div>
 
-      <button
-        onClick={() => setMuseOpen(true)}
-        className="absolute bottom-5 right-5 flex items-center gap-2 rounded-full bg-[#351c45] px-4 py-2.5 text-[11px] font-medium uppercase tracking-[0.14em] text-[#d4af70] shadow-[0_10px_30px_-10px_rgba(53,28,69,0.6)] transition-transform hover:-translate-y-0.5"
-      >
-        <IconSparkle className="h-3.5 w-3.5" />
-        Muse
-      </button>
+      <MagnifierLens lens={lens} onMove={setLens} active={inspecting} />
 
-      {design.view === "3d" && !zoomed && (
+      {design.view === "3d" && !zoomed && !wrapView && (
         <p className="absolute left-1/2 top-4 -translate-x-1/2 text-[11px] uppercase tracking-[0.14em] text-ink-faint">Drag to rotate</p>
       )}
     </div>
@@ -464,7 +506,7 @@ export default function Create() {
             key={v.id}
             onClick={() => selectView(v.id)}
             className={`rounded-full px-4 py-1.5 text-[11px] font-medium uppercase tracking-[0.12em] transition-colors ${
-              activeViewTab === v.id ? "bg-[#351c45] text-[#d4af70]" : "text-ink-soft hover:text-ink"
+              activeViewTab === v.id ? "bg-[#241f1a] text-[#d4af70]" : "text-ink-soft hover:text-ink"
             }`}
           >
             {v.label}
@@ -472,6 +514,18 @@ export default function Create() {
         ))}
       </div>
     );
+
+  const InspectToggle = () => (
+    <button
+      onClick={() => setInspecting((v) => !v)}
+      className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[11px] font-medium uppercase tracking-[0.1em] transition-colors ${
+        inspecting ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-line text-ink-soft hover:border-ink-soft"
+      }`}
+    >
+      <IconEye className="h-3.5 w-3.5" />
+      {inspecting ? "Inspecting" : "Inspect"}
+    </button>
+  );
 
   return (
     <div className="relative lg:mx-auto lg:max-w-[1500px] lg:px-5 lg:pb-16 lg:pt-10 xl:px-8">
@@ -488,21 +542,23 @@ export default function Create() {
           >
             ← Start Over
           </button>
-          <h1 className="font-display text-4xl text-ink">FORMÉ Studio</h1>
+          <h1 className="font-display text-4xl text-ink">FORMÉ Create</h1>
           <p className="mt-1.5 max-w-md text-sm text-ink-soft">Your canvas. Your rules.</p>
           <PrototypeNotice className="mt-4 max-w-lg" />
         </div>
 
         <div className="grid grid-cols-[210px_1fr_280px] items-start gap-5 xl:grid-cols-[280px_1fr_360px] xl:gap-8">
-          {/* LEFT: tools */}
+          {/* LEFT: product switcher + tools — scrolls independently */}
           <div>
+            <ProductSwitcher className="mb-6" />
+
             <div className="flex flex-col gap-1.5">
-              {categoryTabsFor(apparel).map((t) => (
+              {tabs.map((t) => (
                 <button
                   key={t.id}
                   onClick={() => setCategory(t.id)}
                   className={`rounded-xl px-4 py-2.5 text-left text-[13px] font-medium uppercase tracking-[0.08em] transition-colors ${
-                    category === t.id ? "bg-[#351c45] text-[#d4af70]" : "text-ink-soft hover:bg-ivory-dim"
+                    category === t.id ? "bg-[#241f1a] text-[#d4af70]" : "text-ink-soft hover:bg-ivory-dim"
                   }`}
                 >
                   {t.label}
@@ -511,50 +567,68 @@ export default function Create() {
             </div>
 
             {category === "design" && (
-              <div className="mt-3 grid grid-cols-3 gap-1.5">
-                {DESIGN_SUB_TABS.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => setDesignSub(t.id)}
-                    className={`flex flex-col items-center gap-1 rounded-lg border py-2 text-[10px] uppercase tracking-[0.04em] transition-colors ${
-                      designSub === t.id ? "border-[#351c45] text-[#351c45]" : "border-line-soft text-ink-faint hover:border-ink-soft"
-                    }`}
-                  >
-                    <t.icon className="h-3.5 w-3.5" />
-                    {t.label}
-                  </button>
-                ))}
+              <div className="mt-3">
+                <button
+                  onClick={() => setDesignSub("muse")}
+                  className={`flex w-full items-center gap-2.5 rounded-xl border px-3.5 py-3 text-left transition-all ${
+                    designSub === "muse" ? "border-[#c8a96b] bg-[#c8a96b]/[0.1]" : "border-line-soft hover:border-[#c8a96b]/50"
+                  }`}
+                >
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#241f1a] text-[#c8a96b]">
+                    <IconSparkle className="h-3.5 w-3.5" />
+                  </span>
+                  <span>
+                    <span className="block text-[12.5px] font-semibold uppercase tracking-[0.06em] text-ink">Muse</span>
+                    <span className="block text-[11px] text-ink-soft">Describe it — AI does the rest</span>
+                  </span>
+                </button>
+                <div className="mt-1.5 grid grid-cols-4 gap-1.5">
+                  {DESIGN_SUB_TABS.filter((t) => t.id !== "muse").map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => setDesignSub(t.id)}
+                      className={`flex flex-col items-center gap-1 rounded-lg border py-2 text-[10px] uppercase tracking-[0.04em] transition-colors ${
+                        designSub === t.id ? "border-[#241f1a] text-[#241f1a]" : "border-line-soft text-ink-faint hover:border-ink-soft"
+                      }`}
+                    >
+                      <t.icon className="h-3.5 w-3.5" />
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
 
             <div className="mt-4 rounded-3xl border border-line-soft bg-paper p-5 xl:p-6">{renderPanel()}</div>
           </div>
 
-          {/* CENTER: garment */}
-          <div>
-            <ViewTabRow />
+          {/* CENTER: product stage — sticky, stays visible while the left column scrolls */}
+          <div className="lg:sticky lg:top-24 lg:self-start">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1" />
+              <ViewTabRow />
+              <div className="flex flex-1 justify-end">
+                <InspectToggle />
+              </div>
+            </div>
             <div className="mt-6">
               <GarmentCard size="lg" />
             </div>
-            <p className="mt-5 text-center text-sm text-ink-soft">
-              {caption}
-            </p>
+            <p className="mt-5 text-center text-sm text-ink-soft">{caption}</p>
+            <div className="mx-auto mt-2 flex max-w-md justify-center">
+              <button onClick={jumpToMuse} className="inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.1em] text-[#8f7345] hover:text-[#241f1a]">
+                <IconSparkle className="h-3 w-3" /> Ask MUSE
+              </button>
+            </div>
             {IssueOrTip && <div className="mx-auto mt-5 max-w-md">{IssueOrTip}</div>}
           </div>
 
-          {/* RIGHT: muse / price / finish */}
-          <div className="rounded-3xl border border-line-soft bg-paper p-5 xl:p-6">
-            <button
-              onClick={() => setMuseOpen(true)}
-              className="flex w-full items-center justify-between rounded-2xl border border-clay/30 bg-clay/[0.06] px-4 py-3 text-left transition-colors hover:border-clay/55"
-            >
-              <span className="flex items-center gap-2 text-[13px] font-medium text-clay-deep">
-                <IconSparkle className="h-4 w-4" />
-                Ask MUSE
-              </span>
-              <IconArrowRight className="h-3.5 w-3.5 text-clay-deep" />
-            </button>
-            <div className="mt-6">
+          {/* RIGHT: detail inspector (when active) + creation summary — sticky */}
+          <div className="lg:sticky lg:top-24 lg:self-start lg:space-y-5">
+            {inspecting && (
+              <MagnifiedView lens={lens} zoom={lensZoom} setZoom={setLensZoom} renderStage={() => stageElement()} onClose={() => setInspecting(false)} />
+            )}
+            <div className="rounded-3xl border border-line-soft bg-paper p-5 xl:p-6">
               <SummaryPanel onJump={jump} previewFrontOverlay={frontOverlay} previewBackOverlay={backOverlay} />
             </div>
           </div>
@@ -573,7 +647,7 @@ export default function Create() {
           >
             Back
           </button>
-          <p className="font-display text-base text-ink">FORMÉ Studio</p>
+          <p className="font-display text-base text-ink">FORMÉ Create</p>
           <button onClick={quickSave} className="text-[11px] font-medium uppercase tracking-[0.14em] text-ink">
             {savedFlash ? "Saved" : "Save"}
           </button>
@@ -581,22 +655,33 @@ export default function Create() {
 
         <div className="px-4 pb-40 pt-16">
           <PrototypeNotice className="mb-4" />
-          <ViewTabRow />
+          <ProductSwitcher className="mb-4" />
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-full overflow-x-auto scrollbar-none">
+              <div className="flex justify-center">
+                <ViewTabRow />
+              </div>
+            </div>
+            <InspectToggle />
+          </div>
           <div className="mt-5">
             <GarmentCard size="sm" />
           </div>
-          <p className="mt-4 text-center text-[13px] text-ink-soft">
-            {caption}
-          </p>
+          <p className="mt-4 text-center text-[13px] text-ink-soft">{caption}</p>
+          <div className="mt-2 flex justify-center">
+            <button onClick={jumpToMuse} className="inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.1em] text-[#8f7345]">
+              <IconSparkle className="h-3 w-3" /> Ask MUSE
+            </button>
+          </div>
 
           {IssueOrTip && <div className="mt-4">{IssueOrTip}</div>}
 
           <button
             onClick={() => setReviewOpen(true)}
-            className="mt-5 flex w-full items-center justify-between rounded-2xl bg-[#351c45] px-5 py-4 text-[#d4af70]"
+            className="mt-5 flex w-full items-center justify-between rounded-2xl bg-[#c8a96b] px-5 py-4 text-[#241f1a]"
           >
             <span>
-              <span className="block text-[11px] uppercase tracking-[0.16em] text-[#d4af70]/60">Ready?</span>
+              <span className="block text-[11px] uppercase tracking-[0.16em] text-[#241f1a]/60">Ready?</span>
               <span className="font-display text-xl">Review &amp; Finish</span>
             </span>
             <IconArrowRight className="h-5 w-5" />
@@ -605,15 +690,15 @@ export default function Create() {
 
         {/* bottom toolbar */}
         <div className="fixed inset-x-0 bottom-0 z-40 flex items-stretch justify-around border-t border-line-soft bg-paper/95 px-1 pt-1.5 pb-[max(6px,env(safe-area-inset-bottom))] backdrop-blur-md">
-          {(apparel ? (["design", "material", "color", "fit"] as Category[]) : (["design", "color", "options"] as Category[])).map((c) => (
+          {tabs.slice(0, 4).map((t) => (
             <button
-              key={c}
-              onClick={() => openCategory(c)}
+              key={t.id}
+              onClick={() => openCategory(t.id)}
               className={`flex-1 rounded-xl py-2 text-center text-[10.5px] font-medium uppercase tracking-[0.06em] transition-colors ${
-                sheetOpen && category === c ? "bg-ivory-dim text-ink" : "text-ink-soft"
+                sheetOpen && category === t.id ? "bg-ivory-dim text-ink" : "text-ink-soft"
               }`}
             >
-              {categoryTabsFor(apparel).find((t) => t.id === c)!.label}
+              {t.label}
             </button>
           ))}
           <button
@@ -621,9 +706,7 @@ export default function Create() {
               setMoreOpen(true);
               setSheetOpen(false);
             }}
-            className={`flex-1 rounded-xl py-2 text-center text-[10.5px] font-medium uppercase tracking-[0.06em] transition-colors ${
-              category === "details" && sheetOpen ? "bg-ivory-dim text-ink" : "text-ink-soft"
-            }`}
+            className="flex-1 rounded-xl py-2 text-center text-[10.5px] font-medium uppercase tracking-[0.06em] text-ink-soft"
           >
             More
           </button>
@@ -631,44 +714,37 @@ export default function Create() {
 
         <BottomSheet
           open={sheetOpen && !drawExpanded}
-          title={
-            category === "design"
-              ? designChooserOpen
-                ? "Design"
-                : `Design · ${DESIGN_SUB_TABS.find((t) => t.id === designSub)!.label}`
-              : categoryTabsFor(apparel).find((t) => t.id === category)!.label
-          }
+          title={category === "design" ? `Design · ${DESIGN_SUB_TABS.find((t) => t.id === designSub)!.label}` : tabs.find((t) => t.id === category)?.label ?? "Options"}
           onClose={() => setSheetOpen(false)}
         >
-          {category === "design" ? (
-            designChooserOpen ? (
-              <DesignChooser
-                onSelect={(sub) => {
-                  setDesignSub(sub);
-                  setDesignChooserOpen(false);
-                }}
-              />
-            ) : (
-              <div className="animate-fade-in">
+          {category === "design" && (
+            <div className="mb-4 grid grid-cols-5 gap-1.5">
+              {DESIGN_SUB_TABS.map((t) => (
                 <button
-                  onClick={() => setDesignChooserOpen(true)}
-                  className="mb-4 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.1em] text-ink-faint transition-colors hover:text-ink-soft"
+                  key={t.id}
+                  onClick={() => setDesignSub(t.id)}
+                  className={`flex flex-col items-center gap-1 rounded-lg border py-2 text-[9.5px] uppercase tracking-[0.03em] transition-colors ${
+                    designSub === t.id
+                      ? t.id === "muse"
+                        ? "border-[#c8a96b] bg-[#c8a96b]/[0.12] text-[#241f1a]"
+                        : "border-[#241f1a] text-[#241f1a]"
+                      : "border-line-soft text-ink-faint hover:border-ink-soft"
+                  }`}
                 >
-                  ← Change method
+                  <t.icon className="h-3.5 w-3.5" />
+                  {t.label}
                 </button>
-                {renderPanel()}
-              </div>
-            )
-          ) : (
-            renderPanel()
+              ))}
+            </div>
           )}
+          {renderPanel()}
         </BottomSheet>
 
-        {/* dedicated full-canvas drawing mode — the garment stays large while you draw */}
+        {/* dedicated full-canvas drawing mode — the product stays large while you draw */}
         {drawExpanded && (
           <div className="fixed inset-0 z-50 flex flex-col bg-ivory animate-fade-in">
             <div className="flex items-center justify-between border-b border-line-soft px-4 py-3">
-              <p className="text-[11px] uppercase tracking-[0.2em] text-ink-faint">Draw on the garment</p>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-ink-faint">Draw on the {productById(design.garment).label.toLowerCase()}</p>
               <button
                 onClick={() => {
                   const side = design.view === "back" ? "back" : "front";
@@ -684,18 +760,7 @@ export default function Create() {
             </div>
             <div className="flex flex-1 items-center justify-center overflow-hidden p-4">
               <div className="relative aspect-square w-full max-w-[480px] rounded-[28px] border border-line-soft bg-paper p-6 shadow-[0_20px_60px_-30px_rgba(26,23,18,0.35)]">
-                <ProductStage
-                  product={design.garment!}
-                  colorHex={colorHex}
-                  view={design.view === "back" ? "back" : "front"}
-                  variants={design.variants}
-                  fit={apparel ? design.fit : undefined}
-                  accentTrim={design.accentTrim}
-                  pocketVisible={design.pocketVisible}
-                  frontOverlay={frontOverlay}
-                  backOverlay={backOverlay}
-                  className="h-full w-full"
-                />
+                {stageElement()}
               </div>
             </div>
             <div className="max-h-[42vh] overflow-y-auto border-t border-line-soft px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-4">
@@ -724,27 +789,23 @@ export default function Create() {
           />
         )}
 
+        <BottomSheet open={inspecting} title="Detail View" onClose={() => setInspecting(false)}>
+          <MagnifiedView lens={lens} zoom={lensZoom} setZoom={setLensZoom} renderStage={() => stageElement()} panelSize={320} />
+        </BottomSheet>
+
         <BottomSheet open={moreOpen} title="More tools" onClose={() => setMoreOpen(false)}>
           <div className="grid grid-cols-2 gap-3">
-            {[
-              { id: "design" as Category, sub: "text" as DesignSub, label: "Text", icon: IconType },
-              { id: "design" as Category, sub: "graphics" as DesignSub, label: "Graphics", icon: IconLayers },
-              ...(apparel ? [{ id: "details" as Category, sub: undefined, label: "Details", icon: IconSparkle }] : []),
-            ].map((item) => (
+            {tabs.slice(4).map((item) => (
               <button
-                key={item.label}
+                key={item.id}
                 onClick={() => {
                   setCategory(item.id);
-                  if (item.sub) {
-                    setDesignSub(item.sub);
-                    setDesignChooserOpen(false);
-                  }
                   setMoreOpen(false);
                   setSheetOpen(true);
                 }}
                 className="flex flex-col items-center gap-2 rounded-2xl border border-line py-6 text-ink-soft"
               >
-                <item.icon className="h-5 w-5" />
+                <IconSparkle className="h-5 w-5" />
                 <span className="text-[11px] uppercase tracking-[0.08em]">{item.label}</span>
               </button>
             ))}
@@ -768,8 +829,6 @@ export default function Create() {
           </div>
         )}
       </div>
-
-      <MuseAssistant open={museOpen} onClose={() => setMuseOpen(false)} />
     </div>
   );
 }

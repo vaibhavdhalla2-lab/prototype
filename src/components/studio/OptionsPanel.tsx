@@ -3,23 +3,24 @@ import { variantGroupsFor, isApparel } from "../../data/products";
 import { track } from "../../lib/analytics";
 
 /**
- * The generic "Options" tab for every non-apparel product — apparel keeps
+ * The generic variant-group tab for every non-apparel product — apparel keeps
  * its own Material/Fit panels (they carry breathability/durability bars and
  * fit silhouettes that don't map onto a mug's size or a poster's frame).
  * Each product's own variant schema (data/products.ts) drives what shows up
- * here, so a mug shows Material/Finish/Size while a poster shows
- * Orientation/Size/Paper/Frame — nothing hardcoded per product.
+ * here. `groupKeys`, when passed, scopes this instance to just those groups
+ * (e.g. Mug's "Finish" tab shows only the finish group) so the left sidebar
+ * can present object-specific sections instead of one catch-all tab.
  */
-export default function OptionsPanel() {
+export default function OptionsPanel({ groupKeys, title, subtitle }: { groupKeys?: string[]; title?: string; subtitle?: string }) {
   const design = useDesign();
   if (!design.garment || isApparel(design.garment)) return null;
-  const groups = variantGroupsFor(design.garment);
+  const groups = variantGroupsFor(design.garment).filter((g) => !groupKeys || groupKeys.includes(g.key));
 
   return (
     <div className="animate-fade-in space-y-7">
       <div>
-        <p className="text-[11px] uppercase tracking-[0.25em] text-ink-faint">Product options</p>
-        <p className="mt-1 text-sm text-ink-soft">Every choice below updates the preview instantly.</p>
+        <p className="text-[11px] uppercase tracking-[0.25em] text-ink-faint">{title ?? "Product options"}</p>
+        <p className="mt-1 text-sm text-ink-soft">{subtitle ?? "Every choice below updates the preview instantly."}</p>
       </div>
 
       {groups.map((group) => {

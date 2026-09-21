@@ -10,9 +10,9 @@ import SlideMuseText from "../components/onboarding/SlideMuseText";
 import SlideMarketplace from "../components/onboarding/SlideMarketplace";
 import { useFeedback } from "../lib/feedback";
 
-const PLUM = "#351c45";
+const PLUM = "#241f1a";
 const GOLD = "#d4af70";
-const VIOLET = "#8b5cf6";
+const VIOLET = "#c8a96b";
 
 const WAYS = [
   {
@@ -81,7 +81,7 @@ export default function About() {
         <h1 className="text-center font-display-heavy text-[clamp(2.6rem,8vw,4.6rem)] uppercase leading-[0.92] tracking-tight text-ink">
           Give your
           <br />
-          <span className="text-gradient-plum">imagination form.</span>
+          <span className="text-gradient-gold">imagination form.</span>
         </h1>
         <p className="mx-auto mt-6 max-w-xl text-center text-[16px] leading-relaxed text-ink-soft">
           FORMÉ is a working prototype, not a finished product — we're testing whether people actually want a
@@ -130,7 +130,7 @@ export default function About() {
           ))}
         </div>
 
-        <div className="mt-16 border-t border-[#351c45]/10 pt-14">
+        <div className="mt-16 border-t border-[#241f1a]/10 pt-14">
           <p className="text-center text-[12px] uppercase tracking-[0.25em] text-ink-faint">The FORMÉ marketplace</p>
           <h3 className="mx-auto mt-3 max-w-md text-center font-display text-2xl text-ink sm:text-3xl">
             Discover unique designs, made by people — not algorithms.
@@ -159,7 +159,7 @@ export default function About() {
         <p className="font-display-heavy text-[clamp(1.9rem,7vw,3.6rem)] uppercase leading-[1.05] tracking-tight text-ink">
           Imagine it. Create it.
           <br />
-          <span className="text-gradient-plum">Give it form.</span>
+          <span className="text-gradient-gold">Give it form.</span>
         </p>
       </div>
 
@@ -167,7 +167,7 @@ export default function About() {
       <div className="relative mx-auto mt-20 max-w-2xl px-5 sm:mt-24 sm:px-8">
         <div
           className="grain grain-deep relative overflow-hidden rounded-[32px] px-7 py-12 text-center sm:px-12 sm:py-16"
-          style={{ background: `linear-gradient(150deg, ${PLUM} 0%, #24102f 100%)` }}
+          style={{ background: `linear-gradient(150deg, ${PLUM} 0%, #140f0c 100%)` }}
         >
           <p className="text-[12px] uppercase tracking-[0.3em]" style={{ color: GOLD }}>Your voice, our roadmap</p>
           <h2 className="mt-3 font-display-heavy text-[clamp(1.9rem,6vw,3rem)] uppercase leading-[0.95] tracking-tight text-[#faf4ea]">
@@ -179,7 +179,7 @@ export default function About() {
           <button
             onClick={() => openFeedback()}
             className="mt-8 inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-[12px] font-medium uppercase tracking-[0.16em] transition-opacity hover:opacity-90"
-            style={{ background: GOLD, color: "#24102f" }}
+            style={{ background: GOLD, color: "#140f0c" }}
           >
             Give Feedback
             <IconArrowRight className="h-4 w-4" />
@@ -211,7 +211,7 @@ function AboutCarousel() {
   ];
 
   return (
-    <div className="overflow-hidden rounded-[32px] border border-[#d4af70]/25 bg-paper shadow-[0_40px_100px_-50px_rgba(53,28,69,0.35)]">
+    <div className="overflow-hidden rounded-[32px] border border-[#d4af70]/25 bg-paper shadow-[0_40px_100px_-50px_rgba(36, 31, 26,0.35)]">
       <Carousel slides={slides} onIndexChange={setIndex} className="h-[720px] sm:h-[680px]" indicatorGutter={64} />
     </div>
   );

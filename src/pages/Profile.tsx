@@ -22,7 +22,7 @@ const TABS: { id: TabId; label: string }[] = [
 const STATUS_LABEL: Record<MyDesign["status"], string> = { draft: "Draft", published: "Published", ordered: "Ordered" };
 const STATUS_TONE: Record<MyDesign["status"], string> = {
   draft: "text-ink-faint border-line",
-  published: "text-[#351c45] border-[#351c45]/35",
+  published: "text-[#241f1a] border-[#241f1a]/35",
   ordered: "text-success border-success/30",
 };
 
@@ -45,11 +45,11 @@ function DesignCard({ d }: { d: MyDesign }) {
         <p className="mt-1 text-[12.5px] text-ink-faint">Updated {d.updatedAt}</p>
 
         {d.status === "published" && d.stats && (
-          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 border-t border-[#351c45]/10 pt-4 text-[13px] text-ink-soft">
+          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 border-t border-[#241f1a]/10 pt-4 text-[13px] text-ink-soft">
             <span className="flex items-center gap-1.5"><IconEye className="h-3.5 w-3.5" /> {d.stats.views.toLocaleString("en-IN")}</span>
             <span className="flex items-center gap-1.5"><IconRemix className="h-3.5 w-3.5" /> {d.stats.remixes}</span>
             <span className="flex items-center gap-1.5"><IconStore className="h-3.5 w-3.5" /> {d.stats.purchases}</span>
-            <span className="font-medium text-[#351c45]">₹{d.stats.earnings.toLocaleString("en-IN")} earned</span>
+            <span className="font-medium text-[#241f1a]">₹{d.stats.earnings.toLocaleString("en-IN")} earned</span>
           </div>
         )}
       </div>
@@ -81,7 +81,7 @@ export default function Profile() {
       <GradientMesh fixed />
       <div className="relative mx-auto max-w-[1300px] px-5 pb-24 pt-12 sm:px-8 sm:pt-16">
         <div className="flex flex-wrap items-center gap-5">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#351c45] font-display text-2xl text-[#d4af70]">Y</div>
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#241f1a] font-display text-2xl text-[#d4af70]">Y</div>
           <div>
             <p className="text-[11px] uppercase tracking-[0.3em]" style={{ color: "#d4af70" }}>Your archive</p>
             <h1 className="font-display text-3xl text-ink">Your Studio</h1>
@@ -98,13 +98,13 @@ export default function Profile() {
           </GlowButton>
         </div>
 
-        <div className="mt-10 flex flex-wrap gap-2 border-b border-[#351c45]/10 pb-5">
+        <div className="mt-10 flex flex-wrap gap-2 border-b border-[#241f1a]/10 pb-5">
           {TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
               className={`rounded-full border px-4 py-2 text-[12px] font-medium uppercase tracking-[0.1em] transition-colors ${
-                tab === t.id ? "border-[#351c45] bg-[#351c45] text-[#d4af70]" : "border-line text-ink-soft hover:border-[#351c45]/40"
+                tab === t.id ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-line text-ink-soft hover:border-[#241f1a]/40"
               }`}
             >
               {t.label} <span className="opacity-60">({counts[t.id]})</span>

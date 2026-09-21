@@ -22,7 +22,7 @@ export type ProductSide = "front" | "back";
 export const PRODUCT_PRINT_AREAS: Partial<Record<ProductId, Record<ProductSide, PrintAreaRect>>> = {
   mug: {
     front: { x: 132, y: 156, width: 96, height: 92 },
-    back: { x: 58, y: 156, width: 244, height: 92 },
+    back: { x: 132, y: 156, width: 96, height: 92 },
   },
   poster: {
     front: { x: 44, y: 34, width: 272, height: 372 },
@@ -86,39 +86,103 @@ function PrintAreaGuide({ area }: { area: PrintAreaRect }) {
 
 /* ---------------------------------------------------------------- MUG --- */
 
+function MugHandle({ colorHex }: { colorHex: string }) {
+  return (
+    <>
+      <path d="M240 180 q34 4 34 34 q0 32 -34 36" fill="none" stroke={darken(colorHex, 20)} strokeWidth="12" strokeLinecap="round" />
+      <path d="M240 180 q34 4 34 34 q0 32 -34 36" fill="none" stroke={colorHex} strokeWidth="7" strokeLinecap="round" />
+    </>
+  );
+}
+
+/** Front and back are two independently-designable cup panels — back is a horizontal mirror so the handle reads on the opposite side. */
 export function MugFace({ colorHex, side, overlay, variants }: FaceProps) {
-  const wrap = side === "back";
   const area = PRODUCT_PRINT_AREAS.mug![side];
   const glossy = variants.finish !== "matte";
+  const mirrored = side === "back";
 
   return (
     <svg viewBox="0 0 360 440" className="h-full w-full overflow-visible">
       <ellipse cx="180" cy="368" rx="92" ry="14" fill={SHADOW} opacity="0.5" />
-      {wrap ? (
-        <>
-          {/* flattened wraparound strip */}
-          <rect x="50" y="140" width="260" height="120" rx="10" fill={colorHex} stroke={darken(colorHex, 30)} strokeWidth="1.5" />
-          <rect x="50" y="140" width="260" height="18" rx="9" fill={lighten(colorHex, 30)} opacity={glossy ? 0.35 : 0.15} />
-          <text x="180" y="130" textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="9" letterSpacing="2" fill="#9a9086">
-            WRAPAROUND — WILL CURVE AROUND THE MUG
-          </text>
-        </>
-      ) : (
-        <>
-          <path d="M120 150 h120 v130 a60 60 0 0 1 -120 0 z" fill={colorHex} stroke={darken(colorHex, 30)} strokeWidth="1.5" />
-          <path d="M120 150 h120 v14 h-120 z" fill={lighten(colorHex, 35)} opacity={glossy ? 0.4 : 0.18} />
-          <path
-            d="M240 180 q34 4 34 34 q0 32 -34 36"
-            fill="none"
-            stroke={darken(colorHex, 20)}
-            strokeWidth="12"
-            strokeLinecap="round"
-          />
-          <path d="M240 180 q34 4 34 34 q0 32 -34 36" fill="none" stroke={colorHex} strokeWidth="7" strokeLinecap="round" />
-        </>
-      )}
+      <g transform={mirrored ? "translate(360,0) scale(-1,1)" : undefined}>
+        <path d="M120 150 h120 v130 a60 60 0 0 1 -120 0 z" fill={colorHex} stroke={darken(colorHex, 30)} strokeWidth="1.5" />
+        <path d="M120 150 h120 v14 h-120 z" fill={lighten(colorHex, 35)} opacity={glossy ? 0.4 : 0.18} />
+        <MugHandle colorHex={colorHex} />
+      </g>
       <PrintAreaGuide area={area} />
       {overlay}
+      <text x="180" y="420" textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="9" letterSpacing="2" fill="#9a9086">
+        {side === "front" ? "FRONT PANEL" : "BACK PANEL"}
+      </text>
+    </svg>
+  );
+}
+
+/** Maps content drawn for `from` (an existing printArea) into the `to` rect via an affine transform — used to composite the front/back panels into the flattened wraparound strip without needing separate stored strokes. */
+function rectTransform(from: PrintAreaRect, to: PrintAreaRect): string {
+  const sx = to.width / from.width;
+  const sy = to.height / from.height;
+  const tx = to.x - from.x * sx;
+  const ty = to.y - from.y * sy;
+  return `translate(${tx} ${ty}) scale(${sx} ${sy})`;
+}
+
+/** Read-only reference view: shows how the independently-designed front/back panels combine into one flattened, curved-around-the-mug strip, with the handle zone clearly interrupting the surface. */
+export function MugWrapFace({
+  colorHex,
+  variants,
+  frontOverlay,
+  backOverlay,
+}: {
+  colorHex: string;
+  variants: Record<string, string>;
+  frontOverlay?: ReactNode;
+  backOverlay?: ReactNode;
+}) {
+  const glossy = variants.finish !== "matte";
+  const strip = { x: 34, y: 168, width: 292, height: 104 };
+  const leftTarget = { x: strip.x, y: strip.y, width: 112, height: strip.height };
+  const handleZone = { x: strip.x + 116, y: strip.y, width: 60, height: strip.height };
+  const rightTarget = { x: strip.x + 180, y: strip.y, width: 112, height: strip.height };
+  const front = PRODUCT_PRINT_AREAS.mug!.front;
+  const back = PRODUCT_PRINT_AREAS.mug!.back;
+
+  return (
+    <svg viewBox="0 0 360 440" className="h-full w-full overflow-visible">
+      <rect x={strip.x} y={strip.y} width={strip.width} height={strip.height} rx="8" fill={colorHex} stroke={darken(colorHex, 30)} strokeWidth="1.5" />
+      <rect x={strip.x} y={strip.y} width={strip.width} height="14" fill={lighten(colorHex, 30)} opacity={glossy ? 0.35 : 0.15} />
+
+      <rect x={handleZone.x} y={handleZone.y} width={handleZone.width} height={handleZone.height} fill="#1a1712" opacity="0.08" />
+      <line x1={handleZone.x} y1={handleZone.y} x2={handleZone.x} y2={handleZone.y + handleZone.height} stroke="#1a1712" strokeOpacity="0.25" strokeDasharray="3 3" />
+      <line x1={handleZone.x + handleZone.width} y1={handleZone.y} x2={handleZone.x + handleZone.width} y2={handleZone.y + handleZone.height} stroke="#1a1712" strokeOpacity="0.25" strokeDasharray="3 3" />
+      <text x={handleZone.x + handleZone.width / 2} y={handleZone.y + handleZone.height / 2 + 3} textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="7.5" letterSpacing="1.5" fill="#6b5636">
+        HANDLE
+      </text>
+
+      <PrintAreaGuide area={leftTarget} />
+      <PrintAreaGuide area={rightTarget} />
+      <g transform={rectTransform(front, leftTarget)}>
+        <clipPath id="mug-wrap-left">
+          <rect x={front.x} y={front.y} width={front.width} height={front.height} />
+        </clipPath>
+        <g clipPath="url(#mug-wrap-left)">{frontOverlay}</g>
+      </g>
+      <g transform={rectTransform(back, rightTarget)}>
+        <clipPath id="mug-wrap-right">
+          <rect x={back.x} y={back.y} width={back.width} height={back.height} />
+        </clipPath>
+        <g clipPath="url(#mug-wrap-right)">{backOverlay}</g>
+      </g>
+
+      <text x={strip.x + 4} y={strip.y - 8} fontFamily="Inter, sans-serif" fontSize="8" letterSpacing="1.5" fill="#9a9086">
+        LEFT EDGE
+      </text>
+      <text x={strip.x + strip.width - 4} y={strip.y - 8} textAnchor="end" fontFamily="Inter, sans-serif" fontSize="8" letterSpacing="1.5" fill="#9a9086">
+        RIGHT EDGE
+      </text>
+      <text x="180" y={strip.y + strip.height + 22} textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="9" letterSpacing="2" fill="#9a9086">
+        FLATTENED WRAPAROUND — CURVES AROUND THE MUG
+      </text>
     </svg>
   );
 }

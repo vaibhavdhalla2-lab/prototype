@@ -4,7 +4,7 @@ import { IconLock } from "./icons";
 
 export default function Footer() {
   return (
-    <footer className="grain grain-deep border-t border-white/10 bg-[#24102f] pb-24 pt-16 md:pb-16">
+    <footer className="grain grain-deep border-t border-white/10 bg-[#140f0c] pb-24 pt-16 md:pb-16">
       <div className="mx-auto max-w-[1400px] px-5 sm:px-8">
         <div className="mb-14">
           <p className="mb-2 text-[11px] uppercase tracking-[0.3em] text-[#faf4ea]/40">Coming soon</p>

@@ -115,7 +115,7 @@ export default function ImagePanel() {
             <p className="text-ink">{analysis.graphic}</p>
           </div>
         </div>
-        <button onClick={applyRecommendations} className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[#351c45] py-3 text-[12px] uppercase tracking-[0.14em] text-[#d4af70]">
+        <button onClick={applyRecommendations} className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[#c8a96b] py-3 text-[12px] uppercase tracking-[0.14em] text-[#241f1a]">
           <IconCheck className="h-4 w-4" /> Apply Recommendations
         </button>
         <button onClick={() => setAnalysis(null)} className="mt-2 w-full py-2 text-[12px] uppercase tracking-[0.1em] text-ink-faint hover:text-ink-soft">
@@ -131,7 +131,7 @@ export default function ImagePanel() {
         <p className="text-[11px] uppercase tracking-[0.25em] text-ink-faint">Image</p>
         <img src={staged} alt="Uploaded" className="mt-3 h-40 w-full rounded-xl object-cover" />
         <div className="mt-4 space-y-2">
-          <button onClick={useAsArtwork} className="w-full rounded-xl border border-[#351c45] bg-[#351c45] py-2.5 text-[12px] uppercase tracking-[0.1em] text-[#d4af70]">
+          <button onClick={useAsArtwork} className="w-full rounded-xl border border-[#241f1a] bg-[#c8a96b] py-2.5 text-[12px] uppercase tracking-[0.1em] text-[#241f1a]">
             Use As Artwork
           </button>
           <button onClick={useAsInspiration} className="flex w-full items-center justify-center gap-2 rounded-xl border border-clay/40 py-2.5 text-[12px] uppercase tracking-[0.1em] text-clay-deep">
@@ -171,7 +171,7 @@ export default function ImagePanel() {
               <button
                 key={p.id}
                 onClick={() => pickStudioPrint(p.image, p.name)}
-                className="group flex flex-col items-center gap-1.5 rounded-xl border border-line p-2 text-center transition-colors hover:border-[#351c45]/50"
+                className="group flex flex-col items-center gap-1.5 rounded-xl border border-line p-2 text-center transition-colors hover:border-[#241f1a]/50"
               >
                 <span className="flex h-14 w-14 items-center justify-center rounded-lg bg-ink/90">
                   <img src={p.image} alt={p.name} className="h-11 w-11 object-contain" />

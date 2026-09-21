@@ -1,4 +1,6 @@
 import type { ColorId, FitId, GarmentType, MaterialId } from "../data/catalog";
+import { COLORS, materialsFor, fitsFor } from "../data/catalog";
+import { isApparel, variantGroupsFor, type ProductId } from "../data/products";
 
 export interface MuseConcept {
   garment: GarmentType;
@@ -136,6 +138,90 @@ export const MUSE_PROMPT_CHIPS = [
   "I want something for winter.",
   "I want an oversized streetwear look.",
 ];
+
+/** Style biases the MUSE panel's quick-action buttons nudge generation toward. */
+export type MuseStyleBias = "neutral" | "minimal" | "bold";
+
+export interface MuseVariant {
+  id: string;
+  label: string;
+  reason: string;
+  colorId: ColorId;
+  /** Apparel-only. */
+  material?: MaterialId;
+  fit?: FitId;
+  /** Non-apparel — a full variants record for the current product. */
+  variants?: Record<string, string>;
+}
+
+function hashString(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h << 5) - h + s.charCodeAt(i);
+  return h;
+}
+function pick<T>(list: T[], seed: number): T {
+  return list[Math.abs(seed) % list.length];
+}
+
+const MINIMAL_COLORS: ColorId[] = ["offwhite", "stone", "black"];
+const BOLD_COLORS: ColorId[] = ["black", "burgundy", "navy", "forest"];
+
+/**
+ * Generates 4 deterministic design "concepts" for whatever product is
+ * currently active in the studio — this is what powers MUSE's primary
+ * "Generate 4 ideas" moment. Apparel gets color+material+fit combinations;
+ * every other product gets color plus a full variant-group combination
+ * (mug material/finish/size, poster paper/frame, etc.) so MUSE reasons about
+ * the actual dimensions that product exposes, not a generic placeholder.
+ */
+export function generateMuseVariants(prompt: string, product: ProductId, bias: MuseStyleBias = "neutral", nonce = 0): MuseVariant[] {
+  const base = hashString(prompt || "muse") + nonce * 97;
+  const colorPool = bias === "minimal" ? MINIMAL_COLORS : bias === "bold" ? BOLD_COLORS : COLORS.map((c) => c.id);
+
+  return Array.from({ length: 4 }, (_, i) => {
+    const seed = base + i * 131;
+    const colorId = pick(colorPool, seed + i * 7);
+
+    if (isApparel(product)) {
+      const materials = materialsFor(product);
+      const fits = fitsFor(product);
+      const material = bias === "minimal" ? materials[0]?.id : bias === "bold" ? materials[materials.length - 1]?.id : pick(materials, seed).id;
+      const fit = pick(fits, seed + 11).id;
+      return {
+        id: `${seed}`,
+        label: `Concept ${i + 1}`,
+        reason:
+          bias === "minimal"
+            ? "Clean, quiet and versatile — lets the silhouette do the talking."
+            : bias === "bold"
+              ? "Higher contrast and a heavier hand-feel — reads confident from across the room."
+              : "A balanced read on your brief.",
+        colorId,
+        material: material as MaterialId,
+        fit: fit as FitId,
+      };
+    }
+
+    const groups = variantGroupsFor(product);
+    const variants: Record<string, string> = {};
+    for (const g of groups) {
+      const idx = bias === "minimal" ? 0 : bias === "bold" ? g.options.length - 1 : Math.abs(seed + g.key.length) % g.options.length;
+      variants[g.key] = g.options[idx].id;
+    }
+    return {
+      id: `${seed}`,
+      label: `Concept ${i + 1}`,
+      reason:
+        bias === "minimal"
+          ? "The simplest, most versatile combination for this product."
+          : bias === "bold"
+            ? "The most premium, statement-making combination available."
+            : "A balanced read on your brief.",
+      colorId,
+      variants,
+    };
+  });
+}
 
 interface DesignSnapshot {
   garment: GarmentType;

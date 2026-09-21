@@ -23,9 +23,9 @@ import { useFeedback } from "../lib/feedback";
  * need a real color value, not a custom-property name. Keep in sync with
  * the --color-plum/violet/gold tokens in index.css.
  */
-const PLUM = "#351c45";
-const PLUM_DEEP = "#24102f";
-const VIOLET = "#8b5cf6";
+const PLUM = "#241f1a";
+const PLUM_DEEP = "#140f0c";
+const VIOLET = "#c8a96b";
 const GOLD = "#d4af70";
 
 /* ----------------------------------------------------------------------- */
@@ -97,11 +97,11 @@ function HeroReveal() {
           className="h-full w-full"
           frontOverlay={
             <g>
-              <text x="180" y="172" textAnchor="middle" fontFamily="Playfair Display, serif" fontSize="20" fill="#24102f" fontStyle="italic">
+              <text x="180" y="172" textAnchor="middle" fontFamily="Playfair Display, serif" fontSize="20" fill="#140f0c" fontStyle="italic">
                 Your Design.
               </text>
-              <line x1="150" y1="185" x2="210" y2="185" stroke="#24102f" strokeWidth="1" opacity="0.6" />
-              <text x="180" y="203" textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="9" letterSpacing="3" fill="#24102f" opacity="0.7">
+              <line x1="150" y1="185" x2="210" y2="185" stroke="#140f0c" strokeWidth="1" opacity="0.6" />
+              <text x="180" y="203" textAnchor="middle" fontFamily="Inter, sans-serif" fontSize="9" letterSpacing="3" fill="#140f0c" opacity="0.7">
                 NO. 001
               </text>
             </g>
@@ -122,7 +122,7 @@ function HeroReveal() {
         Blank canvas
       </div>
       <div
-        className="absolute right-4 top-4 rounded-full px-3 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-[#24102f]"
+        className="absolute right-4 top-4 rounded-full px-3 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-[#140f0c]"
         style={{ background: GOLD }}
       >
         Your creation
@@ -149,7 +149,7 @@ function SlideHeroIntro() {
           <br />
           <span className="text-[clamp(3.1rem,9.5vw,6.6rem)]">create.</span>
           <br />
-          <span className="text-gradient-plum">Your own world.</span>
+          <span className="text-gradient-gold">Your own world.</span>
         </h1>
         <p className="mt-7 max-w-md text-balance text-lg leading-relaxed text-[#17151a]/60 animate-fade-up [animation-delay:160ms]">
           Create it from scratch. Find something you love. Remix it. Make it yours.
@@ -164,7 +164,7 @@ function SlideHeroIntro() {
           </GlowButton>
           <button
             onClick={() => navigate("/create", { state: { mode: "gift" } })}
-            className="inline-flex items-center gap-2 text-[12.5px] font-medium uppercase tracking-[0.14em] text-[#351c45] underline decoration-[#d4af70] decoration-2 underline-offset-4 transition-opacity hover:opacity-70"
+            className="inline-flex items-center gap-2 text-[12.5px] font-medium uppercase tracking-[0.14em] text-[#241f1a] underline decoration-[#d4af70] decoration-2 underline-offset-4 transition-opacity hover:opacity-70"
           >
             Design A Gift
             <IconArrowRight className="h-3.5 w-3.5" />
@@ -255,7 +255,7 @@ export default function Home() {
       </section>
 
       {/* SIX PRODUCTS — the real V1 product range, all live today. Every card goes straight into the studio pre-set to that product. */}
-      <section className="relative border-t border-[#351c45]/10 py-20 sm:py-28">
+      <section className="relative border-t border-[#241f1a]/10 py-20 sm:py-28">
         <div className="mx-auto max-w-[1400px] px-5 sm:px-8">
           <div className="mb-12 max-w-xl">
             <p className="mb-3 text-[12px] uppercase tracking-[0.3em]" style={{ color: GOLD }}>The FORMÉ canvas</p>
@@ -298,7 +298,7 @@ export default function Home() {
                     const routeMode = id === "prompt" || id === "upload" || id === "gift" ? id : "scratch";
                     navigate("/create", { state: { mode: routeMode } });
                   }}
-                  className="group flex flex-col items-start rounded-2xl border border-[#351c45]/12 bg-white/50 p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:bg-white/80"
+                  className="group flex flex-col items-start rounded-2xl border border-[#241f1a]/12 bg-white/50 p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:bg-white/80"
                 >
                   <span
                     className="flex h-10 w-10 items-center justify-center rounded-full"
@@ -318,7 +318,7 @@ export default function Home() {
       {/* QUICK PULSE — the "how it works" explainer now lives in the hero
           carousel above (slide 2), so this is just a lightweight check-in
           rather than a second full section repeating the same content. */}
-      <section className="relative border-t border-[#351c45]/10 py-14 sm:py-16">
+      <section className="relative border-t border-[#241f1a]/10 py-14 sm:py-16">
         <div className="mx-auto max-w-[1400px] px-5 sm:px-8">
           <MicroPrompt
             question="Would a platform like this excite you?"
@@ -378,7 +378,7 @@ export default function Home() {
                 </Link>
                 <button
                   onClick={() => goRemix(d)}
-                  className="absolute right-2.5 top-2.5 flex items-center gap-1 rounded-full bg-[#24102f]/85 px-2.5 py-1.5 text-[9.5px] font-medium uppercase tracking-[0.1em] text-[#faf4ea] opacity-0 backdrop-blur transition-opacity hover:bg-[#24102f] group-hover:opacity-100"
+                  className="absolute right-2.5 top-2.5 flex items-center gap-1 rounded-full bg-[#140f0c]/85 px-2.5 py-1.5 text-[9.5px] font-medium uppercase tracking-[0.1em] text-[#faf4ea] opacity-0 backdrop-blur transition-opacity hover:bg-[#140f0c] group-hover:opacity-100"
                 >
                   <IconRemix className="h-3 w-3" /> Remix
                 </button>
@@ -389,7 +389,7 @@ export default function Home() {
       </section>
 
       {/* CREATOR ECONOMY — ivory */}
-      <section className="relative border-t border-[#351c45]/10 py-20 sm:py-28">
+      <section className="relative border-t border-[#241f1a]/10 py-20 sm:py-28">
         <div className="mx-auto max-w-[1400px] px-5 sm:px-8">
           <div className="mb-14 max-w-xl">
             <p className="mb-3 text-[12px] uppercase tracking-[0.3em]" style={{ color: VIOLET }}>From idea to income</p>
@@ -411,7 +411,7 @@ export default function Home() {
                 <h3 className="mt-5 font-display text-xl text-[#17151a]">{title}</h3>
                 <p className="mt-2 text-[13px] leading-relaxed text-[#17151a]/55">{body}</p>
                 {i < EARN_FLOW.length - 1 && (
-                  <IconArrowRight className="absolute -right-3 top-1/2 hidden h-5 w-5 -translate-y-1/2 text-[#351c45]/20 lg:block" />
+                  <IconArrowRight className="absolute -right-3 top-1/2 hidden h-5 w-5 -translate-y-1/2 text-[#241f1a]/20 lg:block" />
                 )}
               </div>
             ))}
@@ -432,7 +432,7 @@ export default function Home() {
 
       {/* COMING SOON — soft lavender wash */}
       <section
-        className="relative border-t border-[#351c45]/10 py-20 sm:py-28"
+        className="relative border-t border-[#241f1a]/10 py-20 sm:py-28"
         style={{ background: "linear-gradient(180deg, rgba(250,244,234,0.5) 0%, rgba(233,213,255,0.4) 50%, rgba(250,244,234,0.5) 100%)" }}
       >
         <div className="mx-auto max-w-[1400px] px-5 sm:px-8">
@@ -467,8 +467,8 @@ export default function Home() {
               </div>
             ))}
 
-            <div className="relative flex flex-col overflow-hidden rounded-3xl border border-dashed border-[#351c45]/20 bg-white/25">
-              <div className="flex aspect-[4/5] items-center justify-center p-6 text-[#351c45]/25">
+            <div className="relative flex flex-col overflow-hidden rounded-3xl border border-dashed border-[#241f1a]/20 bg-white/25">
+              <div className="flex aspect-[4/5] items-center justify-center p-6 text-[#241f1a]/25">
                 <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.4" className="h-16 w-16 opacity-60">
                   <path d="M14 6h20l2 8-3 3v25a2 2 0 0 1-2 2H17a2 2 0 0 1-2-2V17l-3-3 2-8z" />
                   <path d="M20 6c0 3 1.8 5 4 5s4-2 4-5" />
@@ -530,7 +530,7 @@ export default function Home() {
         className="grain grain-deep relative overflow-hidden border-t border-white/10 py-24 text-center text-[#faf4ea] sm:py-32"
         style={{ background: `linear-gradient(135deg, ${PLUM} 0%, ${VIOLET} 130%)` }}
       >
-        <GradientMesh variant="plum" />
+        <GradientMesh variant="dark" />
         <div className="relative mx-auto max-w-2xl px-5 sm:px-8">
           <h2 className="font-display-heavy text-[clamp(2.4rem,8vw,5rem)] uppercase leading-[0.9] text-[#faf4ea]">
             So... what are you making?

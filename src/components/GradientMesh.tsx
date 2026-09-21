@@ -1,12 +1,12 @@
-const LAVENDER = "#e9d5ff";
-const VIOLET = "#8b5cf6";
+const CHAMPAGNE_WASH = "#f0e4c8";
+const CHAMPAGNE = "#c8a96b";
 const GOLD = "#d4af70";
 
 /**
  * Animated blurred color blobs — the "atmospheric lighting" backdrop for the
  * atelier theme. Purely decorative and non-interactive.
  *
- * `variant="plum"` swaps in a palette that reads against the deep-plum
+ * `variant="dark"` swaps in a palette that reads against deep espresso
  * sections (marketplace preview, footer) instead of the light ivory ones.
  *
  * `fixed` anchors the mesh to the viewport (ignores scroll) so it can sit
@@ -23,10 +23,10 @@ export default function GradientMesh({
 }: {
   className?: string;
   fixed?: boolean;
-  variant?: "warm" | "plum";
+  variant?: "warm" | "dark";
 }) {
-  const colors = variant === "plum" ? [VIOLET, GOLD, "#faf4ea"] : [LAVENDER, VIOLET, GOLD];
-  const opacities = variant === "plum" ? [0.2, 0.14, 0.06] : [0.55, 0.22, 0.3];
+  const colors = variant === "dark" ? [CHAMPAGNE, GOLD, "#faf4ea"] : [CHAMPAGNE_WASH, CHAMPAGNE, GOLD];
+  const opacities = variant === "dark" ? [0.18, 0.13, 0.06] : [0.5, 0.2, 0.28];
 
   return (
     <div className={`pointer-events-none inset-0 -z-10 overflow-hidden ${fixed ? "fixed" : "absolute"} ${className}`} aria-hidden="true">

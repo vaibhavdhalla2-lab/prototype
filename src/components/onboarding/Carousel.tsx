@@ -152,13 +152,15 @@ export default function Carousel({
         </div>
       </div>
 
-      {/* desktop: labeled prev / next flanking the slide */}
+      {/* desktop: labeled prev / next flanking the slide — identical size/padding/position on both sides */}
       <button
         onClick={goBack}
         disabled={isFirst}
         aria-label="Previous slide"
-        className={`absolute left-1 top-1/2 z-20 hidden -translate-y-1/2 items-center gap-2 rounded-full px-3 py-2.5 text-[11px] font-medium uppercase tracking-[0.14em] transition-all sm:flex sm:left-2 ${
-          dark ? "text-[#17151a]/50 hover:text-[#351c45]" : "text-ink-soft hover:text-ink"
+        className={`absolute left-2 top-1/2 z-20 hidden -translate-y-1/2 items-center gap-2 rounded-full border px-3.5 py-2.5 text-[11px] font-medium uppercase tracking-[0.14em] transition-all sm:flex ${
+          dark
+            ? "border-white/15 bg-white/5 text-[#faf4ea]/70 backdrop-blur hover:border-[#c8a96b]/50 hover:text-[#d4af70]"
+            : "border-transparent text-ink-soft hover:border-line hover:text-ink"
         } ${isFirst ? "pointer-events-none opacity-0" : "opacity-100"}`}
       >
         <IconArrowRight className="h-4 w-4 rotate-180" />
@@ -168,21 +170,23 @@ export default function Carousel({
         onClick={goNext}
         disabled={isLast && !onFinish}
         aria-label="Next slide"
-        className={`absolute right-1 top-1/2 z-20 hidden -translate-y-1/2 items-center gap-2 rounded-full px-3 py-2.5 text-[11px] font-medium uppercase tracking-[0.14em] transition-all sm:flex sm:right-2 ${
-          dark ? "text-[#17151a]/50 hover:text-[#351c45]" : "text-ink-soft hover:text-ink"
+        className={`absolute right-2 top-1/2 z-20 hidden -translate-y-1/2 items-center gap-2 rounded-full border px-3.5 py-2.5 text-[11px] font-medium uppercase tracking-[0.14em] transition-all sm:flex ${
+          dark
+            ? "border-white/15 bg-white/5 text-[#faf4ea]/70 backdrop-blur hover:border-[#c8a96b]/50 hover:text-[#d4af70]"
+            : "border-transparent text-ink-soft hover:border-line hover:text-ink"
         } ${isLast && !onFinish ? "pointer-events-none opacity-0" : "opacity-100"}`}
       >
         {isLast ? finishLabel : "Next"}
         <IconArrowRight className="h-4 w-4" />
       </button>
 
-      {/* mobile: compact icon-only arrows */}
+      {/* mobile: compact icon-only arrows — identical size/position on both sides */}
       <button
         onClick={goBack}
         disabled={isFirst}
         aria-label="Previous slide"
         className={`absolute left-2 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full shadow-sm backdrop-blur transition-opacity sm:hidden ${
-          dark ? "bg-white/70 text-[#351c45]" : "bg-paper/80 text-ink-soft"
+          dark ? "bg-white/85 text-[#241f1a]" : "bg-paper/80 text-ink-soft"
         } ${isFirst ? "pointer-events-none opacity-0" : "opacity-100"}`}
       >
         <IconArrowRight className="h-4 w-4 rotate-180" />
@@ -192,7 +196,7 @@ export default function Carousel({
         disabled={isLast && !onFinish}
         aria-label="Next slide"
         className={`absolute right-2 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full shadow-sm backdrop-blur transition-opacity sm:hidden ${
-          dark ? "bg-white/70 text-[#351c45]" : "bg-paper/80 text-ink-soft"
+          dark ? "bg-white/85 text-[#241f1a]" : "bg-paper/80 text-ink-soft"
         } ${isLast && !onFinish ? "pointer-events-none opacity-0" : "opacity-100"}`}
       >
         <IconArrowRight className="h-4 w-4" />
@@ -212,17 +216,17 @@ export default function Carousel({
                 className={`h-1 rounded-full transition-all duration-300 ${
                   i === index
                     ? dark
-                      ? "w-6 bg-[#351c45]"
+                      ? "w-6 bg-[#faf4ea]"
                       : "w-6 bg-ink"
                     : dark
-                      ? "w-3 bg-[#351c45]/20 group-hover:bg-[#351c45]/35"
+                      ? "w-3 bg-[#faf4ea]/25 group-hover:bg-[#faf4ea]/45"
                       : "w-3 bg-ink/25 group-hover:bg-ink/40"
                 }`}
               />
             </button>
           ))}
         </div>
-        <p className={`text-[10.5px] uppercase tracking-[0.2em] ${dark ? "text-[#17151a]/40" : "text-ink-faint"}`}>
+        <p className={`text-[10.5px] uppercase tracking-[0.2em] ${dark ? "text-[#faf4ea]/45" : "text-ink-faint"}`}>
           {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
         </p>
       </div>

@@ -172,4 +172,4 @@ export function estimatePrice(opts: {
   return base + mat + graphic + text;
 }
 
-export const COMING_SOON = ["Jerseys", "Socks", "Women's Wear", "Accessories", "Phone Cases", "Stickers"];
+export const COMING_SOON = ["Jerseys", "Socks", "Women's Wear", "Accessories", "Stickers", "Tote Bags"];

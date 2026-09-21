@@ -51,7 +51,7 @@ function Eyebrow({ children, tone, onPlum }: { children: string; tone: string; o
 
 /** Lightweight stand-in shown until a slide's real photographic visual has been asked for at least once. */
 function VisualSkeleton({ className }: { className?: string }) {
-  return <div className={`animate-pulse rounded-2xl bg-[#351c45]/[0.06] ${className ?? ""}`} />;
+  return <div className={`animate-pulse rounded-2xl bg-[#241f1a]/[0.06] ${className ?? ""}`} />;
 }
 
 /**
@@ -66,11 +66,11 @@ function SlideShell({ tone, plumBg, children }: { tone: string; plumBg?: boolean
       className={`grain ${plumBg ? "grain-deep" : ""} relative h-full overflow-hidden rounded-[28px] sm:mx-24 sm:rounded-[32px] lg:mx-28`}
       style={{
         background: plumBg
-          ? "linear-gradient(150deg, #351c45 0%, #24102f 100%)"
+          ? "linear-gradient(150deg, #241f1a 0%, #140f0c 100%)"
           : "linear-gradient(150deg, rgba(250,244,234,0.94) 0%, rgba(233,213,255,0.55) 100%)",
         boxShadow: plumBg
           ? `0 0 0 1px rgba(255,255,255,0.1), 0 0 90px -30px ${tone}77, 0 40px 100px -50px rgba(0,0,0,0.5)`
-          : `0 0 0 1px rgba(255,255,255,0.6), 0 0 90px -35px ${tone}66, 0 40px 90px -55px rgba(53,28,69,0.25)`,
+          : `0 0 0 1px rgba(255,255,255,0.6), 0 0 90px -35px ${tone}66, 0 40px 90px -55px rgba(36, 31, 26,0.25)`,
       }}
     >
       {children}
@@ -78,8 +78,8 @@ function SlideShell({ tone, plumBg, children }: { tone: string; plumBg?: boolean
   );
 }
 
-const PLUM = "#351c45";
-const VIOLET = "#8b5cf6";
+const PLUM = "#241f1a";
+const VIOLET = "#c8a96b";
 const GOLD = "#d4af70";
 
 /* ----------------------------------------------------------------------- */
@@ -165,7 +165,7 @@ export function SlideDiscoverMarketplace({ active }: SlideProps) {
                 ) : (
                   <VisualSkeleton className="h-full w-full" />
                 )}
-                <span className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-[#351c45]/85 px-2 py-1 text-[9px] font-medium uppercase tracking-[0.08em] text-white">
+                <span className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-[#241f1a]/85 px-2 py-1 text-[9px] font-medium uppercase tracking-[0.08em] text-white">
                   <IconRemix className="h-2.5 w-2.5" />
                   {d.remixes}
                 </span>

@@ -88,7 +88,7 @@ function AiPrintQuickView({ designs, initial, onClose, onCustomize }: { designs:
                     key={d.id}
                     onClick={() => setActiveId(d.id)}
                     className={`rounded-full border px-3.5 py-2 text-[11px] font-medium uppercase tracking-[0.06em] transition-colors ${
-                      d.id === active.id ? "border-[#351c45] bg-[#351c45] text-[#d4af70]" : "border-line text-ink-soft hover:border-[#351c45]/40"
+                      d.id === active.id ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-line text-ink-soft hover:border-[#241f1a]/40"
                     }`}
                   >
                     {d.name}
@@ -139,7 +139,7 @@ function DesignCard({ d, onOpen, onRemix }: { d: MarketDesign; onOpen: () => voi
             <p className="font-display text-lg leading-tight text-ink">{d.name}</p>
             <p className="text-xs text-ink-faint">by @{d.creator}</p>
           </button>
-          <p className="whitespace-nowrap text-sm font-medium text-[#351c45]">₹{d.price.toLocaleString("en-IN")}</p>
+          <p className="whitespace-nowrap text-sm font-medium text-[#241f1a]">₹{d.price.toLocaleString("en-IN")}</p>
         </div>
         <div className="mt-3 flex items-center justify-between">
           <span className="flex items-center gap-1 text-[11px] text-ink-faint">
@@ -147,7 +147,7 @@ function DesignCard({ d, onOpen, onRemix }: { d: MarketDesign; onOpen: () => voi
           </span>
           <button
             onClick={onRemix}
-            className="flex items-center gap-1.5 rounded-full border border-[#351c45]/25 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-soft transition-colors group-hover:border-[#351c45] group-hover:text-[#351c45]"
+            className="flex items-center gap-1.5 rounded-full border border-[#241f1a]/25 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-ink-soft transition-colors group-hover:border-[#241f1a] group-hover:text-[#241f1a]"
           >
             <IconRemix className="h-3 w-3" /> Remix
           </button>
@@ -173,10 +173,10 @@ function QuickView({ d, onClose, onRemix }: { d: MarketDesign; onClose: () => vo
         <div className="p-8">
           <p className="text-xs uppercase tracking-[0.16em] text-ink-faint">by @{d.creator}</p>
           <h2 className="mt-1 font-display text-3xl text-ink">{d.name}</h2>
-          <p className="mt-1 text-lg font-medium text-[#351c45]">₹{d.price.toLocaleString("en-IN")}</p>
+          <p className="mt-1 text-lg font-medium text-[#241f1a]">₹{d.price.toLocaleString("en-IN")}</p>
           <p className="mt-3 text-sm leading-relaxed text-ink-soft">{d.story}</p>
 
-          <div className="mt-6 grid grid-cols-2 gap-4 rounded-2xl border border-[#351c45]/15 bg-ivory-dim p-4 text-[13px]">
+          <div className="mt-6 grid grid-cols-2 gap-4 rounded-2xl border border-[#241f1a]/15 bg-ivory-dim p-4 text-[13px]">
             <div><p className="text-[11px] uppercase tracking-[0.08em] text-ink-faint">Product</p><p className="text-ink">{garmentById(d.garment).label}</p></div>
             <div><p className="text-[11px] uppercase tracking-[0.08em] text-ink-faint">Colour</p><p className="text-ink">{colorById(d.color).label}</p></div>
             <div><p className="text-[11px] uppercase tracking-[0.08em] text-ink-faint">Material</p><p className="text-ink">{materialById(d.material).label}</p></div>
@@ -264,7 +264,7 @@ export default function Marketplace() {
               key={t.id}
               onClick={() => setTab(t.id)}
               className={`rounded-full border px-4 py-2 text-[12px] font-medium uppercase tracking-[0.1em] transition-colors ${
-                tab === t.id ? "border-[#351c45] bg-[#351c45] text-[#d4af70]" : "border-line text-ink-soft hover:border-[#351c45]/40"
+                tab === t.id ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-line text-ink-soft hover:border-[#241f1a]/40"
               }`}
             >
               {t.label}

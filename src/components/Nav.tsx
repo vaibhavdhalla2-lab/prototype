@@ -4,7 +4,7 @@ import { IconMenu, IconClose, IconStore, IconUser, IconPlus } from "./icons";
 
 const LINK_CLS = ({ isActive }: { isActive: boolean }) =>
   `relative py-1 text-[13px] tracking-[0.14em] uppercase transition-colors ${
-    isActive ? "text-[#17151a]" : "text-[#17151a]/55 hover:text-[#351c45]"
+    isActive ? "text-[#17151a]" : "text-[#17151a]/55 hover:text-[#241f1a]"
   } after:absolute after:left-0 after:-bottom-1 after:h-px after:bg-[#d4af70] after:transition-all ${
     isActive ? "after:w-full" : "after:w-0 hover:after:w-full"
   }`;
@@ -26,17 +26,20 @@ export default function Nav() {
       <header
         data-mobile-chrome
         className={`sticky top-0 z-40 w-full transition-all duration-300 ${
-          scrolled ? "border-b border-[#351c45]/10 bg-[#faf4ea]/85 backdrop-blur-md" : "border-b border-transparent bg-transparent"
+          scrolled ? "border-b border-[#241f1a]/10 bg-[#faf4ea]/85 backdrop-blur-md" : "border-b border-transparent bg-transparent"
         }`}
       >
         <div className="mx-auto flex max-w-[1400px] items-center justify-between px-5 py-4 sm:px-8">
           <NavLink to="/" className="font-display text-2xl tracking-tight text-[#17151a]" onClick={() => setMobileOpen(false)}>
-            FORM<span className="text-[#351c45]">É</span>
+            FORM<span className="text-[#c8a96b]">É</span>
           </NavLink>
 
           <nav className="hidden items-center gap-9 lg:flex">
+            <NavLink to="/" end className={LINK_CLS}>
+              Home
+            </NavLink>
             <NavLink to="/create" className={LINK_CLS}>
-              Start Creating
+              Create
             </NavLink>
             <NavLink to="/marketplace" className={LINK_CLS}>
               Marketplace
@@ -52,7 +55,7 @@ export default function Nav() {
           <div className="hidden lg:block">
             <button
               onClick={() => navigate("/create")}
-              className="group inline-flex items-center gap-2 rounded-full bg-[#351c45] px-5 py-2.5 text-[12px] font-medium uppercase tracking-[0.14em] text-[#d4af70] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-10px_rgba(53,28,69,0.55)]"
+              className="group inline-flex items-center gap-2 rounded-full bg-[#c8a96b] px-5 py-2.5 text-[12px] font-medium uppercase tracking-[0.14em] text-[#241f1a] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-10px_rgba(36,31,26,0.4)]"
             >
               Create From Scratch
               <IconPlus className="h-3.5 w-3.5 transition-transform group-hover:rotate-90" />
@@ -65,10 +68,13 @@ export default function Nav() {
         </div>
 
         {mobileOpen && (
-          <div className="animate-fade-in border-t border-[#351c45]/10 bg-[#faf4ea] px-6 py-6 lg:hidden">
+          <div className="animate-fade-in border-t border-[#241f1a]/10 bg-[#faf4ea] px-6 py-6 lg:hidden">
             <div className="flex flex-col gap-5">
+              <NavLink to="/" end onClick={() => setMobileOpen(false)} className="font-display text-lg text-[#17151a]">
+                Home
+              </NavLink>
               <NavLink to="/create" onClick={() => setMobileOpen(false)} className="font-display text-lg text-[#17151a]">
-                Start Creating
+                Create
               </NavLink>
               <NavLink to="/marketplace" onClick={() => setMobileOpen(false)} className="font-display text-lg text-[#17151a]">
                 Marketplace
@@ -87,7 +93,7 @@ export default function Nav() {
       {/* Mobile bottom tab bar */}
       <nav
         data-mobile-chrome
-        className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-[#351c45]/10 bg-[#faf4ea]/95 px-4 pb-[max(10px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-[#241f1a]/10 bg-[#faf4ea]/95 px-4 pb-[max(10px,env(safe-area-inset-bottom))] pt-2 backdrop-blur-md lg:hidden"
       >
         <NavLink to="/marketplace" className="flex flex-col items-center gap-1 px-4 py-1">
           {({ isActive }) => (
@@ -99,7 +105,7 @@ export default function Nav() {
         </NavLink>
 
         <NavLink to="/create" className="-mt-6 flex flex-col items-center gap-1">
-          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#351c45] text-[#d4af70] shadow-[0_10px_24px_-8px_rgba(53,28,69,0.6)] transition-transform active:scale-95">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#c8a96b] text-[#241f1a] shadow-[0_10px_24px_-8px_rgba(36,31,26,0.45)] transition-transform active:scale-95">
             <IconPlus className="h-6 w-6" />
           </span>
           <span className="text-[10px] font-medium uppercase tracking-wide text-[#17151a]">Create</span>

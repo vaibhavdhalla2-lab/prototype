@@ -1,13 +1,23 @@
 import type { ReactNode } from "react";
 import { GarmentStage, PRINT_AREAS, type GarmentStageProps } from "../Garment";
 import { isApparel, type ProductId } from "../../data/products";
-import { MugFace, PosterFace, BottleFace, DeskPadFace, PhoneCaseFace, PRODUCT_PRINT_AREAS, type ProductSide, type PrintAreaRect } from "./ProductFaces";
+import {
+  MugFace,
+  MugWrapFace,
+  PosterFace,
+  BottleFace,
+  DeskPadFace,
+  PhoneCaseFace,
+  PRODUCT_PRINT_AREAS,
+  type ProductSide,
+  type PrintAreaRect,
+} from "./ProductFaces";
 
 export interface ProductStageProps {
   product: ProductId;
   colorHex: string;
-  /** "front"/"back" — for non-apparel products this is repurposed per product (wraparound, angled) rather than a literal reverse side. */
-  view: ProductSide | "3d";
+  /** "front"/"back" — for non-apparel products this is repurposed per product (angled, 3D preview) rather than a literal reverse side. "wrap" is mug-only: a read-only composite of its front+back panels. */
+  view: ProductSide | "3d" | "wrap";
   variants: Record<string, string>;
   frontOverlay?: ReactNode;
   backOverlay?: ReactNode;
@@ -24,7 +34,7 @@ export default function ProductStage({ product, colorHex, view, variants, frontO
       <GarmentStage
         garment={product}
         colorHex={colorHex}
-        view={view === "3d" ? "3d" : view}
+        view={view === "3d" ? "3d" : (view as "front" | "back")}
         fit={fit}
         accentTrim={accentTrim}
         pocketVisible={pocketVisible}
@@ -32,6 +42,14 @@ export default function ProductStage({ product, colorHex, view, variants, frontO
         backOverlay={backOverlay}
         className={className}
       />
+    );
+  }
+
+  if (product === "mug" && view === "wrap") {
+    return (
+      <div className={`relative ${className ?? ""}`}>
+        <MugWrapFace colorHex={colorHex} variants={variants} frontOverlay={frontOverlay} backOverlay={backOverlay} />
+      </div>
     );
   }
 
@@ -55,14 +73,20 @@ export function printAreaFor(product: ProductId, side: ProductSide): PrintAreaRe
   return PRODUCT_PRINT_AREAS[product]![side];
 }
 
-/** Whether this product exposes a second, meaningful view (back/wraparound/angled) beyond its front. Posters and desk pads are single-view — the whole point is one full-bleed composition. */
+/** Whether this product exposes a second, meaningful view (back/wraparound/3D preview) beyond its front. Posters and desk pads are single-view — the whole point is one full-bleed composition. */
 export function hasSecondaryView(product: ProductId): boolean {
   return product !== "poster" && product !== "deskpad";
 }
 
-/** Label for the secondary view tab, contextual per product. */
+/** Label for the secondary view tab, contextual per product. Phone case drops the old "Angled" editing tab in favor of a clearly-labelled 3D preview — an angled render is still used automatically in final mockups, just not as a primary edit surface. */
 export function secondaryViewLabel(product: ProductId): string {
   if (isApparel(product)) return "Back";
   if (product === "mug") return "Wraparound";
+  if (product === "phonecase") return "3D Preview";
   return "Angled";
+}
+
+/** Label for the primary/front view tab — phone case calls it "Design" since that's literally where customization happens. */
+export function primaryViewLabel(product: ProductId): string {
+  return product === "phonecase" ? "Design" : "Front";
 }

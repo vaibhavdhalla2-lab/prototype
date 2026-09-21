@@ -189,7 +189,7 @@ export default function GiftFlow({ onBack, onEnterStudio }: { onBack: () => void
           <button
             onClick={generate}
             disabled={!canGenerate}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-[#351c45] py-3.5 text-[12.5px] font-medium uppercase tracking-[0.16em] text-[#d4af70] transition-opacity disabled:opacity-30 hover:opacity-90"
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-[#c8a96b] py-3.5 text-[12.5px] font-medium uppercase tracking-[0.16em] text-[#241f1a] transition-opacity disabled:opacity-30 hover:opacity-90"
           >
             <IconSparkle className="h-4 w-4" />
             Generate Gift Concepts
@@ -232,7 +232,7 @@ export default function GiftFlow({ onBack, onEnterStudio }: { onBack: () => void
             <button
               key={c.product}
               onClick={() => chooseConcept(c)}
-              className={`card-atelier group flex flex-col overflow-hidden text-left transition-all ${isSelected ? "ring-2 ring-[#351c45]" : ""}`}
+              className={`card-atelier group flex flex-col overflow-hidden text-left transition-all ${isSelected ? "ring-2 ring-[#241f1a]" : ""}`}
             >
               <div className="flex aspect-square items-center justify-center p-6" style={{ background: `${c.colorHex}14` }}>
                 <div className="h-full w-full transition-transform duration-500 group-hover:scale-105">
@@ -260,7 +260,7 @@ export default function GiftFlow({ onBack, onEnterStudio }: { onBack: () => void
         <div className="mt-10 flex flex-col items-center gap-3">
           <button
             onClick={() => onEnterStudio(selected.product)}
-            className="flex items-center gap-2 rounded-full bg-[#351c45] px-8 py-3.5 text-[12.5px] font-medium uppercase tracking-[0.16em] text-[#d4af70] transition-transform hover:-translate-y-0.5"
+            className="flex items-center gap-2 rounded-full bg-[#c8a96b] px-8 py-3.5 text-[12.5px] font-medium uppercase tracking-[0.16em] text-[#241f1a] transition-transform hover:-translate-y-0.5"
           >
             Customize This Gift
             <IconArrowRight className="h-4 w-4" />

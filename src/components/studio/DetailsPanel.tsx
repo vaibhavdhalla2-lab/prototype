@@ -1,5 +1,5 @@
 import { useDesign } from "../../lib/store";
-import { isApparel } from "../../data/products";
+import { isApparel, productById } from "../../data/products";
 import { track } from "../../lib/analytics";
 
 const TRIM_LABEL: Record<string, { on: string; off: string }> = {
@@ -20,9 +20,38 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
   );
 }
 
+/** Non-apparel products don't have stitching/embroidery — this is a lighter, still-genuine details tab: naming the piece and a reminder of what makes it distinct. */
+function GenericDetailsPanel({ garment }: { garment: NonNullable<ReturnType<typeof useDesign>["garment"]> }) {
+  const design = useDesign();
+  const product = productById(garment);
+
+  return (
+    <div className="animate-fade-in">
+      <p className="text-[11px] uppercase tracking-[0.25em] text-ink-faint">Details</p>
+      <p className="mt-1 text-sm text-ink-soft">{product.customizationNote}</p>
+
+      <div className="mt-5 rounded-2xl border border-line p-4">
+        <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-ink-faint">Name this creation</p>
+        <input
+          value={design.name}
+          onChange={(e) => design.setName(e.target.value)}
+          placeholder="Untitled Creation"
+          className="mt-2 w-full rounded-xl border border-line bg-ivory px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-[#c8a96b] focus:outline-none"
+        />
+      </div>
+
+      <div className="mt-3 rounded-2xl border border-line-soft bg-ivory-dim p-4 text-[13px] leading-relaxed text-ink-soft">
+        Every other choice for this piece — material, size, colour — lives in its own tab on the left, so the preview
+        always reflects exactly what you'll get.
+      </div>
+    </div>
+  );
+}
+
 export default function DetailsPanel() {
   const design = useDesign();
-  if (!design.garment || !isApparel(design.garment)) return null;
+  if (!design.garment) return null;
+  if (!isApparel(design.garment)) return <GenericDetailsPanel garment={design.garment} />;
   const labels = TRIM_LABEL[design.garment];
 
   return (
