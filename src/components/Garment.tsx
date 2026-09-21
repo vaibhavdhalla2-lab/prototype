@@ -227,9 +227,11 @@ interface FaceProps {
   showPrintHint?: boolean;
   accentTrim?: boolean;
   pocketVisible?: boolean;
+  /** Skips the woven-grain noise overlay — it's tuned to disappear via antialiasing at normal render sizes, but fully resolves into a harsh speckled texture at Precision Edit's extreme zoom. */
+  disableGrain?: boolean;
 }
 
-function Face({ garment, colorHex, side, overlay, printArea, showPrintHint, accentTrim, pocketVisible = true }: FaceProps) {
+function Face({ garment, colorHex, side, overlay, printArea, showPrintHint, accentTrim, pocketVisible = true, disableGrain }: FaceProps) {
   const clipId = `clip-${garment}-${side}`;
   const shadeId = `shade-${garment}-${side}`;
   const grainId = `grain-${garment}-${side}`;
@@ -316,8 +318,8 @@ function Face({ garment, colorHex, side, overlay, printArea, showPrintHint, acce
 
       {/* everything below is clipped to the garment silhouette */}
       <g clipPath={`url(#${clipId})`} pointerEvents="none">
-        {/* woven fabric grain */}
-        <rect x="0" y="0" width="360" height="440" filter={`url(#${grainId})`} opacity={0.5} style={{ mixBlendMode: "overlay" }} />
+        {/* woven fabric grain — skipped at Precision Edit's extreme zoom, see disableGrain */}
+        {!disableGrain && <rect x="0" y="0" width="360" height="440" filter={`url(#${grainId})`} opacity={0.5} style={{ mixBlendMode: "overlay" }} />}
 
         {/* directional studio light */}
         <rect x="0" y="0" width="360" height="440" fill={`url(#${shadeId})`} />
@@ -462,6 +464,14 @@ export interface GarmentStageProps {
   pocketVisible?: boolean;
   fit?: "oversized" | "relaxed" | "regular" | "cropped";
   className?: string;
+  /**
+   * Skip the photographic canvas mockup and always use the flat vector Face,
+   * even for garments that normally get the photo treatment. The photo
+   * mockup's canvas bitmap doesn't upscale cleanly to the extreme sizes
+   * Precision Edit renders at (a duplicate stage many times larger than its
+   * visible crop), so precision editing forces this to stay crisp at any zoom.
+   */
+  forceFlat?: boolean;
 }
 
 /**
@@ -476,8 +486,8 @@ const FIT_SCALE: Record<NonNullable<GarmentStageProps["fit"]>, { x: number; y: n
   cropped: { x: 1, y: 0.86 },
 };
 
-export function GarmentStage({ garment, colorHex, view, frontOverlay, backOverlay, showPrintHint, accentTrim, pocketVisible, fit, className }: GarmentStageProps) {
-  const hasPhoto = garment === "tshirt" && Boolean(GARMENT_ASSET_REGISTRY.tshirt);
+export function GarmentStage({ garment, colorHex, view, frontOverlay, backOverlay, showPrintHint, accentTrim, pocketVisible, fit, className, forceFlat }: GarmentStageProps) {
+  const hasPhoto = garment === "tshirt" && !forceFlat && Boolean(GARMENT_ASSET_REGISTRY.tshirt);
   const [dragAngle, setDragAngle] = useState(-26);
 
   useEffect(() => {
@@ -535,14 +545,14 @@ export function GarmentStage({ garment, colorHex, view, frontOverlay, backOverla
           {hasPhoto ? (
             <PhotographicFace colorHex={colorHex} side="front" overlay={frontOverlay} printArea={PRINT_AREAS[garment].front} showPrintHint={showPrintHint} />
           ) : (
-            <Face garment={garment} colorHex={colorHex} side="front" overlay={frontOverlay} printArea={PRINT_AREAS[garment].front} showPrintHint={showPrintHint} accentTrim={accentTrim} pocketVisible={pocketVisible} />
+            <Face garment={garment} colorHex={colorHex} side="front" overlay={frontOverlay} printArea={PRINT_AREAS[garment].front} showPrintHint={showPrintHint} accentTrim={accentTrim} pocketVisible={pocketVisible} disableGrain={forceFlat} />
           )}
         </div>
         <div className="absolute inset-0" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
           {hasPhoto ? (
             <PhotographicFace colorHex={colorHex} side="back" overlay={backOverlay} printArea={PRINT_AREAS[garment].back} showPrintHint={showPrintHint} />
           ) : (
-            <Face garment={garment} colorHex={colorHex} side="back" overlay={backOverlay} printArea={PRINT_AREAS[garment].back} showPrintHint={showPrintHint} accentTrim={accentTrim} pocketVisible={pocketVisible} />
+            <Face garment={garment} colorHex={colorHex} side="back" overlay={backOverlay} printArea={PRINT_AREAS[garment].back} showPrintHint={showPrintHint} accentTrim={accentTrim} pocketVisible={pocketVisible} disableGrain={forceFlat} />
           )}
         </div>
       </div>

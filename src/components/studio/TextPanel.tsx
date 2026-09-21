@@ -97,7 +97,7 @@ export default function TextPanel() {
       <div className="flex items-center justify-between">
         <p className="text-[11px] uppercase tracking-[0.25em] text-ink-faint">Editing text</p>
         <button onClick={() => design.selectLayer(null)} className="text-[11px] uppercase tracking-[0.1em] text-ink-faint hover:text-ink-soft">
-          Done
+          Deselect
         </button>
       </div>
 

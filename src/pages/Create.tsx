@@ -29,11 +29,11 @@ import LayersPanel from "../components/studio/LayersPanel";
 import SummaryPanel from "../components/studio/SummaryPanel";
 import MusePanel from "../components/studio/MusePanel";
 import LayerStack, { type CanvasMode } from "../components/studio/LayerStack";
-import { MagnifierLens, MagnifiedView, lensToRegion, DEFAULT_ZOOM, type LensPos } from "../components/studio/Magnifier";
+import { MagnifierLens, MagnifiedView, lensToRegion, DEFAULT_ZOOM, type LensPos, type PrecisionCursorMode } from "../components/studio/Magnifier";
 import BottomSheet from "../components/studio/BottomSheet";
 import RefineDrawing from "../components/studio/RefineDrawing";
 import { IconSparkle, IconArrowRight, IconClose, IconPencil, IconType, IconUpload, IconLayers, IconMove, IconStore } from "../components/icons";
-import { IconMaximize } from "../components/icons";
+import { IconMaximize, IconHand } from "../components/icons";
 
 type Stage = "pick" | "upload" | "prompt" | "gift" | "studio";
 type ViewTab = "front" | "back" | "detail" | "3d" | "wrap";
@@ -140,8 +140,17 @@ export default function Create() {
   const [zoomed, setZoomed] = useState(false);
   const [wrapView, setWrapView] = useState(false);
   const [inspecting, setInspecting] = useState(false);
-  const [lens, setLens] = useState<LensPos>({ x: 0.5, y: 0.42 });
+  const [panMode, setPanMode] = useState(false);
+  const [precisionHintDismissed, setPrecisionHintDismissed] = useState(() => {
+    try {
+      return window.localStorage.getItem("forme_precision_hint_seen") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const [lens, setLens] = useState<LensPos>({ x: 0.5, y: 0.42, size: 0.32 });
   const [lensZoom, setLensZoom] = useState(DEFAULT_ZOOM);
+  const [productSettingsOpen, setProductSettingsOpen] = useState(false);
   const [musePrefill, setMusePrefill] = useState<string | null>(null);
   const [museSheetOpen, setMuseSheetOpen] = useState(false);
   const [productSheetOpen, setProductSheetOpen] = useState(false);
@@ -323,13 +332,29 @@ export default function Create() {
   const activeSide = design.view === "back" ? "back" : "front";
   const activePrintArea = activeSide === "back" ? backPrintArea : printArea;
 
-  const canvasMode: CanvasMode = !wrapView && (category === "design" || category === "layers")
+  const canvasMode: CanvasMode = !wrapView && (category === "design" || category === "layers") && !(inspecting && panMode)
     ? category === "design" && designSub === "draw"
       ? "draw"
       : category === "design" && designSub === "text"
         ? "text"
         : "move"
     : "none";
+
+  const region = inspecting && !wrapView ? lensToRegion(lens, activePrintArea, activeSide) : null;
+  const precisionCursorMode: PrecisionCursorMode = panMode
+    ? "hand"
+    : category === "design" && designSub === "draw"
+      ? drawTool === "eraser"
+        ? "erase"
+        : "draw"
+      : category === "design" && designSub === "text"
+        ? "text"
+        : "move";
+
+  const exitPrecisionEdit = () => {
+    setInspecting(false);
+    setPanMode(false);
+  };
 
   const onCreateText = (createSide: "front" | "back", x: number, y: number) => {
     design.addTextLayer(createSide, { content: "Type here", x, y });
@@ -457,7 +482,7 @@ export default function Create() {
           ]
         : [{ id: "front", label: primaryViewLabel(design.garment) }];
 
-  const stageElement = () => (
+  const stageElement = (opts?: { forceFlat?: boolean }) => (
     <ProductStage
       product={design.garment!}
       colorHex={colorHex}
@@ -469,6 +494,7 @@ export default function Create() {
       frontOverlay={frontOverlay}
       backOverlay={backOverlay}
       className="h-full w-full"
+      forceFlat={opts?.forceFlat}
     />
   );
 
@@ -515,7 +541,14 @@ export default function Create() {
 
   const PrecisionEditToggle = () => (
     <button
-      onClick={() => setInspecting((v) => !v)}
+      onClick={() => {
+        if (inspecting) {
+          exitPrecisionEdit();
+        } else {
+          setInspecting(true);
+          if (category !== "design" && category !== "layers") setCategory("design");
+        }
+      }}
       className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[11px] font-medium uppercase tracking-[0.1em] transition-colors ${
         inspecting ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-line text-ink-soft hover:border-ink-soft"
       }`}
@@ -525,34 +558,46 @@ export default function Create() {
     </button>
   );
 
+  const selectPrecisionTool = (sub: DesignSub) => {
+    setPanMode(false);
+    setCategory("design");
+    setDesignSub(sub);
+  };
+
+  /** The canvas-level tool switcher only — properties for whichever tool is active live in the left sidebar, not duplicated here. */
   const PrecisionToolTabs = () => (
     <div className="mb-2.5 flex flex-wrap items-center gap-1.5">
-      {DESIGN_SUB_TABS.filter((t) => t.id !== "graphics").map((t) => (
+      <button
+        onClick={() => setPanMode((v) => !v)}
+        className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-[0.06em] transition-colors ${
+          panMode ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-line-soft text-ink-soft hover:border-ink-soft"
+        }`}
+      >
+        <IconHand className="h-3.5 w-3.5" /> Hand
+      </button>
+      {DESIGN_SUB_TABS.map((t) => (
         <button
           key={t.id}
-          onClick={() => {
-            setCategory("design");
-            setDesignSub(t.id);
-          }}
+          onClick={() => selectPrecisionTool(t.id)}
           className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-[0.06em] transition-colors ${
-            category === "design" && designSub === t.id ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-line-soft text-ink-soft hover:border-ink-soft"
+            !panMode && category === "design" && designSub === t.id ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-line-soft text-ink-soft hover:border-ink-soft"
           }`}
         >
           <t.icon className="h-3.5 w-3.5" />
           {t.label}
         </button>
       ))}
-      <button onClick={() => askMuse("")} className="flex items-center gap-1.5 rounded-full border border-[#c8a96b]/50 px-3 py-1.5 text-[11px] uppercase tracking-[0.06em] text-[#8f7345] hover:border-[#c8a96b]">
+      <button
+        onClick={() => {
+          setPanMode(false);
+          askMuse("");
+        }}
+        className="flex items-center gap-1.5 rounded-full border border-[#c8a96b]/50 px-3 py-1.5 text-[11px] uppercase tracking-[0.06em] text-[#8f7345] hover:border-[#c8a96b]"
+      >
         <IconSparkle className="h-3.5 w-3.5" /> MUSE
-      </button>
-      <div className="flex-1" />
-      <button onClick={() => setInspecting(false)} className="rounded-full border border-line px-3 py-1.5 text-[11px] uppercase tracking-[0.06em] text-ink-soft hover:border-ink-soft">
-        Done
       </button>
     </div>
   );
-
-  const region = inspecting && !wrapView ? lensToRegion(lens, activePrintArea, activeSide) : null;
 
   return (
     <div className="relative">
@@ -583,7 +628,7 @@ export default function Create() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              {tabs.map((t) => (
+              {(inspecting ? tabs.filter((t) => t.id === "design" || t.id === "layers") : tabs).map((t) => (
                 <button
                   key={t.id}
                   onClick={() => setCategory(t.id)}
@@ -595,6 +640,35 @@ export default function Create() {
                 </button>
               ))}
             </div>
+
+            {inspecting && tabs.some((t) => t.id !== "design" && t.id !== "layers") && (
+              <div className="mt-2 border-t border-line-soft pt-2">
+                <button
+                  onClick={() => setProductSettingsOpen((v) => !v)}
+                  className="flex w-full items-center justify-between px-4 py-2 text-left text-[11px] uppercase tracking-[0.1em] text-ink-faint hover:text-ink-soft"
+                >
+                  Product settings
+                  <span className="text-[10px]">{productSettingsOpen ? "Hide" : "Show"}</span>
+                </button>
+                {productSettingsOpen && (
+                  <div className="flex flex-col gap-1.5 px-1">
+                    {tabs
+                      .filter((t) => t.id !== "design" && t.id !== "layers")
+                      .map((t) => (
+                        <button
+                          key={t.id}
+                          onClick={() => setCategory(t.id)}
+                          className={`rounded-xl px-4 py-2.5 text-left text-[13px] font-medium uppercase tracking-[0.08em] transition-colors ${
+                            category === t.id ? "bg-[#241f1a] text-[#d4af70]" : "text-ink-soft hover:bg-ivory-dim"
+                          }`}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {category === "design" && (
               <div className="mt-3 grid grid-cols-5 gap-1.5">
@@ -619,32 +693,74 @@ export default function Create() {
           {/* CENTER — canvas, never scrolls */}
           <div className="flex flex-1 flex-col overflow-hidden px-8 py-5">
             {inspecting && !wrapView ? (
-              <div className="flex min-h-0 flex-1 flex-col">
+              <div className="relative flex min-h-0 flex-1 flex-col">
                 <div className="mb-3 flex shrink-0 items-center justify-between gap-3">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-ink-faint">Precision Edit · {caption}</p>
-                  <button onClick={() => setInspecting(false)} className="rounded-full border border-line px-3.5 py-1.5 text-[11px] font-medium uppercase tracking-[0.1em] text-ink-soft hover:border-ink-soft">
+                  <div>
+                    <p className="text-[10.5px] uppercase tracking-[0.2em] text-[#8f7345]">Create / Precision Edit</p>
+                    <p className="mt-0.5 text-[13px] font-medium text-ink">
+                      {productById(design.garment).label} · {activeSide === "back" ? "Back" : "Front"}
+                      {region ? ` · ${region.label}` : ""}
+                    </p>
+                  </div>
+                  <button onClick={exitPrecisionEdit} className="rounded-full border border-line bg-paper px-4 py-2 text-[11px] font-medium uppercase tracking-[0.12em] text-ink-soft hover:border-ink-soft">
                     Done
                   </button>
                 </div>
                 <div className="flex min-h-0 flex-1 gap-6">
-                  {/* NAVIGATOR — the whole product, small, with a draggable viewport rectangle */}
+                  {/* NAVIGATOR — chooses WHICH area to work on. Not for drawing. */}
                   <div className="flex w-[190px] shrink-0 flex-col xl:w-[220px]">
                     <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.16em] text-ink-faint">Navigator</p>
                     <div className="relative aspect-square w-full rounded-2xl border border-line-soft bg-paper p-4 shadow-[0_20px_50px_-35px_rgba(36,31,26,0.35)]">
                       {stageElement()}
                       <MagnifierLens lens={lens} onMove={setLens} printArea={activePrintArea} active />
                     </div>
-                    <p className="mt-2 text-[11px] leading-snug text-ink-faint">Drag the square to choose which physical area to work on.</p>
+                    <p className="mt-2 text-[11px] leading-snug text-ink-faint">Drag the box to choose an area · drag the corner to resize it.</p>
                   </div>
 
-                  {/* PRECISION CANVAS — the large, actually-editable detail view */}
+                  {/* PRECISION CANVAS — the large, actually-editable detail view. This is the hero. */}
                   <div className="flex min-h-0 flex-1 flex-col">
                     <PrecisionToolTabs />
                     <div className="min-h-0 flex-1">
-                      <MagnifiedView lens={lens} zoom={lensZoom} setZoom={setLensZoom} renderStage={() => stageElement()} panelSize={520} />
+                      <MagnifiedView
+                        lens={lens}
+                        zoom={lensZoom}
+                        setZoom={setLensZoom}
+                        renderStage={() => stageElement({ forceFlat: true })}
+                        panelSize={520}
+                        regionLabel={`${activeSide === "back" ? "Back" : "Front"}${region ? ` · ${region.label}` : ""} · ${lensZoom}×`}
+                        cursorMode={precisionCursorMode}
+                        brushSize={drawBrushSize}
+                        onPan={panMode ? setLens : undefined}
+                      />
                     </div>
                   </div>
                 </div>
+
+                {!precisionHintDismissed && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#17151a]/12 backdrop-blur-[1px]">
+                    <div className="max-w-sm rounded-3xl border border-[#c8a96b]/30 bg-paper p-6 shadow-[0_30px_70px_-30px_rgba(23,21,26,0.5)]">
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-[#8f7345]">Precision Edit</p>
+                      <ol className="mt-3 space-y-2 text-[13.5px] leading-relaxed text-ink-soft">
+                        <li>1. Drag the box in the Navigator to choose an area.</li>
+                        <li>2. Zoom in on the Precision Canvas.</li>
+                        <li>3. Draw, type, or ask MUSE to edit only that area.</li>
+                      </ol>
+                      <button
+                        onClick={() => {
+                          setPrecisionHintDismissed(true);
+                          try {
+                            window.localStorage.setItem("forme_precision_hint_seen", "1");
+                          } catch {
+                            /* ignore */
+                          }
+                        }}
+                        className="mt-4 w-full rounded-full bg-[#241f1a] py-2.5 text-[12px] font-medium uppercase tracking-[0.12em] text-[#d4af70]"
+                      >
+                        Got it
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <>
@@ -864,21 +980,63 @@ export default function Create() {
         {inspecting && !wrapView && (
           <div className="fixed inset-0 z-50 flex flex-col bg-ivory animate-fade-in">
             <div className="flex items-center justify-between border-b border-line-soft px-4 py-3">
-              <p className="text-[11px] uppercase tracking-[0.2em] text-ink-faint">Precision Edit</p>
-              <button onClick={() => setInspecting(false)} className="text-[12px] font-medium uppercase tracking-[0.14em] text-ink">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.18em] text-[#8f7345]">Create / Precision Edit</p>
+                <p className="mt-0.5 text-[12.5px] font-medium text-ink">
+                  {productById(design.garment).label} · {activeSide === "back" ? "Back" : "Front"}
+                  {region ? ` · ${region.label}` : ""}
+                </p>
+              </div>
+              <button onClick={exitPrecisionEdit} className="text-[12px] font-medium uppercase tracking-[0.14em] text-ink">
                 Done
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto px-4 py-4">
-              <p className="mb-2 text-center text-[10px] font-medium uppercase tracking-[0.16em] text-ink-faint">Navigator — drag to choose an area</p>
+            <div className="relative flex-1 overflow-y-auto px-4 py-4">
+              <p className="mb-2 text-center text-[10px] font-medium uppercase tracking-[0.16em] text-ink-faint">Navigator — drag to choose an area, drag the corner to resize</p>
               <div className="relative mx-auto aspect-square w-full max-w-[220px] rounded-[24px] border border-line-soft bg-paper p-4 shadow-[0_20px_60px_-30px_rgba(26,23,18,0.35)]">
                 {stageElement()}
                 <MagnifierLens lens={lens} onMove={setLens} printArea={activePrintArea} active />
               </div>
               <div className="mt-5">
                 <PrecisionToolTabs />
-                <MagnifiedView lens={lens} zoom={lensZoom} setZoom={setLensZoom} renderStage={() => stageElement()} panelSize={320} />
+                <MagnifiedView
+                  lens={lens}
+                  zoom={lensZoom}
+                  setZoom={setLensZoom}
+                  renderStage={() => stageElement({ forceFlat: true })}
+                  panelSize={320}
+                  regionLabel={`${activeSide === "back" ? "Back" : "Front"}${region ? ` · ${region.label}` : ""} · ${lensZoom}×`}
+                  cursorMode={precisionCursorMode}
+                  brushSize={drawBrushSize}
+                  onPan={panMode ? setLens : undefined}
+                />
               </div>
+
+              {!precisionHintDismissed && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#17151a]/12 p-4 backdrop-blur-[1px]">
+                  <div className="max-w-sm rounded-3xl border border-[#c8a96b]/30 bg-paper p-6 shadow-[0_30px_70px_-30px_rgba(23,21,26,0.5)]">
+                    <p className="text-[11px] uppercase tracking-[0.2em] text-[#8f7345]">Precision Edit</p>
+                    <ol className="mt-3 space-y-2 text-[13.5px] leading-relaxed text-ink-soft">
+                      <li>1. Drag the box in the Navigator to choose an area.</li>
+                      <li>2. Zoom in on the Precision Canvas.</li>
+                      <li>3. Draw, type, or ask MUSE to edit only that area.</li>
+                    </ol>
+                    <button
+                      onClick={() => {
+                        setPrecisionHintDismissed(true);
+                        try {
+                          window.localStorage.setItem("forme_precision_hint_seen", "1");
+                        } catch {
+                          /* ignore */
+                        }
+                      }}
+                      className="mt-4 w-full rounded-full bg-[#241f1a] py-2.5 text-[12px] font-medium uppercase tracking-[0.12em] text-[#d4af70]"
+                    >
+                      Got it
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

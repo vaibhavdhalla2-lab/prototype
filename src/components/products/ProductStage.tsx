@@ -25,10 +25,12 @@ export interface ProductStageProps {
   accentTrim?: boolean;
   pocketVisible?: boolean;
   className?: string;
+  /** See GarmentStageProps.forceFlat — used by Precision Edit's duplicate render so zoom stays crisp. */
+  forceFlat?: boolean;
 }
 
 /** Single entry point the studio renders through — apparel keeps its existing photographic/SVG system untouched; everything else goes through the new flat-illustration faces. */
-export default function ProductStage({ product, colorHex, view, variants, frontOverlay, backOverlay, fit, accentTrim, pocketVisible, className }: ProductStageProps) {
+export default function ProductStage({ product, colorHex, view, variants, frontOverlay, backOverlay, fit, accentTrim, pocketVisible, className, forceFlat }: ProductStageProps) {
   if (isApparel(product)) {
     return (
       <GarmentStage
@@ -41,6 +43,7 @@ export default function ProductStage({ product, colorHex, view, variants, frontO
         frontOverlay={frontOverlay}
         backOverlay={backOverlay}
         className={className}
+        forceFlat={forceFlat}
       />
     );
   }
