@@ -214,21 +214,21 @@ export function SlideCreateShareEarn({ active }: SlideProps) {
   const navigate = useNavigate();
   const ready = useLazyActive(active);
   return (
-    <SlideShell tone={GOLD} plumBg>
+    <SlideShell tone={GOLD}>
       <div className="flex h-full flex-col justify-center px-6 py-9 sm:px-10 sm:py-12 lg:px-14">
-        <Eyebrow tone={GOLD} onPlum>You can sell what you create</Eyebrow>
-        <h3 className="font-display-heavy max-w-2xl text-[clamp(1.9rem,6vw,3.6rem)] uppercase leading-[0.9] tracking-tight text-[#faf4ea]">
+        <Eyebrow tone={GOLD}>You can sell what you create</Eyebrow>
+        <h3 className="font-display-heavy max-w-2xl text-[clamp(1.9rem,6vw,3.6rem)] uppercase leading-[0.9] tracking-tight text-[#17151a]">
           Create it. Sell it.
           <br />
           Earn from it.
         </h3>
-        <p className="mt-4 max-w-md text-[14px] leading-relaxed text-[#faf4ea]/60">
-          Turn your creation into a marketplace listing. When someone buys it, FORMÉ produces and ships it — you earn on every sale.
+        <p className="mt-4 max-w-md text-[14px] leading-relaxed text-[#17151a]/55">
+          Create a product once. List it on the marketplace. FORMÉ handles production and fulfillment when someone buys it — you earn from every sale.
         </p>
 
         <div className="mt-8 flex flex-1 flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
           {/* your design */}
-          <div className="glass-plum flex w-full max-w-[220px] flex-col overflow-hidden rounded-2xl border border-white/10 sm:w-[168px]">
+          <div className="flex w-full max-w-[220px] flex-col overflow-hidden rounded-2xl border border-white/60 bg-white/55 sm:w-[168px]">
             <div className="flex h-24 items-center justify-center p-4" style={{ background: `${GOLD}14` }}>
               {ready ? (
                 <GarmentStage garment={SELL_SAMPLE.garment} colorHex={colorById(SELL_SAMPLE.color).hex} view="front" className="h-full w-full" />
@@ -237,41 +237,46 @@ export function SlideCreateShareEarn({ active }: SlideProps) {
               )}
             </div>
             <div className="px-3 py-2.5 text-center">
-              <p className="text-[9.5px] font-medium uppercase tracking-[0.14em] text-[#faf4ea]/45">Your design</p>
-              <p className="mt-0.5 truncate font-display text-[13px] text-[#faf4ea]">{SELL_SAMPLE.name}</p>
+              <p className="text-[9.5px] font-medium uppercase tracking-[0.14em] text-[#17151a]/45">Your design</p>
+              <p className="mt-0.5 truncate font-display text-[13px] text-[#17151a]">{SELL_SAMPLE.name}</p>
             </div>
           </div>
 
-          <IconArrowRight className="h-4 w-4 rotate-90 shrink-0 text-[#faf4ea]/25 sm:rotate-0" />
+          <IconArrowRight className="h-4 w-4 rotate-90 shrink-0 text-[#17151a]/25 sm:rotate-0" />
 
           {/* marketplace listing */}
-          <div className="glass-plum flex w-full max-w-[220px] flex-col overflow-hidden rounded-2xl border border-white/10 sm:w-[168px]">
+          <div className="flex w-full max-w-[220px] flex-col overflow-hidden rounded-2xl border border-white/60 bg-white/55 sm:w-[168px]">
             <div className="flex h-24 flex-col items-center justify-center gap-1.5 p-4" style={{ background: `${GOLD}14` }}>
               <IconStore className="h-6 w-6" style={{ color: GOLD }} />
-              <p className="text-[9.5px] uppercase tracking-[0.12em] text-[#faf4ea]/45">Live on marketplace</p>
+              <p className="text-[9.5px] uppercase tracking-[0.12em] text-[#17151a]/45">Live on marketplace</p>
             </div>
             <div className="px-3 py-2.5 text-center">
-              <p className="text-[9.5px] font-medium uppercase tracking-[0.14em] text-[#faf4ea]/45">Marketplace listing</p>
-              <p className="mt-0.5 text-[13px] text-[#faf4ea]/80">₹{SELL_SAMPLE.price.toLocaleString("en-IN")} · sold</p>
+              <p className="text-[9.5px] font-medium uppercase tracking-[0.14em] text-[#17151a]/45">Marketplace listing</p>
+              <p className="mt-0.5 text-[13px] text-[#17151a]/80">₹{SELL_SAMPLE.price.toLocaleString("en-IN")} · sold</p>
             </div>
           </div>
 
-          <IconArrowRight className="h-4 w-4 rotate-90 shrink-0 text-[#faf4ea]/25 sm:rotate-0" />
+          <IconArrowRight className="h-4 w-4 rotate-90 shrink-0 text-[#17151a]/25 sm:rotate-0" />
 
           {/* you earn */}
-          <div className="flex w-full max-w-[220px] flex-col items-center justify-center rounded-2xl border border-[#d4af70]/30 bg-[#d4af70]/10 px-4 py-6 text-center sm:w-[168px]">
-            <p className="text-[9.5px] font-medium uppercase tracking-[0.14em]" style={{ color: GOLD }}>You earn</p>
-            <p className="mt-2 font-display-heavy text-2xl text-[#faf4ea]">Every sale</p>
-            <p className="mt-1 text-[11px] leading-snug text-[#faf4ea]/50">Your profit, calculated at checkout.</p>
+          <div className="flex w-full max-w-[220px] flex-col items-center justify-center rounded-2xl border border-[#d4af70]/40 bg-[#d4af70]/[0.14] px-4 py-6 text-center sm:w-[168px]">
+            <p className="text-[9.5px] font-medium uppercase tracking-[0.14em]" style={{ color: "#8f7345" }}>You earn</p>
+            <p className="mt-2 font-display-heavy text-2xl text-[#17151a]">Every sale</p>
+            <p className="mt-1 text-[11px] leading-snug text-[#17151a]/50">Your profit, calculated at checkout.</p>
           </div>
         </div>
 
         <div className="mt-2 flex flex-wrap items-center justify-between gap-4">
-          <p className="text-[11px] italic text-[#faf4ea]/40">Illustrative — subject to final FORMÉ marketplace terms.</p>
-          <GlowButton onClick={() => navigate("/marketplace")}>
-            Explore Marketplace
-            <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </GlowButton>
+          <p className="text-[11px] italic text-[#17151a]/40">Illustrative — subject to final FORMÉ marketplace terms.</p>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <GlowButton variant="secondary" onClick={() => navigate("/marketplace")}>
+              Explore Marketplace
+            </GlowButton>
+            <GlowButton onClick={() => navigate("/create", { state: { mode: "scratch" } })}>
+              Start Selling
+              <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </GlowButton>
+          </div>
         </div>
       </div>
     </SlideShell>

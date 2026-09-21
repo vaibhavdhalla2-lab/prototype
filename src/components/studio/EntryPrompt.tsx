@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { useDesign } from "../../lib/store";
 import { interpretPrompt, type MuseConcept } from "../../lib/muse";
-import { colorById, materialById, fitById, garmentById } from "../../data/catalog";
+import { colorById, materialById, fitById } from "../../data/catalog";
+import { isApparel, productById } from "../../data/products";
 import { track } from "../../lib/analytics";
 import PrototypeNotice from "../PrototypeNotice";
 import { IconSparkle, IconCheck } from "../icons";
 
 const EXAMPLE = "I want an oversized black hoodie with a minimal futuristic design inspired by Tokyo nightlife.";
 
-export default function EntryPrompt({ onEnterStudio }: { onEnterStudio: (tab: string) => void }) {
+export default function EntryPrompt({ onEnterStudio, initialText }: { onEnterStudio: (tab: string) => void; initialText?: string }) {
   const design = useDesign();
-  const [text, setText] = useState("");
+  const [text, setText] = useState(initialText ?? "");
   const [concept, setConcept] = useState<MuseConcept | null>(null);
   const [thinking, setThinking] = useState(false);
 
@@ -26,10 +27,14 @@ export default function EntryPrompt({ onEnterStudio }: { onEnterStudio: (tab: st
 
   const apply = (jumpTo: string) => {
     if (!concept) return;
-    design.setGarment(concept.garment);
+    design.setGarment(concept.product);
     design.setColor(concept.color);
-    design.setMaterial(concept.material);
-    design.setFit(concept.fit);
+    if (isApparel(concept.product)) {
+      if (concept.material) design.setMaterial(concept.material);
+      if (concept.fit) design.setFit(concept.fit);
+    } else if (concept.variants) {
+      for (const [key, value] of Object.entries(concept.variants)) design.setVariant(key, value);
+    }
     design.setSourceMode("prompt");
     onEnterStudio(jumpTo);
   };
@@ -84,20 +89,24 @@ export default function EntryPrompt({ onEnterStudio }: { onEnterStudio: (tab: st
           <div className="mt-5 grid grid-cols-2 gap-3 rounded-2xl bg-paper p-4 text-[13px] sm:grid-cols-3">
             <div>
               <p className="text-[11px] uppercase tracking-[0.08em] text-ink-faint">Product</p>
-              <p className="text-ink">{garmentById(concept.garment).label}</p>
+              <p className="text-ink">{productById(concept.product).label}</p>
             </div>
             <div>
               <p className="text-[11px] uppercase tracking-[0.08em] text-ink-faint">Colour</p>
               <p className="text-ink">{colorById(concept.color).label}</p>
             </div>
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.08em] text-ink-faint">Material</p>
-              <p className="text-ink">{materialById(concept.material).label}</p>
-            </div>
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.08em] text-ink-faint">Fit</p>
-              <p className="text-ink">{fitById(concept.fit).label}</p>
-            </div>
+            {isApparel(concept.product) && concept.material && (
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.08em] text-ink-faint">Material</p>
+                <p className="text-ink">{materialById(concept.material).label}</p>
+              </div>
+            )}
+            {isApparel(concept.product) && concept.fit && (
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.08em] text-ink-faint">Fit</p>
+                <p className="text-ink">{fitById(concept.fit).label}</p>
+              </div>
+            )}
             <div>
               <p className="text-[11px] uppercase tracking-[0.08em] text-ink-faint">Graphic</p>
               <p className="text-ink">{concept.graphicNote}</p>

@@ -1,13 +1,13 @@
 import { useDesign, type DrawTool, type SmoothingLevel } from "../../lib/store";
 import { track } from "../../lib/analytics";
-import { IconUndo, IconRedo, IconTrash, IconSparkle, IconCheck } from "../icons";
+import { IconUndo, IconRedo, IconTrash, IconSparkle, IconCheck, IconPencil, IconMarker, IconBrush, IconPen, IconEraser } from "../icons";
 
-const TOOLS: { id: DrawTool; label: string }[] = [
-  { id: "pencil", label: "Pencil" },
-  { id: "marker", label: "Marker" },
-  { id: "brush", label: "Brush" },
-  { id: "pen", label: "Pen" },
-  { id: "eraser", label: "Eraser" },
+const TOOLS: { id: DrawTool; label: string; icon: typeof IconPencil }[] = [
+  { id: "pencil", label: "Pencil", icon: IconPencil },
+  { id: "marker", label: "Marker", icon: IconMarker },
+  { id: "brush", label: "Brush", icon: IconBrush },
+  { id: "pen", label: "Pen", icon: IconPen },
+  { id: "eraser", label: "Eraser", icon: IconEraser },
 ];
 
 const BRUSH_SIZES = [1, 2, 4, 8, 12, 16, 24, 40];
@@ -62,16 +62,21 @@ export default function DrawPanel({ tool, setTool, color, setColor, brushSize, s
       <p className="text-[11px] uppercase tracking-[0.25em] text-ink-faint">Draw</p>
       <p className="mt-1 text-sm text-ink-soft">Don't overthink it. Draw something only you would wear.</p>
 
-      <div className="mt-4 grid grid-cols-5 gap-1.5">
+      <div className="mt-4 grid grid-cols-5 gap-2">
         {TOOLS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTool(t.id)}
-            className={`rounded-xl border py-2.5 text-[10.5px] uppercase tracking-[0.02em] transition-colors ${
-              tool === t.id ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-line text-ink-soft hover:border-ink-soft"
+            aria-label={t.label}
+            aria-pressed={tool === t.id}
+            className={`flex flex-col items-center gap-1.5 rounded-2xl border px-1.5 py-3 transition-all duration-150 ${
+              tool === t.id
+                ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]"
+                : "border-[#B8A88B]/50 bg-[#FAF3E4] text-[#3a352c] hover:border-[#B8A88B] hover:bg-[#f3e9d4]"
             }`}
           >
-            {t.label}
+            <t.icon className="h-[18px] w-[18px]" />
+            <span className="text-[9.5px] font-medium uppercase tracking-[0.04em]">{t.label}</span>
           </button>
         ))}
       </div>
@@ -84,8 +89,8 @@ export default function DrawPanel({ tool, setTool, color, setColor, brushSize, s
             <button
               key={s}
               onClick={() => setBrushSize(s)}
-              className={`rounded-full border px-2.5 py-1 text-[10.5px] transition-colors ${
-                brushSize === s ? "border-[#241f1a] bg-ivory-dim text-ink" : "border-line-soft text-ink-faint hover:border-ink-soft"
+              className={`rounded-full border px-3 py-1.5 text-[11px] font-medium transition-all duration-150 ${
+                brushSize === s ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-[#B8A88B]/50 bg-[#FAF3E4] text-[#3a352c] hover:border-[#B8A88B]"
               }`}
             >
               {s}
@@ -106,8 +111,8 @@ export default function DrawPanel({ tool, setTool, color, setColor, brushSize, s
             <button
               key={s.id}
               onClick={() => setSmoothing(s.id)}
-              className={`rounded-lg border py-2 text-[11px] transition-colors ${
-                smoothing === s.id ? "border-[#241f1a] bg-ivory-dim text-ink" : "border-line-soft text-ink-faint hover:border-ink-soft"
+              className={`rounded-xl border py-2 text-[11px] font-medium transition-all duration-150 ${
+                smoothing === s.id ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-[#B8A88B]/50 bg-[#FAF3E4] text-[#3a352c] hover:border-[#B8A88B]"
               }`}
             >
               {s.label}

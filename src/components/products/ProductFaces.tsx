@@ -262,21 +262,31 @@ export function DeskPadFace({ colorHex, overlay, variants }: FaceProps) {
 export function PhoneCaseFace({ colorHex, side, overlay, variants }: FaceProps) {
   const angled = side === "back";
   const clear = variants.type === "clear";
-  const finish = variants.finish === "matte" ? 0.12 : 0.32;
+  const finish = variants.finish === "matte" ? 0.1 : 0.24;
   const area = PRODUCT_PRINT_AREAS.phonecase![side];
   const groupTransform = angled ? "rotate(-6 180 250) skewY(1)" : undefined;
+  const bodyFill = clear ? "#f4f4f4" : colorHex;
+  // The camera module is blended toward the case's own colour rather than
+  // painted stark black, so a light case reads as a soft charcoal cutout
+  // instead of a jarring high-contrast square.
+  const moduleFill = darken(clear ? "#cfcfcf" : colorHex, 60);
+  const lensFill = darken(clear ? "#cfcfcf" : colorHex, 78);
 
   return (
     <svg viewBox="0 0 360 440" className="h-full w-full overflow-visible">
       <ellipse cx="180" cy="400" rx="70" ry="12" fill={SHADOW} opacity="0.4" />
       <g transform={groupTransform}>
-        <rect x="96" y="70" width="168" height="320" rx="34" fill={clear ? "#f4f4f4" : colorHex} opacity={clear ? 0.25 : 1} stroke={darken(clear ? "#cfcfcf" : colorHex, 30)} strokeWidth="1.5" />
+        <rect x="96" y="70" width="168" height="320" rx="34" fill={bodyFill} opacity={clear ? 0.25 : 1} stroke={darken(clear ? "#cfcfcf" : colorHex, 30)} strokeWidth="1.5" />
         <rect x="96" y="70" width="168" height="60" rx="30" fill={lighten(colorHex, 40)} opacity={finish} />
-        {/* camera safe-zone cutout, upper-left — the print area rect stays clear of this always */}
-        <rect x="112" y="86" width="66" height="66" rx="16" fill="#1a1712" opacity="0.85" />
-        <circle cx="132" cy="106" r="10" fill="#2a2622" />
-        <circle cx="158" cy="106" r="10" fill="#2a2622" />
-        <circle cx="132" cy="132" r="10" fill="#2a2622" />
+        {/* camera module — small, rounded and colour-matched to the case, not a stark black block */}
+        <rect x="118" y="88" width="46" height="46" rx="14" fill={moduleFill} opacity={clear ? 0.55 : 0.92} />
+        <circle cx="133" cy="103" r="7.5" fill={lensFill} />
+        <circle cx="149" cy="103" r="7.5" fill={lensFill} />
+        <circle cx="133" cy="119" r="7.5" fill={lensFill} />
+        <circle cx="133" cy="103" r="2.6" fill="#0d0b09" opacity="0.55" />
+        <circle cx="149" cy="103" r="2.6" fill="#0d0b09" opacity="0.55" />
+        <circle cx="133" cy="119" r="2.6" fill="#0d0b09" opacity="0.55" />
+        <circle cx="152" cy="119" r="3.2" fill={lensFill} opacity="0.7" />
         <rect x="150" y="380" width="60" height="4" rx="2" fill={darken(colorHex, 40)} opacity="0.5" />
       </g>
       <g transform={groupTransform}>

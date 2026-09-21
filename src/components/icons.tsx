@@ -244,3 +244,78 @@ export function IconStar(props: IconProps & { filled?: boolean }) {
     </svg>
   );
 }
+
+export function IconMarker(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" {...base} {...props}>
+      <path d="M8 20l1-5 8-8 4 4-8 8-5 1z" />
+      <path d="M14 8.5l3-3a2 2 0 0 1 3 3l-3 3" />
+    </svg>
+  );
+}
+
+export function IconBrush(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" {...base} {...props}>
+      <path d="M6 21c-1.5 0-2.4-1.6-1.6-2.9L7 14l3 3-3.6 2.6c-.4.3-.9.4-1.4.4z" />
+      <path d="M10 14l6.5-6.5a2.1 2.1 0 0 0 0-3 2.1 2.1 0 0 0-3 0L7 11" />
+      <path d="M15 6.5L17.5 9" />
+    </svg>
+  );
+}
+
+export function IconPen(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" {...base} {...props}>
+      <path d="M5 19l1-3.2L15.3 6.5a1.8 1.8 0 0 1 2.5 0l.7.7a1.8 1.8 0 0 1 0 2.5L9.2 18l-3.2 1z" />
+      <path d="M13.2 8.5l2.3 2.3" />
+    </svg>
+  );
+}
+
+export function IconEraser(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" {...base} {...props}>
+      <path d="M18.5 12.5L11 20H6l-2.5-2.5a1.5 1.5 0 0 1 0-2.1l9-9a1.5 1.5 0 0 1 2.1 0l4 4a1.5 1.5 0 0 1 0 2.1z" />
+      <path d="M13 8.5L18 13.5" />
+      <path d="M6 20h13" />
+    </svg>
+  );
+}
+
+export function IconHand(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" {...base} {...props}>
+      <path d="M9 12.5V6a1.3 1.3 0 0 1 2.6 0v5" />
+      <path d="M11.6 11V4.6a1.3 1.3 0 0 1 2.6 0V11" />
+      <path d="M14.2 11.2V6a1.3 1.3 0 0 1 2.6 0v7.5" />
+      <path d="M16.8 10.8a1.3 1.3 0 0 1 2.6 0v4.7c0 3.6-2.4 6.5-6 6.5h-1.8c-2.1 0-3.4-.7-4.7-2.3l-3-3.7a1.4 1.4 0 0 1 2-2l1.7 1.5" />
+    </svg>
+  );
+}
+
+export function IconZoomIn(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" {...base} {...props}>
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="M20 20l-4.3-4.3M10.5 7.5v6M7.5 10.5h6" />
+    </svg>
+  );
+}
+
+export function IconZoomOut(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" {...base} {...props}>
+      <circle cx="10.5" cy="10.5" r="6.5" />
+      <path d="M20 20l-4.3-4.3M7.5 10.5h6" />
+    </svg>
+  );
+}
+
+export function IconMaximize(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" {...base} {...props}>
+      <path d="M4 9V5a1 1 0 0 1 1-1h4M20 9V5a1 1 0 0 0-1-1h-4M4 15v4a1 1 0 0 0 1 1h4M20 15v4a1 1 0 0 1-1 1h-4" />
+    </svg>
+  );
+}

@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { useDesign, type TextLayer, type CaseMode, type TextAlign } from "../../lib/store";
 import { track } from "../../lib/analytics";
-import { IconTrash, IconCopy, IconType } from "../icons";
+import { IconTrash, IconCopy, IconType, IconChevronDown } from "../icons";
 
 const FONTS = ["Inter", "Playfair Display", "Bebas Neue", "Georgia", "Courier New", "Arial Black"];
 const SIZES = [12, 14, 16, 20, 24, 32, 48, 64, 96];
@@ -43,6 +44,7 @@ function Slider({ value, min, max, step = 1, onChange, format }: { value: number
 
 export default function TextPanel() {
   const design = useDesign();
+  const [moreOpen, setMoreOpen] = useState(false);
   if (!design.garment) return null;
   const side = design.view === "back" ? "back" : "front";
   const layers = design.layersFor(side).filter((l): l is TextLayer => l.type === "text");
@@ -63,7 +65,7 @@ export default function TextPanel() {
     return (
       <div className="animate-fade-in">
         <p className="text-[11px] uppercase tracking-[0.25em] text-ink-faint">Text</p>
-        <p className="mt-1 text-sm text-ink-soft">Add a word or line, then drag it into place. Every text block is its own layer.</p>
+        <p className="mt-1 text-sm text-ink-soft">Tap anywhere on the product to place text, or add one below. Every text block is its own layer you can style, move and delete.</p>
 
         {layers.length > 0 && (
           <div className="mt-4 space-y-2">
@@ -130,8 +132,8 @@ export default function TextPanel() {
             <button
               key={s}
               onClick={() => update({ fontSize: s })}
-              className={`rounded-lg border px-2.5 py-1.5 text-[11.5px] transition-colors ${
-                selected.fontSize === s ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-line text-ink-soft hover:border-ink-soft"
+              className={`rounded-lg border px-2.5 py-1.5 text-[11.5px] font-medium transition-all duration-150 ${
+                selected.fontSize === s ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-[#B8A88B]/50 bg-[#FAF3E4] text-[#3a352c] hover:border-[#B8A88B]"
               }`}
             >
               {s}
@@ -140,60 +142,34 @@ export default function TextPanel() {
         </div>
       </div>
 
-      <div>
-        <p className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.1em] text-ink-faint">Weight</p>
-        <div className="flex flex-wrap gap-1.5">
-          {WEIGHTS.map((w) => (
-            <button
-              key={w.value}
-              onClick={() => update({ fontWeight: w.value })}
-              className={`rounded-lg border px-2.5 py-1.5 text-[11px] transition-colors ${
-                selected.fontWeight === w.value ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-line text-ink-soft hover:border-ink-soft"
-              }`}
-            >
-              {w.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
       <div className="flex items-center gap-2">
         <button
           onClick={() => update({ fontWeight: selected.fontWeight >= 700 ? 400 : 700 })}
-          className={`flex h-9 w-9 items-center justify-center rounded-lg border font-bold transition-colors ${
-            selected.fontWeight >= 700 ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-line text-ink-soft"
+          aria-pressed={selected.fontWeight >= 700}
+          className={`flex h-9 w-9 items-center justify-center rounded-lg border font-bold transition-all duration-150 ${
+            selected.fontWeight >= 700 ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-[#B8A88B]/50 bg-[#FAF3E4] text-[#3a352c]"
           }`}
         >
           B
         </button>
         <button
           onClick={() => update({ italic: !selected.italic })}
-          className={`flex h-9 w-9 items-center justify-center rounded-lg border italic transition-colors ${
-            selected.italic ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-line text-ink-soft"
+          aria-pressed={selected.italic}
+          className={`flex h-9 w-9 items-center justify-center rounded-lg border italic transition-all duration-150 ${
+            selected.italic ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-[#B8A88B]/50 bg-[#FAF3E4] text-[#3a352c]"
           }`}
         >
           I
         </button>
         <button
           onClick={() => update({ underline: !selected.underline })}
-          className={`flex h-9 w-9 items-center justify-center rounded-lg border underline transition-colors ${
-            selected.underline ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-line text-ink-soft"
+          aria-pressed={selected.underline}
+          className={`flex h-9 w-9 items-center justify-center rounded-lg border underline transition-all duration-150 ${
+            selected.underline ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-[#B8A88B]/50 bg-[#FAF3E4] text-[#3a352c]"
           }`}
         >
           U
         </button>
-        <div className="mx-1 h-6 w-px bg-line" />
-        {CASES.map((c) => (
-          <button
-            key={c.id}
-            onClick={() => update({ caseMode: c.id })}
-            className={`flex h-9 w-9 items-center justify-center rounded-lg border text-[12px] transition-colors ${
-              selected.caseMode === c.id ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-line text-ink-soft"
-            }`}
-          >
-            {c.label}
-          </button>
-        ))}
       </div>
 
       <div>
@@ -203,29 +179,14 @@ export default function TextPanel() {
             <button
               key={a.id}
               onClick={() => update({ align: a.id })}
-              className={`flex-1 rounded-lg border py-2 text-[11.5px] uppercase tracking-[0.06em] transition-colors ${
-                selected.align === a.id ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-line text-ink-soft"
+              className={`flex-1 rounded-lg border py-2 text-[11.5px] uppercase tracking-[0.06em] transition-all duration-150 ${
+                selected.align === a.id ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-[#B8A88B]/50 bg-[#FAF3E4] text-[#3a352c]"
               }`}
             >
               {a.label}
             </button>
           ))}
         </div>
-      </div>
-
-      <div>
-        <p className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.1em] text-ink-faint">Letter spacing</p>
-        <Slider value={selected.letterSpacing} min={-2} max={12} step={0.5} onChange={(v) => update({ letterSpacing: v })} format={(v) => `${v}px`} />
-      </div>
-
-      <div>
-        <p className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.1em] text-ink-faint">Line height</p>
-        <Slider value={selected.lineHeight} min={0.8} max={2} step={0.05} onChange={(v) => update({ lineHeight: v })} format={(v) => v.toFixed(2)} />
-      </div>
-
-      <div>
-        <p className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.1em] text-ink-faint">Opacity</p>
-        <Slider value={Math.round(selected.opacity * 100)} min={10} max={100} onChange={(v) => update({ opacity: v / 100 })} format={(v) => `${v}%`} />
       </div>
 
       <div>
@@ -248,6 +209,74 @@ export default function TextPanel() {
             aria-label="Custom colour"
           />
         </div>
+      </div>
+
+      <div className="border-t border-line-soft pt-4">
+        <button
+          onClick={() => setMoreOpen((v) => !v)}
+          className="flex w-full items-center justify-between text-[10.5px] font-medium uppercase tracking-[0.12em] text-ink-faint hover:text-ink-soft"
+        >
+          More text options
+          <IconChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${moreOpen ? "rotate-180" : ""}`} />
+        </button>
+
+        {moreOpen && (
+          <div className="mt-4 space-y-5 animate-fade-in">
+            <div>
+              <p className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.1em] text-ink-faint">Weight</p>
+              <div className="flex flex-wrap gap-1.5">
+                {WEIGHTS.map((w) => (
+                  <button
+                    key={w.value}
+                    onClick={() => update({ fontWeight: w.value })}
+                    className={`rounded-lg border px-2.5 py-1.5 text-[11px] transition-all duration-150 ${
+                      selected.fontWeight === w.value ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-[#B8A88B]/50 bg-[#FAF3E4] text-[#3a352c]"
+                    }`}
+                  >
+                    {w.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.1em] text-ink-faint">Case</p>
+              <div className="flex gap-1.5">
+                {CASES.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => update({ caseMode: c.id })}
+                    className={`flex h-9 flex-1 items-center justify-center rounded-lg border text-[12px] transition-all duration-150 ${
+                      selected.caseMode === c.id ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-[#B8A88B]/50 bg-[#FAF3E4] text-[#3a352c]"
+                    }`}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.1em] text-ink-faint">Letter spacing</p>
+              <Slider value={selected.letterSpacing} min={-2} max={12} step={0.5} onChange={(v) => update({ letterSpacing: v })} format={(v) => `${v}px`} />
+            </div>
+
+            <div>
+              <p className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.1em] text-ink-faint">Line height</p>
+              <Slider value={selected.lineHeight} min={0.8} max={2} step={0.05} onChange={(v) => update({ lineHeight: v })} format={(v) => v.toFixed(2)} />
+            </div>
+
+            <div>
+              <p className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.1em] text-ink-faint">Rotation</p>
+              <Slider value={selected.rotation} min={-180} max={180} step={1} onChange={(v) => update({ rotation: v })} format={(v) => `${v}°`} />
+            </div>
+
+            <div>
+              <p className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.1em] text-ink-faint">Opacity</p>
+              <Slider value={Math.round(selected.opacity * 100)} min={10} max={100} onChange={(v) => update({ opacity: v / 100 })} format={(v) => `${v}%`} />
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex gap-2 border-t border-line-soft pt-4">

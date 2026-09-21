@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useDesign, type ImageLayer, type GraphicLayer } from "../../lib/store";
-import { generateMuseVariants, type MuseVariant, type MuseStyleBias } from "../../lib/muse";
+import { generateMuseVariants, type MuseVariant, type MuseStyleBias, MUSE_STYLE_MODIFIERS, MUSE_EXAMPLE_PROMPTS } from "../../lib/muse";
 import { interpretLocalEdit } from "../../lib/localEdit";
 import type { RegionSelection } from "./Magnifier";
 import { colorById } from "../../data/catalog";
@@ -9,8 +9,14 @@ import ProductStage from "../products/ProductStage";
 import { track } from "../../lib/analytics";
 import { IconSparkle, IconCheck, IconUndo } from "../icons";
 
-const PRODUCT_CHIPS = ["Minimal", "More Premium", "More Playful", "Vintage", "Change Colours", "Simplify", "Add Typography", "Create 4 Variations"];
-const REGION_CHIPS = ["Add a small star", "Add a thin stripe", "Write FORMÉ here", "Make it distressed", "Add hand-drawn flowers", "Remove this element"];
+const REGION_CHIPS = [
+  "Add a tiny hand-drawn gold star here",
+  "Place my initials subtly in this corner",
+  "Add fine floral linework",
+  "Make these lines more intricate",
+  "Add small serif text underneath",
+  "Remove this element only from this area",
+];
 
 export interface MusePanelProps {
   inspecting: boolean;
@@ -64,6 +70,7 @@ export default function MusePanel({ inspecting, region, prefill, onPrefillConsum
 
   const product = productById(design.garment);
   const apparel = isApparel(design.garment);
+  const exampleList = MUSE_EXAMPLE_PROMPTS[design.garment] ?? [];
   const regionMode = inspecting && !!region && scopeOverride !== "product";
   const side = design.view === "back" ? "back" : "front";
 
@@ -137,16 +144,27 @@ export default function MusePanel({ inspecting, region, prefill, onPrefillConsum
 
       {regionMode ? (
         <div className="mt-5 animate-fade-in">
-          <div className="flex items-center justify-between rounded-2xl border border-[#c8a96b]/40 bg-[#c8a96b]/[0.08] px-4 py-3">
-            <div>
-              <p className="text-[10.5px] uppercase tracking-[0.14em] text-[#8f7345]">Editing selected area</p>
-              <p className="mt-0.5 text-[13px] font-medium text-ink">
-                {side === "back" ? "Back" : "Front"} · {region!.label}
-              </p>
+          <div className="rounded-2xl border border-[#c8a96b]/40 bg-[#c8a96b]/[0.08] px-4 py-3">
+            <p className="text-[10.5px] uppercase tracking-[0.14em] text-[#8f7345]">Editing</p>
+            <p className="mt-0.5 text-[13px] font-medium text-ink">
+              {product.label} · {side === "back" ? "Back" : "Front"} · Selected area
+            </p>
+          </div>
+
+          <div className="mt-3">
+            <p className="text-[10.5px] font-medium uppercase tracking-[0.1em] text-ink-faint">Apply to</p>
+            <div className="mt-1.5 flex flex-col gap-1.5">
+              <button onClick={() => setScopeOverride("auto")} className="flex items-center gap-2 text-left text-[13px] text-ink">
+                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-[1.5px] border-[#241f1a]">
+                  <span className="h-2 w-2 rounded-full bg-[#241f1a]" />
+                </span>
+                Selected area
+              </button>
+              <button onClick={() => setScopeOverride("product")} className="flex items-center gap-2 text-left text-[13px] text-ink-faint hover:text-ink-soft">
+                <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-[1.5px] border-line" />
+                Whole product
+              </button>
             </div>
-            <button onClick={() => setScopeOverride("product")} className="shrink-0 text-[10.5px] uppercase tracking-[0.08em] text-ink-faint hover:text-ink-soft">
-              Whole product instead
-            </button>
           </div>
 
           <textarea
@@ -162,7 +180,7 @@ export default function MusePanel({ inspecting, region, prefill, onPrefillConsum
               <button
                 key={chip}
                 onClick={() => setText(chip)}
-                className="rounded-full border border-line-soft px-3 py-1.5 text-[11px] text-ink-soft transition-colors hover:border-[#c8a96b]/60 hover:text-ink"
+                className="rounded-full border border-[#B8A88B]/50 bg-[#FAF3E4] px-3 py-1.5 text-[11px] font-medium text-[#3a352c] transition-all duration-150 hover:border-[#c8a96b]"
               >
                 {chip}
               </button>
@@ -202,18 +220,38 @@ export default function MusePanel({ inspecting, region, prefill, onPrefillConsum
             rows={3}
             className="mt-3 w-full resize-none rounded-2xl border border-line bg-ivory px-4 py-3 text-[14px] leading-relaxed text-ink placeholder:text-ink-faint focus:border-[#c8a96b] focus:outline-none"
           />
-          <p className="mt-3 text-[10.5px] font-medium uppercase tracking-[0.1em] text-ink-faint">Suggested</p>
+          <p className="mt-3 text-[10.5px] font-medium uppercase tracking-[0.1em] text-ink-faint">Style</p>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {PRODUCT_CHIPS.map((chip) => (
+            {MUSE_STYLE_MODIFIERS.map((chip) => (
               <button
                 key={chip}
-                onClick={() => (chip === "Create 4 Variations" ? generateProduct("neutral", true) : setText((t) => (t ? `${t}, ${chip.toLowerCase()}` : `A ${chip.toLowerCase()} ${product.label.toLowerCase()}.`)))}
-                className="rounded-full border border-line-soft px-3 py-1.5 text-[11.5px] text-ink-soft transition-colors hover:border-[#c8a96b]/60 hover:text-ink"
+                onClick={() => setText((t) => (t ? `${t}, ${chip.toLowerCase()}` : `A ${chip.toLowerCase()} ${product.label.toLowerCase()}.`))}
+                className="rounded-full border border-[#B8A88B]/50 bg-[#FAF3E4] px-3 py-1.5 text-[11.5px] font-medium text-[#3a352c] transition-all duration-150 hover:border-[#c8a96b]"
               >
                 {chip}
               </button>
             ))}
           </div>
+
+          {exampleList.length > 0 && (
+            <div className="mt-5">
+              <p className="text-[10.5px] font-medium uppercase tracking-[0.1em] text-ink-faint">Need inspiration?</p>
+              <div className="mt-2 space-y-1.5">
+                {exampleList.map((ex) => (
+                  <button
+                    key={ex}
+                    onClick={() => {
+                      setText(ex);
+                      textareaRef.current?.focus();
+                    }}
+                    className="block w-full rounded-xl border border-line-soft bg-paper px-3.5 py-2.5 text-left text-[12.5px] italic leading-snug text-ink-soft transition-colors hover:border-[#c8a96b]/60 hover:text-ink"
+                  >
+                    "{ex}"
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <button
             onClick={() => generateProduct("neutral")}

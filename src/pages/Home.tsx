@@ -11,7 +11,7 @@ import { COLORS, GARMENTS, colorById } from "../data/catalog";
 import { PRODUCTS } from "../data/products";
 import ProductStage from "../components/products/ProductStage";
 import { useDesign } from "../lib/store";
-import { IconArrowRight, IconPencil, IconRemix, IconStore, IconLock, IconHeart } from "../components/icons";
+import { IconArrowRight, IconPencil, IconRemix, IconStore, IconLock, IconHeart, IconSparkle, IconUpload, IconDraw, IconType } from "../components/icons";
 import type { ProductDef } from "../data/products";
 import MicroPrompt from "../components/MicroPrompt";
 import { track } from "../lib/analytics";
@@ -139,41 +139,107 @@ function HeroReveal() {
 /* HERO CAROUSEL — slide 1 is the hero itself, unchanged                    */
 /* ----------------------------------------------------------------------- */
 
+const HERO_PROMPT_EXAMPLES = [
+  "Create a cream ceramic mug with tiny botanical illustrations and 'Slow Mornings' in elegant serif typography.",
+  "Design a vintage motorsport poster in cream and burgundy.",
+  "Create a forest-green phone case with tiny serif initials.",
+  "Make a playful mug for someone who loves coffee and cats.",
+  "Create a panoramic Tokyo-night desk mat in navy and muted red.",
+];
+
 function SlideHeroIntro() {
   const navigate = useNavigate();
+  const [prompt, setPrompt] = useState(HERO_PROMPT_EXAMPLES[0]);
+  const [exampleIndex, setExampleIndex] = useState(0);
+  const [dirty, setDirty] = useState(false);
+
+  useEffect(() => {
+    if (dirty) return;
+    const id = window.setInterval(() => {
+      setExampleIndex((i) => {
+        const next = (i + 1) % HERO_PROMPT_EXAMPLES.length;
+        setPrompt(HERO_PROMPT_EXAMPLES[next]);
+        return next;
+      });
+    }, 4800);
+    return () => window.clearInterval(id);
+  }, [dirty]);
+
+  const createWithMuse = () => {
+    track("start_creating", { mode: "prompt", source: "home_hero" });
+    navigate("/create", { state: { mode: "prompt", prefillText: prompt } });
+  };
+
   return (
-    <div className="mx-auto grid h-full max-w-[1400px] grid-cols-1 items-center gap-10 px-5 sm:px-8 lg:grid-cols-2 lg:gap-10 lg:px-8">
+    <div className="mx-auto grid h-full max-w-[1400px] grid-cols-1 items-center gap-10 px-5 sm:px-8 lg:grid-cols-2 lg:gap-14 lg:px-8">
       <div className="order-2 lg:order-1">
-        <p className="mb-5 text-[12px] uppercase tracking-[0.3em] text-[#17151a]/40 animate-fade-up">FORMÉ — a design prototype</p>
-        <h1 className="font-display-heavy text-[clamp(2.6rem,8vw,5.4rem)] uppercase leading-[0.88] tracking-tight text-[#17151a] animate-fade-up [animation-delay:80ms]">
-          You can
+        <p className="mb-4 flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.3em] animate-fade-up" style={{ color: GOLD }}>
+          <IconSparkle className="h-3.5 w-3.5" /> Create with MUSE
+        </p>
+        <h1 className="font-display-heavy text-[clamp(2.3rem,6.4vw,4.2rem)] uppercase leading-[0.94] tracking-tight text-[#17151a] animate-fade-up [animation-delay:80ms]">
+          From a sentence
           <br />
-          <span className="text-[clamp(3.1rem,9.5vw,6.6rem)]">create.</span>
-          <br />
-          <span className="text-gradient-gold">Your own world.</span>
+          to <span className="text-gradient-gold">something real.</span>
         </h1>
-        <p className="mt-7 max-w-md text-balance text-lg leading-relaxed text-[#17151a]/60 animate-fade-up [animation-delay:160ms]">
-          Create it from scratch. Find something you love. Remix it. Make it yours.
+        <p className="mt-5 max-w-md text-balance text-[16px] leading-relaxed text-[#17151a]/60 animate-fade-up [animation-delay:160ms]">
+          Describe the product you're imagining. MUSE creates a starting point you can refine down to the smallest detail.
         </p>
-        <div className="mt-9 flex flex-wrap items-center gap-4 animate-fade-up [animation-delay:240ms]">
-          <GlowButton onClick={() => navigate("/create")}>
-            Start Creating
-            <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </GlowButton>
-          <GlowButton variant="secondary" onClick={() => navigate("/marketplace")}>
-            Explore Marketplace
-          </GlowButton>
-          <button
-            onClick={() => navigate("/create", { state: { mode: "gift" } })}
-            className="inline-flex items-center gap-2 text-[12.5px] font-medium uppercase tracking-[0.14em] text-[#241f1a] underline decoration-[#d4af70] decoration-2 underline-offset-4 transition-opacity hover:opacity-70"
-          >
-            Design A Gift
-            <IconArrowRight className="h-3.5 w-3.5" />
-          </button>
+
+        <div className="mt-7 animate-fade-up [animation-delay:220ms]">
+          <div className="rounded-3xl border border-[#241f1a]/12 bg-white/70 p-2 shadow-[0_30px_70px_-45px_rgba(36,31,26,0.35)] backdrop-blur">
+            <textarea
+              value={prompt}
+              onChange={(e) => {
+                setPrompt(e.target.value);
+                setDirty(true);
+              }}
+              rows={3}
+              placeholder="Describe the product you're imagining..."
+              className="w-full resize-none rounded-2xl bg-transparent px-4 py-3 text-[15px] italic leading-relaxed text-[#17151a] placeholder:text-[#17151a]/40 placeholder:not-italic focus:outline-none"
+            />
+            <div className="flex items-center justify-between gap-3 px-2 pb-1.5 pt-1">
+              <div className="flex items-center gap-1.5">
+                {HERO_PROMPT_EXAMPLES.map((_, i) => (
+                  <span key={i} className={`h-1 rounded-full transition-all duration-300 ${i === exampleIndex && !dirty ? "w-4 bg-[#241f1a]/50" : "w-1 bg-[#241f1a]/15"}`} />
+                ))}
+              </div>
+              <GlowButton onClick={createWithMuse} className="shrink-0">
+                <IconSparkle className="h-4 w-4" />
+                Create With MUSE
+              </GlowButton>
+            </div>
+          </div>
         </div>
-        <p className="mt-6 max-w-sm text-[13px] uppercase tracking-[0.1em] text-[#17151a]/35 animate-fade-up [animation-delay:320ms]">
-          Six products to customize · Hoodies, caps &amp; more coming soon
-        </p>
+
+        <div className="mt-8 animate-fade-up [animation-delay:280ms]">
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#17151a]/40">Or start your way</p>
+          <div className="mt-3 flex flex-wrap items-center gap-2.5">
+            <button
+              onClick={() => navigate("/create", { state: { mode: "upload" } })}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#241f1a]/15 bg-white/50 px-4 py-2 text-[12.5px] font-medium text-[#17151a] transition-colors hover:border-[#241f1a]/30"
+            >
+              <IconUpload className="h-3.5 w-3.5" /> Upload
+            </button>
+            <button
+              onClick={() => navigate("/create", { state: { mode: "scratch" } })}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#241f1a]/15 bg-white/50 px-4 py-2 text-[12.5px] font-medium text-[#17151a] transition-colors hover:border-[#241f1a]/30"
+            >
+              <IconDraw className="h-3.5 w-3.5" /> Draw
+            </button>
+            <button
+              onClick={() => navigate("/create", { state: { mode: "scratch" } })}
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#241f1a]/15 bg-white/50 px-4 py-2 text-[12.5px] font-medium text-[#17151a] transition-colors hover:border-[#241f1a]/30"
+            >
+              <IconType className="h-3.5 w-3.5" /> Manual Design
+            </button>
+            <button
+              onClick={() => navigate("/create", { state: { mode: "gift" } })}
+              className="inline-flex items-center gap-1.5 text-[12.5px] font-medium uppercase tracking-[0.1em] text-[#241f1a] underline decoration-[#d4af70] decoration-2 underline-offset-4 transition-opacity hover:opacity-70"
+            >
+              Design A Gift
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="order-1 flex justify-center lg:order-2">
@@ -200,12 +266,12 @@ const EARN_FLOW = [
 /* ----------------------------------------------------------------------- */
 
 const PRODUCT_WORLDS: Record<string, { bg: string; materials?: string; dark?: boolean }> = {
-  tshirt: { bg: "radial-gradient(120% 120% at 28% 15%, rgba(212,175,112,0.24) 0%, rgba(250,244,234,0) 68%)" },
+  tshirt: { bg: "radial-gradient(120% 120% at 28% 15%, rgba(212,175,112,0.24) 0%, rgba(250,244,234,0) 68%)", materials: "Regular · Oversized · Heavyweight" },
   mug: { bg: "radial-gradient(120% 130% at 75% 15%, rgba(201,154,111,0.3) 0%, rgba(250,244,234,0) 68%)", materials: "Ceramic · Enamel · Steel" },
-  poster: { bg: "radial-gradient(120% 130% at 25% 85%, rgba(200,169,107,0.2) 0%, rgba(233,213,255,0.22) 45%, rgba(250,244,234,0) 75%)" },
+  poster: { bg: "radial-gradient(120% 130% at 25% 85%, rgba(200,169,107,0.2) 0%, rgba(233,213,255,0.22) 45%, rgba(250,244,234,0) 75%)", materials: "Matte · Fine Art · Framed" },
   bottle: { bg: "radial-gradient(120% 130% at 75% 20%, rgba(127,166,171,0.28) 0%, rgba(250,244,234,0) 68%)", materials: "Steel · Aluminum · Insulated" },
   deskpad: { bg: "radial-gradient(120% 130% at 25% 80%, rgba(169,130,90,0.24) 0%, rgba(250,244,234,0) 68%)" },
-  phonecase: { bg: "linear-gradient(155deg, #241f1a 0%, #140f0c 100%)", dark: true },
+  phonecase: { bg: "radial-gradient(120% 130% at 75% 20%, rgba(184,168,139,0.3) 0%, rgba(250,244,234,0) 68%)", materials: "Slim · Tough · Clear" },
 };
 
 function ProductCard({ p, hero, className, onSelect }: { p: ProductDef; hero?: boolean; className?: string; onSelect: () => void }) {
@@ -285,8 +351,8 @@ export default function Home() {
             slides={[
               <SlideHeroIntro key="hero" />,
               <SlideThreeWays key="ways" active={heroSlide === 1} />,
-              <SlideDiscoverMarketplace key="discover" active={heroSlide === 2} />,
-              <SlideCreateShareEarn key="earn" active={heroSlide === 3} />,
+              <SlideCreateShareEarn key="earn" active={heroSlide === 2} />,
+              <SlideDiscoverMarketplace key="discover" active={heroSlide === 3} />,
             ]}
           />
         </div>
@@ -295,15 +361,17 @@ export default function Home() {
       {/* THINGS YOU CAN MAKE — the real V1 product range, all live today, in a varied bento layout instead of six uniform cards in a row. */}
       <section className="relative border-t border-[#241f1a]/10 py-20 sm:py-28">
         <div className="mx-auto max-w-[1400px] px-5 sm:px-8">
-          <div className="mb-12 flex flex-wrap items-end justify-between gap-6">
-            <div className="max-w-xl">
-              <p className="mb-3 text-[12px] uppercase tracking-[0.3em]" style={{ color: GOLD }}>The FORMÉ canvas</p>
-              <h2 className="font-display-heavy text-[clamp(2rem,5.5vw,3.6rem)] uppercase leading-[0.92] text-[#17151a]">
-                Things you can make.
-              </h2>
-              <p className="mt-4 max-w-md text-[15px] text-[#17151a]/55">Start with six — with many more to come.</p>
-            </div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#17151a]/35">And this is just the start →</p>
+          <div className="mb-12 max-w-2xl">
+            <p className="mb-3 text-[12px] uppercase tracking-[0.3em]" style={{ color: GOLD }}>The FORMÉ canvas</p>
+            <h2 className="font-display-heavy text-[clamp(2rem,5.5vw,3.6rem)] uppercase leading-[0.92] text-[#17151a]">
+              Things you can make.
+            </h2>
+            <p className="mt-4 text-[16px] font-medium text-[#3a352c] sm:text-[18px]">
+              T-Shirts · Mugs · Posters · Bottles · Desk Pads · Phone Cases
+            </p>
+            <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.22em]" style={{ color: GOLD }}>
+              Even more to come
+            </p>
           </div>
 
           <LazyMount className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6 lg:auto-rows-[210px]">

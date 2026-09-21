@@ -29,10 +29,11 @@ import LayersPanel from "../components/studio/LayersPanel";
 import SummaryPanel from "../components/studio/SummaryPanel";
 import MusePanel from "../components/studio/MusePanel";
 import LayerStack, { type CanvasMode } from "../components/studio/LayerStack";
-import { MagnifierLens, MagnifiedView, lensToRegion, type LensPos } from "../components/studio/Magnifier";
+import { MagnifierLens, MagnifiedView, lensToRegion, DEFAULT_ZOOM, type LensPos } from "../components/studio/Magnifier";
 import BottomSheet from "../components/studio/BottomSheet";
 import RefineDrawing from "../components/studio/RefineDrawing";
-import { IconSparkle, IconArrowRight, IconClose, IconPencil, IconType, IconUpload, IconLayers, IconEye, IconMove, IconStore } from "../components/icons";
+import { IconSparkle, IconArrowRight, IconClose, IconPencil, IconType, IconUpload, IconLayers, IconMove, IconStore } from "../components/icons";
+import { IconMaximize } from "../components/icons";
 
 type Stage = "pick" | "upload" | "prompt" | "gift" | "studio";
 type ViewTab = "front" | "back" | "detail" | "3d" | "wrap";
@@ -127,6 +128,7 @@ export default function Create() {
   const initialized = useRef(false);
 
   const [stage, setStage] = useState<Stage>("studio");
+  const [promptPrefill, setPromptPrefill] = useState<string | undefined>(undefined);
   const [category, setCategory] = useState<string>("design");
   const [designSub, setDesignSub] = useState<DesignSub>("move");
   const [drawTool, setDrawTool] = useState<DrawTool>("marker");
@@ -139,7 +141,7 @@ export default function Create() {
   const [wrapView, setWrapView] = useState(false);
   const [inspecting, setInspecting] = useState(false);
   const [lens, setLens] = useState<LensPos>({ x: 0.5, y: 0.42 });
-  const [lensZoom, setLensZoom] = useState(2.5);
+  const [lensZoom, setLensZoom] = useState(DEFAULT_ZOOM);
   const [musePrefill, setMusePrefill] = useState<string | null>(null);
   const [museSheetOpen, setMuseSheetOpen] = useState(false);
   const [productSheetOpen, setProductSheetOpen] = useState(false);
@@ -169,6 +171,8 @@ export default function Create() {
     if (initialized.current) return;
     initialized.current = true;
     const mode = (location.state as { mode?: string } | null)?.mode;
+    const prefillText = (location.state as { prefillText?: string } | null)?.prefillText;
+    if (prefillText) setPromptPrefill(prefillText);
 
     if (mode === "remix" || design.sourceMode === "remix") {
       setStage("studio");
@@ -275,6 +279,7 @@ export default function Create() {
   if (stage === "prompt") {
     return (
       <EntryPrompt
+        initialText={promptPrefill}
         onEnterStudio={(tab) => {
           setStage("studio");
           setCategory(tab === "color" ? "color" : "design");
@@ -318,7 +323,17 @@ export default function Create() {
   const activeSide = design.view === "back" ? "back" : "front";
   const activePrintArea = activeSide === "back" ? backPrintArea : printArea;
 
-  const canvasMode: CanvasMode = !wrapView && (category === "design" || category === "layers") ? (category === "design" && designSub === "draw" ? "draw" : "move") : "none";
+  const canvasMode: CanvasMode = !wrapView && (category === "design" || category === "layers")
+    ? category === "design" && designSub === "draw"
+      ? "draw"
+      : category === "design" && designSub === "text"
+        ? "text"
+        : "move"
+    : "none";
+
+  const onCreateText = (createSide: "front" | "back", x: number, y: number) => {
+    design.addTextLayer(createSide, { content: "Type here", x, y });
+  };
 
   const layerStackCommon = {
     drawTool,
@@ -327,6 +342,7 @@ export default function Create() {
     drawOpacity,
     smoothing: drawSmoothing,
     eraseColor: colorHex,
+    onCreateText,
   };
 
   const frontOverlay = (
@@ -497,19 +513,19 @@ export default function Create() {
       </div>
     );
 
-  const InspectToggle = () => (
+  const PrecisionEditToggle = () => (
     <button
       onClick={() => setInspecting((v) => !v)}
       className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[11px] font-medium uppercase tracking-[0.1em] transition-colors ${
         inspecting ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-line text-ink-soft hover:border-ink-soft"
       }`}
     >
-      <IconEye className="h-3.5 w-3.5" />
-      {inspecting ? "Inspecting" : "Inspect"}
+      <IconMaximize className="h-3.5 w-3.5" />
+      {inspecting ? "Editing Precisely" : "Precision Edit"}
     </button>
   );
 
-  const InspectToolbar = () => (
+  const PrecisionToolTabs = () => (
     <div className="mb-2.5 flex flex-wrap items-center gap-1.5">
       {DESIGN_SUB_TABS.filter((t) => t.id !== "graphics").map((t) => (
         <button
@@ -602,21 +618,46 @@ export default function Create() {
 
           {/* CENTER — canvas, never scrolls */}
           <div className="flex flex-1 flex-col overflow-hidden px-8 py-5">
-            <div className="flex shrink-0 items-center justify-between gap-3">
-              <div className="flex-1" />
-              <ViewTabRow />
-              <div className="flex flex-1 justify-end">{!wrapView && <InspectToggle />}</div>
-            </div>
+            {inspecting && !wrapView ? (
+              <div className="flex min-h-0 flex-1 flex-col">
+                <div className="mb-3 flex shrink-0 items-center justify-between gap-3">
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-ink-faint">Precision Edit · {caption}</p>
+                  <button onClick={() => setInspecting(false)} className="rounded-full border border-line px-3.5 py-1.5 text-[11px] font-medium uppercase tracking-[0.1em] text-ink-soft hover:border-ink-soft">
+                    Done
+                  </button>
+                </div>
+                <div className="flex min-h-0 flex-1 gap-6">
+                  {/* NAVIGATOR — the whole product, small, with a draggable viewport rectangle */}
+                  <div className="flex w-[190px] shrink-0 flex-col xl:w-[220px]">
+                    <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.16em] text-ink-faint">Navigator</p>
+                    <div className="relative aspect-square w-full rounded-2xl border border-line-soft bg-paper p-4 shadow-[0_20px_50px_-35px_rgba(36,31,26,0.35)]">
+                      {stageElement()}
+                      <MagnifierLens lens={lens} onMove={setLens} printArea={activePrintArea} active />
+                    </div>
+                    <p className="mt-2 text-[11px] leading-snug text-ink-faint">Drag the square to choose which physical area to work on.</p>
+                  </div>
 
-            <div className="flex min-h-0 flex-1 items-center justify-center py-4">
-              <GarmentCard size="lg" />
-            </div>
-
-            {inspecting && !wrapView && (
-              <div className="shrink-0 border-t border-line-soft pt-4">
-                <InspectToolbar />
-                <MagnifiedView lens={lens} zoom={lensZoom} setZoom={setLensZoom} renderStage={() => stageElement()} panelSize={200} />
+                  {/* PRECISION CANVAS — the large, actually-editable detail view */}
+                  <div className="flex min-h-0 flex-1 flex-col">
+                    <PrecisionToolTabs />
+                    <div className="min-h-0 flex-1">
+                      <MagnifiedView lens={lens} zoom={lensZoom} setZoom={setLensZoom} renderStage={() => stageElement()} panelSize={520} />
+                    </div>
+                  </div>
+                </div>
               </div>
+            ) : (
+              <>
+                <div className="flex shrink-0 items-center justify-between gap-3">
+                  <div className="flex-1" />
+                  <ViewTabRow />
+                  <div className="flex flex-1 justify-end">{!wrapView && <PrecisionEditToggle />}</div>
+                </div>
+
+                <div className="flex min-h-0 flex-1 items-center justify-center py-4">
+                  <GarmentCard size="lg" />
+                </div>
+              </>
             )}
 
             <div className="shrink-0 pt-3 text-center">
@@ -658,7 +699,7 @@ export default function Create() {
                 <ViewTabRow />
               </div>
             </div>
-            {!wrapView && <InspectToggle />}
+            {!wrapView && <PrecisionEditToggle />}
           </div>
           <div className="mt-5">
             <GarmentCard size="sm" />
@@ -819,22 +860,23 @@ export default function Create() {
           />
         )}
 
-        {/* magnifier — full-screen detail editor on mobile */}
+        {/* Precision Edit — full-screen navigator (top) + precision canvas (below) on mobile */}
         {inspecting && !wrapView && (
           <div className="fixed inset-0 z-50 flex flex-col bg-ivory animate-fade-in">
             <div className="flex items-center justify-between border-b border-line-soft px-4 py-3">
-              <p className="text-[11px] uppercase tracking-[0.2em] text-ink-faint">Detail editor</p>
+              <p className="text-[11px] uppercase tracking-[0.2em] text-ink-faint">Precision Edit</p>
               <button onClick={() => setInspecting(false)} className="text-[12px] font-medium uppercase tracking-[0.14em] text-ink">
                 Done
               </button>
             </div>
             <div className="flex-1 overflow-y-auto px-4 py-4">
-              <div className="relative mx-auto aspect-square w-full max-w-[360px] rounded-[28px] border border-line-soft bg-paper p-5 shadow-[0_20px_60px_-30px_rgba(26,23,18,0.35)]">
+              <p className="mb-2 text-center text-[10px] font-medium uppercase tracking-[0.16em] text-ink-faint">Navigator — drag to choose an area</p>
+              <div className="relative mx-auto aspect-square w-full max-w-[220px] rounded-[24px] border border-line-soft bg-paper p-4 shadow-[0_20px_60px_-30px_rgba(26,23,18,0.35)]">
                 {stageElement()}
                 <MagnifierLens lens={lens} onMove={setLens} printArea={activePrintArea} active />
               </div>
               <div className="mt-5">
-                <InspectToolbar />
+                <PrecisionToolTabs />
                 <MagnifiedView lens={lens} zoom={lensZoom} setZoom={setLensZoom} renderStage={() => stageElement()} panelSize={320} />
               </div>
             </div>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode, type WheelEvent as ReactWheelEvent } from "react";
 import { IconClose } from "../icons";
 
 export interface LensPos {
@@ -151,16 +151,22 @@ export function MagnifierLens({ lens, onMove, printArea, active }: { lens: LensP
   );
 }
 
+/** The only zoom levels Precision Edit snaps to — deliberately discrete rather than an arbitrary continuous range. */
+export const ZOOM_LEVELS = [1, 2, 4, 8, 12, 16, 24];
+export const DEFAULT_ZOOM = 8;
+export const FIT_ZOOM = 2;
+
 /**
- * The magnified secondary preview: a fixed-size clipped window showing a
- * duplicate, scaled-and-translated render of the exact same product stage,
- * so the crop always corresponds precisely to the lens position. Because
- * everything the studio renders is vector (SVG), this stays crisp at any
- * zoom — and uploaded raster artwork will visibly show its real resolution,
- * which is the point of a print-quality inspector. When `renderStage`
- * includes the interactive layer stack, this doubles as a real editing
- * surface: drawing/dragging here hits the exact same SVG coordinate space
- * as the main canvas (via getScreenCTM), just rendered larger.
+ * The Precision Canvas — a duplicate, scaled-and-translated render of the
+ * exact same product stage as the navigator, so the crop always corresponds
+ * precisely to the navigator's viewport rectangle. Because everything the
+ * studio renders is vector (SVG), this stays crisp at any zoom — and
+ * uploaded raster artwork will visibly show its real resolution, which is
+ * the point of a print-quality editor. Since `renderStage` includes the
+ * interactive layer stack, this IS a real editing surface: drawing/typing/
+ * dragging here hits the exact same SVG coordinate space as the main canvas
+ * (via getScreenCTM), just rendered larger — edits land in the same place
+ * on the product whether made here or at normal size.
  */
 export function MagnifiedView({
   lens,
@@ -182,13 +188,21 @@ export function MagnifiedView({
   const inner = panelSize * zoom;
   const tx = -(lens.x * inner - panelSize / 2);
   const ty = -(lens.y * inner - panelSize / 2);
+  const levelIndex = ZOOM_LEVELS.indexOf(zoom);
+
+  const onWheel = (e: ReactWheelEvent) => {
+    e.preventDefault();
+    const idx = ZOOM_LEVELS.indexOf(zoom);
+    if (e.deltaY < 0 && idx < ZOOM_LEVELS.length - 1) setZoom(ZOOM_LEVELS[idx + 1]);
+    else if (e.deltaY > 0 && idx > 0) setZoom(ZOOM_LEVELS[idx - 1]);
+  };
 
   return (
     <div className="rounded-2xl border border-line-soft bg-paper p-4 animate-fade-in">
       <div className="flex items-center justify-between">
-        <p className="text-[11px] uppercase tracking-[0.22em] text-ink-faint">Detail view · {zoom.toFixed(1)}×</p>
+        <p className="text-[11px] uppercase tracking-[0.22em] text-ink-faint">Precision canvas · {zoom}×</p>
         {onClose && (
-          <button onClick={onClose} className="text-ink-faint hover:text-ink" aria-label="Close detail view">
+          <button onClick={onClose} className="text-ink-faint hover:text-ink" aria-label="Close precision edit">
             <IconClose className="h-4 w-4" />
           </button>
         )}
@@ -197,32 +211,36 @@ export function MagnifiedView({
       <div
         className="relative mt-3 overflow-hidden rounded-xl border border-line-soft bg-ivory-dim"
         style={{ width: "100%", aspectRatio: "1 / 1", maxWidth: panelSize }}
+        onWheel={onWheel}
       >
         <div style={{ position: "absolute", width: inner, height: inner, transform: `translate(${tx}px, ${ty}px)` }}>{renderStage(inner)}</div>
       </div>
       <div className="mt-3 flex items-center justify-center gap-2">
         <button
-          onClick={() => setZoom(Math.max(1.5, +(zoom - 0.5).toFixed(1)))}
-          className="flex h-8 w-8 items-center justify-center rounded-full border border-line text-ink-soft hover:border-ink-soft"
+          onClick={() => levelIndex > 0 && setZoom(ZOOM_LEVELS[levelIndex - 1])}
+          disabled={levelIndex <= 0}
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-line text-ink-soft hover:border-ink-soft disabled:opacity-30"
           aria-label="Zoom out"
         >
           −
         </button>
+        <span className="min-w-[42px] text-center text-[12px] font-medium tabular-nums text-ink">{zoom}×</span>
         <button
-          onClick={() => setZoom(2.5)}
-          className="rounded-full border border-line px-3 py-1.5 text-[11px] uppercase tracking-[0.08em] text-ink-soft hover:border-ink-soft"
-        >
-          Reset
-        </button>
-        <button
-          onClick={() => setZoom(Math.min(4, +(zoom + 0.5).toFixed(1)))}
-          className="flex h-8 w-8 items-center justify-center rounded-full border border-line text-ink-soft hover:border-ink-soft"
+          onClick={() => levelIndex < ZOOM_LEVELS.length - 1 && setZoom(ZOOM_LEVELS[levelIndex + 1])}
+          disabled={levelIndex >= ZOOM_LEVELS.length - 1}
+          className="flex h-8 w-8 items-center justify-center rounded-full border border-line text-ink-soft hover:border-ink-soft disabled:opacity-30"
           aria-label="Zoom in"
         >
           +
         </button>
+        <button
+          onClick={() => setZoom(FIT_ZOOM)}
+          className="ml-1 rounded-full border border-line px-3 py-1.5 text-[11px] uppercase tracking-[0.08em] text-ink-soft hover:border-ink-soft"
+        >
+          Fit
+        </button>
       </div>
-      <p className="mt-2 text-center text-[11px] text-ink-faint">Drag the square on the product to inspect a different area.</p>
+      <p className="mt-2 text-center text-[11px] text-ink-faint">Drag the square in the navigator to move the viewport, or scroll to zoom.</p>
     </div>
   );
 }
