@@ -55,17 +55,18 @@ export default function Nav() {
             </NavLink>
           </nav>
 
-          {!hideCreateCta && (
-            <div className="hidden lg:block">
-              <button
-                onClick={() => navigate("/create")}
-                className="group inline-flex items-center gap-2 rounded-full bg-[#c8a96b] px-5 py-2.5 text-[12px] font-medium uppercase tracking-[0.14em] text-[#241f1a] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-10px_rgba(36,31,26,0.4)]"
-              >
-                Create From Scratch
-                <IconPlus className="h-3.5 w-3.5 transition-transform group-hover:rotate-90" />
-              </button>
-            </div>
-          )}
+          {/* Always rendered (and left in the flex layout) so the nav links don't jump when this
+              is hidden on /create and /profile — only visibility toggles, never the flex child count. */}
+          <div className={`hidden lg:block ${hideCreateCta ? "invisible" : ""}`} aria-hidden={hideCreateCta}>
+            <button
+              onClick={() => navigate("/create")}
+              tabIndex={hideCreateCta ? -1 : undefined}
+              className="group inline-flex items-center gap-2 rounded-full bg-[#c8a96b] px-5 py-2.5 text-[12px] font-medium uppercase tracking-[0.14em] text-[#241f1a] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-10px_rgba(36,31,26,0.4)]"
+            >
+              Create From Scratch
+              <IconPlus className="h-3.5 w-3.5 transition-transform group-hover:rotate-90" />
+            </button>
+          </div>
 
           <button className="text-[#17151a] lg:hidden" onClick={() => setMobileOpen((v) => !v)} aria-label="Menu">
             {mobileOpen ? <IconClose className="h-6 w-6" /> : <IconMenu className="h-6 w-6" />}

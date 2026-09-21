@@ -613,7 +613,7 @@ export default function Create() {
 
       {/* ============================= DESKTOP (lg+) ============================= */}
       <div className="hidden lg:flex lg:h-[calc(100vh-73px)] lg:flex-col">
-        <div className="flex shrink-0 items-center justify-between border-b border-line-soft bg-paper/70 px-6 py-2.5">
+        <div className="flex shrink-0 items-center justify-between border-b border-line-soft px-6 py-2.5">
           <button
             onClick={() => {
               design.startFresh();

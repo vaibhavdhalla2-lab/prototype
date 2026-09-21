@@ -182,7 +182,7 @@ function SlideHeroIntro() {
           to <span className="text-gradient-gold">something real.</span>
         </h1>
         <p className="mt-5 max-w-md text-balance text-[16px] leading-relaxed text-[#17151a]/60 animate-fade-up [animation-delay:160ms]">
-          Describe the product you're imagining. MUSE creates a starting point you can refine down to the smallest detail.
+          Describe the product you're imagining and MUSE creates the entire design for you — ready to refine down to the smallest detail.
         </p>
 
         <div className="mt-7 animate-fade-up [animation-delay:220ms]">

@@ -85,7 +85,7 @@ const GOLD = "#d4af70";
 
 const WAYS = [
   { id: "image", label: "Upload an image", body: "Show us your inspiration — a photo, a screenshot, anything.", icon: IconUpload, tone: PLUM },
-  { id: "muse", label: "Tell AI (MUSE)", body: "Describe it in a sentence. Our AI turns it into a starting point.", icon: IconSparkle, tone: VIOLET },
+  { id: "muse", label: "Tell AI (MUSE)", body: "Describe it in a sentence. MUSE creates the whole product for you.", icon: IconSparkle, tone: VIOLET },
   { id: "draw", label: "Draw it yourself", body: "Start from a blank canvas. Rough is fine — we refine it.", icon: IconDraw, tone: PLUM },
 ];
 

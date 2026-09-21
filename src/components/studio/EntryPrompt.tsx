@@ -46,7 +46,7 @@ export default function EntryPrompt({ onEnterStudio, initialText }: { onEnterStu
         Describe what you're imagining
       </h1>
       <p className="mx-auto mt-3 max-w-sm text-center text-ink-soft animate-fade-up [animation-delay:120ms]">
-        Tell MUSE what you're picturing — a mood, a colour, a feeling. We'll turn it into a starting point.
+        Tell MUSE what you're picturing — a mood, a colour, a feeling. We'll create the whole product for you, ready to refine.
       </p>
 
       <PrototypeNotice className="mt-7" />
