@@ -296,7 +296,7 @@ export function MagnifiedView({
       <div
         ref={containerRef}
         className={`relative mt-3 overflow-hidden rounded-xl border-2 border-[#c8a96b]/50 bg-white ${CURSOR_CLASS[cursorMode]} ${panning ? "cursor-grabbing" : ""}`}
-        style={{ width: "100%", aspectRatio: "1 / 1", maxWidth: panelSize }}
+        style={{ width: "100%", aspectRatio: "1 / 1", maxWidth: panelSize, isolation: "isolate" }}
         onWheel={onWheel}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}

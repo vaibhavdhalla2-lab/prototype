@@ -15,6 +15,7 @@ import EntryUpload from "../components/studio/EntryUpload";
 import EntryPrompt from "../components/studio/EntryPrompt";
 import GiftFlow from "../components/studio/GiftFlow";
 import ProductSwitcher from "../components/studio/ProductSwitcher";
+import ColorSwatchRow from "../components/studio/ColorSwatchRow";
 import DeviceSelector from "../components/studio/DeviceSelector";
 import ColorPanel from "../components/studio/ColorPanel";
 import MaterialPanel from "../components/studio/MaterialPanel";
@@ -44,27 +45,30 @@ interface TabDef {
   groupKeys?: string[];
 }
 
+/**
+ * Colour is shown directly under the product selector (see ColorSwatchRow), not as a
+ * top-level tab a user has to go find — so "color" is deliberately left out of every
+ * list below. Layer management lives inside the Design panel as a compact expandable
+ * control instead of its own top-level tab, for the same reason.
+ */
 function leftPanelTabsFor(product: ProductId, apparel: boolean): TabDef[] {
-  let base: TabDef[];
   if (apparel) {
-    base = [
+    return [
       { id: "design", label: "Design" },
       { id: "material", label: "Material" },
-      { id: "color", label: "Colour" },
       { id: "fit", label: "Fit" },
       { id: "details", label: "Details" },
     ];
   } else if (product === "mug") {
-    base = [
+    return [
       { id: "design", label: "Design" },
       { id: "material", label: "Material", groupKeys: ["material"] },
       { id: "finish", label: "Finish", groupKeys: ["finish"] },
       { id: "size", label: "Size", groupKeys: ["size"] },
-      { id: "color", label: "Colour" },
       { id: "details", label: "Details" },
     ];
   } else if (product === "poster") {
-    base = [
+    return [
       { id: "design", label: "Design" },
       { id: "size-orientation", label: "Size & Orientation", groupKeys: ["orientation", "size"] },
       { id: "paper", label: "Paper", groupKeys: ["paper"] },
@@ -72,16 +76,15 @@ function leftPanelTabsFor(product: ProductId, apparel: boolean): TabDef[] {
       { id: "details", label: "Details" },
     ];
   } else if (product === "bottle") {
-    base = [
+    return [
       { id: "design", label: "Design" },
       { id: "material", label: "Material", groupKeys: ["material"] },
       { id: "capacity", label: "Capacity", groupKeys: ["capacity"] },
       { id: "lid", label: "Cap / Lid", groupKeys: ["lid"] },
-      { id: "color", label: "Colour" },
       { id: "details", label: "Details" },
     ];
   } else if (product === "deskpad") {
-    base = [
+    return [
       { id: "design", label: "Design" },
       { id: "size", label: "Size", groupKeys: ["size"] },
       { id: "surface", label: "Surface", groupKeys: ["surface"] },
@@ -90,22 +93,18 @@ function leftPanelTabsFor(product: ProductId, apparel: boolean): TabDef[] {
       { id: "details", label: "Details" },
     ];
   } else if (product === "phonecase") {
-    base = [
+    return [
       { id: "device", label: "Device", groupKeys: ["model"] },
       { id: "design", label: "Design" },
       { id: "casetype", label: "Case Type", groupKeys: ["type"] },
       { id: "finish", label: "Finish", groupKeys: ["finish"] },
-      { id: "color", label: "Colour" },
-      { id: "details", label: "Details" },
-    ];
-  } else {
-    base = [
-      { id: "design", label: "Design" },
-      { id: "color", label: "Colour" },
       { id: "details", label: "Details" },
     ];
   }
-  return [...base, { id: "layers", label: "Layers" }];
+  return [
+    { id: "design", label: "Design" },
+    { id: "details", label: "Details" },
+  ];
 }
 
 function initialCategoryFor(product: ProductId): string {
@@ -436,7 +435,15 @@ export default function Create() {
     if (category === "fit" && apparel) return <FitPanel />;
     if (category === "details") return <DetailsPanel />;
     if (category === "device") return <DeviceSelector />;
-    if (category === "layers") return <LayersPanel onAskMuse={askMuse} />;
+    if (category === "layers")
+      return (
+        <div>
+          <button onClick={() => setCategory("design")} className="mb-3 text-[11px] uppercase tracking-[0.14em] text-ink-faint hover:text-ink-soft">
+            ← Design
+          </button>
+          <LayersPanel onAskMuse={askMuse} />
+        </div>
+      );
     if (activeTabDef?.groupKeys) return <OptionsPanel groupKeys={activeTabDef.groupKeys} title={activeTabDef.label} />;
     return null;
   };
@@ -622,13 +629,14 @@ export default function Create() {
           {/* LEFT — product config + summary, own scroll */}
           <div className="scrollbar-thin w-[300px] shrink-0 overflow-y-auto border-r border-line-soft px-5 py-6 xl:w-[320px]">
             <ProductSwitcher className="mb-5" />
+            <ColorSwatchRow />
 
             <div className="mb-5 rounded-2xl border border-line-soft bg-paper p-4">
               <SummaryPanel onJump={jump} previewFrontOverlay={frontOverlay} previewBackOverlay={backOverlay} />
             </div>
 
             <div className="flex flex-col gap-1.5">
-              {(inspecting ? tabs.filter((t) => t.id === "design" || t.id === "layers") : tabs).map((t) => (
+              {(inspecting ? tabs.filter((t) => t.id === "design") : tabs).map((t) => (
                 <button
                   key={t.id}
                   onClick={() => setCategory(t.id)}
@@ -641,7 +649,7 @@ export default function Create() {
               ))}
             </div>
 
-            {inspecting && tabs.some((t) => t.id !== "design" && t.id !== "layers") && (
+            {inspecting && tabs.some((t) => t.id !== "design") && (
               <div className="mt-2 border-t border-line-soft pt-2">
                 <button
                   onClick={() => setProductSettingsOpen((v) => !v)}
@@ -653,7 +661,7 @@ export default function Create() {
                 {productSettingsOpen && (
                   <div className="flex flex-col gap-1.5 px-1">
                     {tabs
-                      .filter((t) => t.id !== "design" && t.id !== "layers")
+                      .filter((t) => t.id !== "design")
                       .map((t) => (
                         <button
                           key={t.id}
@@ -687,6 +695,15 @@ export default function Create() {
               </div>
             )}
 
+            {category === "design" && (
+              <button
+                onClick={() => setCategory("layers")}
+                className="mt-2.5 flex items-center gap-1.5 text-[11px] uppercase tracking-[0.1em] text-ink-faint hover:text-ink-soft"
+              >
+                <IconLayers className="h-3.5 w-3.5" /> Layers ▾
+              </button>
+            )}
+
             <div className="mt-4 rounded-3xl border border-line-soft bg-paper p-5">{renderPanel()}</div>
           </div>
 
@@ -710,7 +727,7 @@ export default function Create() {
                   {/* NAVIGATOR — chooses WHICH area to work on. Not for drawing. */}
                   <div className="flex w-[190px] shrink-0 flex-col xl:w-[220px]">
                     <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.16em] text-ink-faint">Navigator</p>
-                    <div className="relative aspect-square w-full rounded-2xl border border-line-soft bg-paper p-4 shadow-[0_20px_50px_-35px_rgba(36,31,26,0.35)]">
+                    <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-line-soft bg-paper p-4 shadow-[0_20px_50px_-35px_rgba(36,31,26,0.35)]">
                       {stageElement()}
                       <MagnifierLens lens={lens} onMove={setLens} printArea={activePrintArea} active />
                     </div>
@@ -875,12 +892,21 @@ export default function Create() {
 
         <BottomSheet open={productSheetOpen} title="Product" onClose={() => setProductSheetOpen(false)}>
           <ProductSwitcher className="mb-5" />
+          <ColorSwatchRow />
           <SummaryPanel onJump={jump} previewFrontOverlay={frontOverlay} previewBackOverlay={backOverlay} />
         </BottomSheet>
 
         <BottomSheet
           open={sheetOpen && !(category === "design" && designSub === "draw")}
-          title={category === "design" ? `Design · ${DESIGN_SUB_TABS.find((t) => t.id === designSub)!.label}` : (tabs.find((t) => t.id === category)?.label ?? "Tools")}
+          title={
+            category === "design"
+              ? `Design · ${DESIGN_SUB_TABS.find((t) => t.id === designSub)!.label}`
+              : category === "layers"
+                ? "Layers"
+                : category === "color"
+                  ? "Colour"
+                  : (tabs.find((t) => t.id === category)?.label ?? "Tools")
+          }
           onClose={() => setSheetOpen(false)}
         >
           <div className="mb-4 flex flex-wrap gap-1.5">
@@ -993,7 +1019,7 @@ export default function Create() {
             </div>
             <div className="relative flex-1 overflow-y-auto px-4 py-4">
               <p className="mb-2 text-center text-[10px] font-medium uppercase tracking-[0.16em] text-ink-faint">Navigator — drag to choose an area, drag the corner to resize</p>
-              <div className="relative mx-auto aspect-square w-full max-w-[220px] rounded-[24px] border border-line-soft bg-paper p-4 shadow-[0_20px_60px_-30px_rgba(26,23,18,0.35)]">
+              <div className="relative mx-auto aspect-square w-full max-w-[220px] overflow-hidden rounded-[24px] border border-line-soft bg-paper p-4 shadow-[0_20px_60px_-30px_rgba(26,23,18,0.35)]">
                 {stageElement()}
                 <MagnifierLens lens={lens} onMove={setLens} printArea={activePrintArea} active />
               </div>

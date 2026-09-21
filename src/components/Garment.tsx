@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, useCallback, useId, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import type { GarmentType, ViewMode } from "../data/catalog";
 import { threadTone } from "../lib/color";
 import GarmentPreview from "./garment/GarmentPreview";
@@ -229,13 +229,27 @@ interface FaceProps {
   pocketVisible?: boolean;
   /** Skips the woven-grain noise overlay — it's tuned to disappear via antialiasing at normal render sizes, but fully resolves into a harsh speckled texture at Precision Edit's extreme zoom. */
   disableGrain?: boolean;
+  /**
+   * Drops the soft-focus directional-light and fold-shadow overlays — they're tuned as
+   * whole-garment atmosphere (subtle gradients + heavily blurred blobs across the full
+   * 360x440 viewBox) and read fine at normal size, but Precision Edit crops into a tiny
+   * fraction of that viewBox, so a single blob or gradient stop can fill the entire zoomed
+   * frame with an indistinct grey haze instead of recognizable fabric. Precision Edit wants
+   * a true flat print surface (real garment colour + seams + artwork), not atmosphere.
+   */
+  flattenShading?: boolean;
 }
 
-function Face({ garment, colorHex, side, overlay, printArea, showPrintHint, accentTrim, pocketVisible = true, disableGrain }: FaceProps) {
-  const clipId = `clip-${garment}-${side}`;
-  const shadeId = `shade-${garment}-${side}`;
-  const grainId = `grain-${garment}-${side}`;
-  const blurId = `blur-${garment}-${side}`;
+function Face({ garment, colorHex, side, overlay, printArea, showPrintHint, accentTrim, pocketVisible = true, disableGrain, flattenShading }: FaceProps) {
+  // Multiple Face() instances of the same garment+side can be mounted at once (Navigator vs.
+  // Precision Canvas, desktop vs. mobile layout), and SVG `url(#id)` references resolve to the
+  // FIRST matching id in document order — so without a per-instance suffix here, one instance's
+  // clipPath/gradient/filter references could silently resolve to a *different* instance's defs.
+  const uid = useId();
+  const clipId = `clip-${garment}-${side}${uid}`;
+  const shadeId = `shade-${garment}-${side}${uid}`;
+  const grainId = `grain-${garment}-${side}${uid}`;
+  const blurId = `blur-${garment}-${side}${uid}`;
   const thread = accentTrim ? "#9a6a43" : threadTone(colorHex);
   const grainSeed = side === "front" ? 4 : 9;
   const blobs = FOLD_BLOBS[garment][side];
@@ -273,7 +287,7 @@ function Face({ garment, colorHex, side, overlay, printArea, showPrintHint, acce
           <feColorMatrix in="n" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.6 0" />
         </filter>
 
-        <filter id={`embroidery-${garment}-${side}`} x="-40%" y="-40%" width="180%" height="180%">
+        <filter id={`embroidery-${garment}-${side}${uid}`} x="-40%" y="-40%" width="180%" height="180%">
           <feDropShadow dx="1.1" dy="1.5" stdDeviation="0.5" floodColor="#000000" floodOpacity="0.4" />
           <feDropShadow dx="-0.6" dy="-0.6" stdDeviation="0.3" floodColor="#ffffff" floodOpacity="0.35" />
         </filter>
@@ -289,8 +303,8 @@ function Face({ garment, colorHex, side, overlay, printArea, showPrintHint, acce
         </filter>
       </defs>
 
-      {/* drop shadow on the surface below */}
-      <ellipse cx="180" cy="420" rx="130" ry="16" fill="#1a1712" opacity="0.08" />
+      {/* drop shadow on the surface below — atmosphere, not fabric, so it's skipped when flattenShading */}
+      {!flattenShading && <ellipse cx="180" cy="420" rx="130" ry="16" fill="#1a1712" opacity="0.08" />}
 
       {/* base fill */}
       <g fill="currentColor">
@@ -321,18 +335,20 @@ function Face({ garment, colorHex, side, overlay, printArea, showPrintHint, acce
         {/* woven fabric grain — skipped at Precision Edit's extreme zoom, see disableGrain */}
         {!disableGrain && <rect x="0" y="0" width="360" height="440" filter={`url(#${grainId})`} opacity={0.5} style={{ mixBlendMode: "overlay" }} />}
 
-        {/* directional studio light */}
-        <rect x="0" y="0" width="360" height="440" fill={`url(#${shadeId})`} />
-        <rect x="0" y="0" width="360" height="440" fill={`url(#hem-${shadeId})`} />
-
-        {/* natural fabric folds and drape */}
-        <FoldShadows blobs={blobs} filterId={blurId} />
+        {/* directional studio light + natural fabric folds — skipped when flattenShading, see doc comment on FaceProps */}
+        {!flattenShading && (
+          <>
+            <rect x="0" y="0" width="360" height="440" fill={`url(#${shadeId})`} />
+            <rect x="0" y="0" width="360" height="440" fill={`url(#hem-${shadeId})`} />
+            <FoldShadows blobs={blobs} filterId={blurId} />
+          </>
+        )}
 
         {/* user artwork / drawing / text */}
         <g pointerEvents="auto">{overlay}</g>
 
         {/* a second, gentler light pass so artwork inherits the same fold lighting */}
-        <rect x="0" y="0" width="360" height="440" fill={`url(#${shadeId})`} opacity={0.35} style={{ mixBlendMode: "soft-light" }} />
+        {!flattenShading && <rect x="0" y="0" width="360" height="440" fill={`url(#${shadeId})`} opacity={0.35} style={{ mixBlendMode: "soft-light" }} />}
       </g>
 
       {/* construction seams */}
@@ -523,6 +539,35 @@ export function GarmentStage({ garment, colorHex, view, frontOverlay, backOverla
     dragging.current = false;
   }, []);
 
+  const fitScale = fit ? FIT_SCALE[fit] : FIT_SCALE.regular;
+
+  if (forceFlat) {
+    // Precision Edit's duplicate render: a single flat surface for the active side only —
+    // no perspective/rotateY/backface-visibility 3D card. That flip-card trick relies on a
+    // 3D rendering context that can get flattened by an ancestor transform (Precision Edit's
+    // crop wrapper translates this whole duplicate to position the zoomed viewport), which
+    // can let the "hidden" back face's dark multiply-blend fold-shadow layer paint through.
+    // Precision Edit never needs the flip anyway — it already knows which side is active.
+    const side = view === "back" ? "back" : "front";
+    const overlay = side === "back" ? backOverlay : frontOverlay;
+    return (
+      <div className={`relative select-none ${className ?? ""}`} style={{ transform: `scale(${fitScale.x}, ${fitScale.y})` }}>
+        <Face
+          garment={garment}
+          colorHex={colorHex}
+          side={side}
+          overlay={overlay}
+          printArea={PRINT_AREAS[garment][side]}
+          showPrintHint={showPrintHint}
+          accentTrim={accentTrim}
+          pocketVisible={pocketVisible}
+          disableGrain
+          flattenShading
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       className={`relative select-none ${className ?? ""}`}
@@ -536,7 +581,7 @@ export function GarmentStage({ garment, colorHex, view, frontOverlay, backOverla
         className="relative h-full w-full"
         style={{
           transformStyle: "preserve-3d",
-          transform: `rotateY(${targetAngle}deg) scale(${(fit ? FIT_SCALE[fit] : FIT_SCALE.regular).x}, ${(fit ? FIT_SCALE[fit] : FIT_SCALE.regular).y})`,
+          transform: `rotateY(${targetAngle}deg) scale(${fitScale.x}, ${fitScale.y})`,
           transition: view === "3d" && dragging.current ? "none" : "transform 0.7s cubic-bezier(0.22,1,0.36,1)",
           cursor: view === "3d" ? (dragging.current ? "grabbing" : "grab") : "default",
         }}
@@ -545,14 +590,14 @@ export function GarmentStage({ garment, colorHex, view, frontOverlay, backOverla
           {hasPhoto ? (
             <PhotographicFace colorHex={colorHex} side="front" overlay={frontOverlay} printArea={PRINT_AREAS[garment].front} showPrintHint={showPrintHint} />
           ) : (
-            <Face garment={garment} colorHex={colorHex} side="front" overlay={frontOverlay} printArea={PRINT_AREAS[garment].front} showPrintHint={showPrintHint} accentTrim={accentTrim} pocketVisible={pocketVisible} disableGrain={forceFlat} />
+            <Face garment={garment} colorHex={colorHex} side="front" overlay={frontOverlay} printArea={PRINT_AREAS[garment].front} showPrintHint={showPrintHint} accentTrim={accentTrim} pocketVisible={pocketVisible} />
           )}
         </div>
         <div className="absolute inset-0" style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}>
           {hasPhoto ? (
             <PhotographicFace colorHex={colorHex} side="back" overlay={backOverlay} printArea={PRINT_AREAS[garment].back} showPrintHint={showPrintHint} />
           ) : (
-            <Face garment={garment} colorHex={colorHex} side="back" overlay={backOverlay} printArea={PRINT_AREAS[garment].back} showPrintHint={showPrintHint} accentTrim={accentTrim} pocketVisible={pocketVisible} disableGrain={forceFlat} />
+            <Face garment={garment} colorHex={colorHex} side="back" overlay={backOverlay} printArea={PRINT_AREAS[garment].back} showPrintHint={showPrintHint} accentTrim={accentTrim} pocketVisible={pocketVisible} />
           )}
         </div>
       </div>
