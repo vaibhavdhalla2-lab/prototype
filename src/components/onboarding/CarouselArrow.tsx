@@ -3,53 +3,52 @@ import { IconArrowRight } from "../icons";
 /**
  * The single implementation for every prev/next control across every
  * Carousel instance. Prev and Next differ only by `direction` (which flips
- * the icon and which edge the button sits on) and `label`/`text` — every
- * other visual property (size, border, radius, colour, hover/active state)
- * is identical between them so the pair always reads as one balanced pair,
- * never two different-looking buttons.
+ * the icon) and `label`/`text` — every other visual property (size, border,
+ * radius, colour, hover/active state) is identical between them so the pair
+ * always reads as one balanced pair, never two different-looking buttons.
+ *
+ * Deliberately NOT absolutely positioned — Carousel.tsx places this as a
+ * normal flex sibling next to the slide viewport (or inline with the dots
+ * on narrow screens), so it can never sit on top of slide content.
  */
 interface CarouselArrowProps {
   direction: "prev" | "next";
   onClick: () => void;
   disabled?: boolean;
-  /** false hides the arrow (e.g. on the first/last slide) without shifting layout. */
-  visible: boolean;
   label: string;
-  /** Desktop pill text, e.g. "Previous" / "Next" / a custom finish label. */
-  text: string;
+  /** Pill text shown next to the icon, e.g. "Previous" / "Next". Omit for an icon-only circle (used inline with the dots on narrow screens). */
+  text?: string;
+  /** Must include a complete display pair (e.g. "inline-flex lg:hidden" or "hidden lg:inline-flex") — see the note on BASE below. */
+  className: string;
 }
 
+/**
+ * Deliberately no `display` utility here (not even `inline-flex`) — callers supply the full
+ * display pair themselves (e.g. `inline-flex lg:hidden` or `hidden lg:inline-flex`). An
+ * unprefixed `inline-flex` living here would sit at the same specificity as a caller's
+ * unprefixed `hidden`/`inline-flex`, and cascade order (not intent) would decide the winner —
+ * exactly the bug that shipped once already.
+ */
 const BASE =
-  "z-20 flex items-center justify-center rounded-full border border-[#B8A88B] bg-[#FAF3E4] text-[#27231E] shadow-[0_6px_18px_-10px_rgba(39,35,30,0.35)] transition-all duration-200 hover:border-[#D5B875] hover:bg-[#D5B875] active:border-[#27231E] active:bg-[#27231E] active:text-[#D5B875] disabled:pointer-events-none disabled:opacity-0";
+  "items-center justify-center gap-2 rounded-full border border-[#CDBFAD] bg-[#FAF7F1] text-[#29231D] shadow-[0_6px_18px_-10px_rgba(70,55,35,0.25)] transition-all duration-200 hover:border-[#c8a96b] hover:bg-[#EEE0C6] active:bg-[#e6d5b0] disabled:pointer-events-none disabled:opacity-30";
 
-export default function CarouselArrow({ direction, onClick, disabled, visible, label, text }: CarouselArrowProps) {
+export default function CarouselArrow({ direction, onClick, disabled, label, text, className }: CarouselArrowProps) {
   const isPrev = direction === "prev";
-  const side = isPrev ? "left-3 sm:left-4" : "right-3 sm:right-4";
   const icon = <IconArrowRight className={`h-4 w-4 shrink-0 ${isPrev ? "rotate-180" : ""}`} />;
 
+  // Icon-only circle everywhere by default — costs the flanking flex layout as little width as
+  // possible on tablet widths. Only expands into a labeled pill at lg+, where there's reliably
+  // enough spare width for it without squeezing the slide content between it and its twin.
   return (
-    <>
-      {/* desktop: labeled pill, fixed min-width so Previous/Next always match */}
-      <button
-        onClick={onClick}
-        disabled={disabled}
-        aria-label={label}
-        className={`absolute top-1/2 hidden h-11 min-w-[112px] -translate-y-1/2 gap-2 px-4 text-[11px] font-medium uppercase tracking-[0.14em] sm:flex ${side} ${BASE} ${visible ? "opacity-100" : "pointer-events-none opacity-0"}`}
-        style={{ flexDirection: isPrev ? "row" : "row-reverse" }}
-      >
-        {icon}
-        {text}
-      </button>
-
-      {/* mobile: icon-only circle, identical treatment */}
-      <button
-        onClick={onClick}
-        disabled={disabled}
-        aria-label={label}
-        className={`absolute top-1/2 h-10 w-10 -translate-y-1/2 sm:hidden ${side} ${BASE} ${visible ? "opacity-100" : "pointer-events-none opacity-0"}`}
-      >
-        {icon}
-      </button>
-    </>
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      className={`${BASE} h-9 w-9 sm:h-10 sm:w-10 ${text ? "lg:h-11 lg:w-auto lg:min-w-[112px] lg:px-4 lg:text-[11px] lg:font-medium lg:uppercase lg:tracking-[0.14em]" : ""} ${className}`}
+      style={text ? { flexDirection: isPrev ? "row" : "row-reverse" } : undefined}
+    >
+      {icon}
+      {text && <span className="hidden lg:inline">{text}</span>}
+    </button>
   );
 }

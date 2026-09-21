@@ -112,17 +112,17 @@ export default function GraphicsPanel() {
       </div>
 
       <p className="mb-3 mt-5 text-[11px] uppercase tracking-[0.2em] text-ink-faint">Shape</p>
-      <div className="grid grid-cols-4 gap-2.5">
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(80px,1fr))] gap-2">
         {SHAPES.map((m) => (
           <button
             key={m.id}
             onClick={() => place(m.id)}
-            className="flex flex-col items-center gap-1.5 rounded-xl border border-line py-3 text-ink-soft transition-colors hover:border-ink hover:text-ink"
+            className="flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-xl border border-line px-1.5 py-3 text-ink-soft transition-colors hover:border-[#c8a96b] hover:bg-[#c8a96b]/10 hover:text-ink"
           >
-            <svg viewBox="-30 -30 60 60" className="h-6 w-6">
+            <svg viewBox="-30 -30 60 60" className="h-7 w-7 shrink-0">
               <ShapeRenderer shape={m.id} color="currentColor" />
             </svg>
-            <span className="text-[10px] uppercase tracking-[0.05em]">{m.label}</span>
+            <span className="text-[12px] font-medium leading-none">{m.label}</span>
           </button>
         ))}
       </div>

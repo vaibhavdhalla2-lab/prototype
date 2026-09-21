@@ -346,7 +346,7 @@ export default function Home() {
       <section className="relative pb-10 pt-10 sm:pt-16">
         <div className="mx-auto max-w-[1400px] px-0 sm:px-4">
           <Carousel
-            className="h-[1080px] sm:h-[1000px] lg:h-[760px]"
+            className="h-[900px] sm:h-[820px] lg:h-[660px]"
             onIndexChange={setHeroSlide}
             slides={[
               <SlideHeroIntro key="hero" />,
@@ -532,10 +532,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* COMING SOON — soft lavender wash */}
+      {/* COMING SOON — soft champagne wash */}
       <section
         className="relative border-t border-[#241f1a]/10 py-20 sm:py-28"
-        style={{ background: "linear-gradient(180deg, rgba(250,244,234,0.5) 0%, rgba(233,213,255,0.4) 50%, rgba(250,244,234,0.5) 100%)" }}
+        style={{ background: "linear-gradient(180deg, rgba(250,244,234,0.5) 0%, rgba(239,229,210,0.55) 50%, rgba(250,244,234,0.5) 100%)" }}
       >
         <div className="mx-auto max-w-[1400px] px-5 sm:px-8">
           <div className="mb-12 max-w-xl">

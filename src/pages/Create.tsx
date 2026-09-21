@@ -46,10 +46,11 @@ interface TabDef {
 }
 
 /**
- * Colour is shown directly under the product selector (see ColorSwatchRow), not as a
- * top-level tab a user has to go find — so "color" is deliberately left out of every
- * list below. Layer management lives inside the Design panel as a compact expandable
- * control instead of its own top-level tab, for the same reason.
+ * Colour is shown centered directly under the main product preview (see
+ * ColorSwatchRow), not as a sidebar tab a user has to go find — so "color" is
+ * deliberately left out of every list below. Layer management lives inside
+ * the Design panel as a compact expandable control instead of its own
+ * top-level tab, for the same reason.
  */
 function leftPanelTabsFor(product: ProductId, apparel: boolean): TabDef[] {
   if (apparel) {
@@ -629,7 +630,6 @@ export default function Create() {
           {/* LEFT — product config + summary, own scroll */}
           <div className="scrollbar-thin w-[300px] shrink-0 overflow-y-auto border-r border-line-soft px-5 py-6 xl:w-[320px]">
             <ProductSwitcher className="mb-5" />
-            <ColorSwatchRow />
 
             <div className="mb-5 rounded-2xl border border-line-soft bg-paper p-4">
               <SummaryPanel onJump={jump} previewFrontOverlay={frontOverlay} previewBackOverlay={backOverlay} />
@@ -795,6 +795,11 @@ export default function Create() {
 
             <div className="shrink-0 pt-3 text-center">
               <p className="text-sm text-ink-soft">{caption}</p>
+              {!inspecting && (
+                <div className="mt-3">
+                  <ColorSwatchRow />
+                </div>
+              )}
               {IssueOrTip && <div className="mx-auto mt-3 max-w-md">{IssueOrTip}</div>}
             </div>
           </div>
@@ -838,6 +843,9 @@ export default function Create() {
             <GarmentCard size="sm" />
           </div>
           <p className="mt-4 text-center text-[13px] text-ink-soft">{caption}</p>
+          <div className="mt-3">
+            <ColorSwatchRow />
+          </div>
 
           {IssueOrTip && <div className="mt-4">{IssueOrTip}</div>}
 
@@ -892,7 +900,6 @@ export default function Create() {
 
         <BottomSheet open={productSheetOpen} title="Product" onClose={() => setProductSheetOpen(false)}>
           <ProductSwitcher className="mb-5" />
-          <ColorSwatchRow />
           <SummaryPanel onJump={jump} previewFrontOverlay={frontOverlay} previewBackOverlay={backOverlay} />
         </BottomSheet>
 

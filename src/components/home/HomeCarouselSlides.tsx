@@ -40,7 +40,7 @@ function useLazyActive(active: boolean) {
 function Eyebrow({ children, tone, onPlum }: { children: string; tone: string; onPlum?: boolean }) {
   return (
     <p
-      className="mb-4 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.3em]"
+      className="mb-4 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.2em]"
       style={{ color: onPlum ? "#faf4eacc" : tone }}
     >
       <span className="h-1.5 w-1.5 rounded-full" style={{ background: tone }} />
@@ -55,22 +55,19 @@ function VisualSkeleton({ className }: { className?: string }) {
 }
 
 /**
- * Glass card shell shared by every slide — an ivory-to-lavender gradient
- * glass surface with a soft glow ring in the slide's accent, or (`plumBg`)
- * a deep-plum surface with ivory text for the marketplace/earn moments the
- * brand spec calls out as dark sections.
+ * Glass card shell shared by every slide — a warm ivory-to-champagne surface
+ * (no pink/lavender), or (`plumBg`) a deep-plum surface with ivory text for
+ * the marketplace/earn moments the brand spec calls out as dark sections.
  */
-function SlideShell({ tone, plumBg, children }: { tone: string; plumBg?: boolean; children: ReactNode }) {
+function SlideShell({ plumBg, children }: { plumBg?: boolean; children: ReactNode }) {
   return (
     <div
-      className={`grain ${plumBg ? "grain-deep" : ""} relative h-full overflow-hidden rounded-[28px] sm:mx-24 sm:rounded-[32px] lg:mx-28`}
+      className={`grain ${plumBg ? "grain-deep" : ""} relative h-full overflow-hidden rounded-[28px] sm:mx-8 sm:rounded-[32px] lg:mx-12`}
       style={{
-        background: plumBg
-          ? "linear-gradient(150deg, #241f1a 0%, #140f0c 100%)"
-          : "linear-gradient(150deg, rgba(250,244,234,0.94) 0%, rgba(233,213,255,0.55) 100%)",
+        background: plumBg ? "linear-gradient(150deg, #241f1a 0%, #140f0c 100%)" : "linear-gradient(150deg, #FAF7F1 0%, #F2E9DA 100%)",
         boxShadow: plumBg
-          ? `0 0 0 1px rgba(255,255,255,0.1), 0 0 90px -30px ${tone}77, 0 40px 100px -50px rgba(0,0,0,0.5)`
-          : `0 0 0 1px rgba(255,255,255,0.6), 0 0 90px -35px ${tone}66, 0 40px 90px -55px rgba(36, 31, 26,0.25)`,
+          ? "0 0 0 1px rgba(255,255,255,0.1), 0 40px 100px -50px rgba(0,0,0,0.5)"
+          : "0 0 0 1px rgba(255,255,255,0.7), 0 24px 64px -38px rgba(70,55,35,0.16)",
       }}
     >
       {children}
@@ -95,7 +92,7 @@ const WAYS = [
 export function SlideThreeWays({ active: _active }: SlideProps) {
   const navigate = useNavigate();
   return (
-    <SlideShell tone={PLUM}>
+    <SlideShell>
       <div className="flex h-full flex-col justify-center px-6 py-9 sm:px-10 sm:py-12 lg:px-14">
         <Eyebrow tone={PLUM}>Three ways to design</Eyebrow>
         <h3 className="font-display-heavy max-w-2xl text-[clamp(2rem,6vw,3.6rem)] uppercase leading-[0.9] tracking-tight text-[#17151a]">
@@ -154,7 +151,7 @@ export function SlideDiscoverMarketplace({ active }: SlideProps) {
   const navigate = useNavigate();
   const ready = useLazyActive(active);
   return (
-    <SlideShell tone={GOLD}>
+    <SlideShell>
       <div className="flex h-full flex-col justify-center px-6 py-9 sm:px-10 sm:py-12 lg:px-14">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -214,68 +211,72 @@ export function SlideCreateShareEarn({ active }: SlideProps) {
   const navigate = useNavigate();
   const ready = useLazyActive(active);
   return (
-    <SlideShell tone={GOLD}>
-      <div className="flex h-full flex-col justify-center px-6 py-9 sm:px-10 sm:py-12 lg:px-14">
-        <Eyebrow tone={GOLD}>You can sell what you create</Eyebrow>
-        <h3 className="font-display-heavy max-w-2xl text-[clamp(1.9rem,6vw,3.6rem)] uppercase leading-[0.9] tracking-tight text-[#17151a]">
-          Create it. Sell it.
-          <br />
-          Earn from it.
-        </h3>
-        <p className="mt-4 max-w-md text-[14px] leading-relaxed text-[#17151a]/55">
-          Create a product once. List it on the marketplace. FORMÉ handles production and fulfillment when someone buys it — you earn from every sale.
-        </p>
+    <SlideShell>
+      <div className="grid h-full grid-cols-1 items-center gap-6 px-6 py-9 sm:gap-8 sm:px-10 sm:py-12 md:grid-cols-2 md:gap-10 lg:px-14">
+        {/* LEFT — story + CTA */}
+        <div className="flex flex-col justify-center">
+          <Eyebrow tone={GOLD}>You can sell what you create</Eyebrow>
+          <h3 className="font-display-heavy max-w-lg text-[clamp(1.9rem,5vw,3.2rem)] uppercase leading-[0.92] tracking-tight text-[#17151a]">
+            Create it. Sell it.
+            <br />
+            Earn from it.
+          </h3>
+          <p className="mt-4 max-w-sm text-[14px] leading-relaxed text-[#17151a]/60">
+            Create once. Sell it on FORMÉ.
+            <br />
+            We handle production and fulfilment — you earn whenever it sells.
+          </p>
 
-        <div className="mt-8 flex flex-1 flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+          <div className="mt-8">
+            <GlowButton onClick={() => navigate("/create", { state: { mode: "scratch" } })}>
+              Start Selling
+              <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </GlowButton>
+          </div>
+          <p className="mt-4 text-[11px] italic text-[#17151a]/40">Illustrative — subject to final FORMÉ marketplace terms.</p>
+        </div>
+
+        {/* RIGHT — the create → list → earn journey, given real visual room */}
+        <div className="flex flex-col gap-3">
           {/* your design */}
-          <div className="flex w-full max-w-[220px] flex-col overflow-hidden rounded-2xl border border-white/60 bg-white/55 sm:w-[168px]">
-            <div className="flex h-24 items-center justify-center p-4" style={{ background: `${GOLD}14` }}>
+          <div className="flex items-center gap-4 rounded-2xl border border-white/60 bg-white/55 p-4">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl p-2.5" style={{ background: `${GOLD}14` }}>
               {ready ? (
                 <GarmentStage garment={SELL_SAMPLE.garment} colorHex={colorById(SELL_SAMPLE.color).hex} view="front" className="h-full w-full" />
               ) : (
                 <VisualSkeleton className="h-full w-full" />
               )}
             </div>
-            <div className="px-3 py-2.5 text-center">
-              <p className="text-[9.5px] font-medium uppercase tracking-[0.14em] text-[#17151a]/45">Your design</p>
-              <p className="mt-0.5 truncate font-display text-[13px] text-[#17151a]">{SELL_SAMPLE.name}</p>
+            <div className="min-w-0">
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#17151a]/45">Your design</p>
+              <p className="mt-1 truncate font-display text-lg text-[#17151a]">{SELL_SAMPLE.name}</p>
             </div>
           </div>
 
-          <IconArrowRight className="h-4 w-4 rotate-90 shrink-0 text-[#17151a]/25 sm:rotate-0" />
+          <IconArrowRight className="h-4 w-4 rotate-90 self-center text-[#17151a]/25" />
 
           {/* marketplace listing */}
-          <div className="flex w-full max-w-[220px] flex-col overflow-hidden rounded-2xl border border-white/60 bg-white/55 sm:w-[168px]">
-            <div className="flex h-24 flex-col items-center justify-center gap-1.5 p-4" style={{ background: `${GOLD}14` }}>
-              <IconStore className="h-6 w-6" style={{ color: GOLD }} />
-              <p className="text-[9.5px] uppercase tracking-[0.12em] text-[#17151a]/45">Live on marketplace</p>
+          <div className="flex items-center gap-4 rounded-2xl border border-white/60 bg-white/55 p-4">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl" style={{ background: `${GOLD}14` }}>
+              <IconStore className="h-7 w-7" style={{ color: GOLD }} />
             </div>
-            <div className="px-3 py-2.5 text-center">
-              <p className="text-[9.5px] font-medium uppercase tracking-[0.14em] text-[#17151a]/45">Marketplace listing</p>
-              <p className="mt-0.5 text-[13px] text-[#17151a]/80">₹{SELL_SAMPLE.price.toLocaleString("en-IN")} · sold</p>
+            <div className="min-w-0">
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#17151a]/45">Live on FORMÉ</p>
+              <p className="mt-1 font-display text-lg text-[#17151a]">₹{SELL_SAMPLE.price.toLocaleString("en-IN")}</p>
             </div>
           </div>
 
-          <IconArrowRight className="h-4 w-4 rotate-90 shrink-0 text-[#17151a]/25 sm:rotate-0" />
+          <IconArrowRight className="h-4 w-4 rotate-90 self-center text-[#17151a]/25" />
 
           {/* you earn */}
-          <div className="flex w-full max-w-[220px] flex-col items-center justify-center rounded-2xl border border-[#d4af70]/40 bg-[#d4af70]/[0.14] px-4 py-6 text-center sm:w-[168px]">
-            <p className="text-[9.5px] font-medium uppercase tracking-[0.14em]" style={{ color: "#8f7345" }}>You earn</p>
-            <p className="mt-2 font-display-heavy text-2xl text-[#17151a]">Every sale</p>
-            <p className="mt-1 text-[11px] leading-snug text-[#17151a]/50">Your profit, calculated at checkout.</p>
-          </div>
-        </div>
-
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-4">
-          <p className="text-[11px] italic text-[#17151a]/40">Illustrative — subject to final FORMÉ marketplace terms.</p>
-          <div className="flex flex-wrap items-center gap-2.5">
-            <GlowButton variant="secondary" onClick={() => navigate("/marketplace")}>
-              Explore Marketplace
-            </GlowButton>
-            <GlowButton onClick={() => navigate("/create", { state: { mode: "scratch" } })}>
-              Start Selling
-              <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </GlowButton>
+          <div className="flex items-center gap-4 rounded-2xl border border-[#d4af70]/40 bg-[#d4af70]/[0.14] p-4">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl border border-[#d4af70]/40 bg-white/40">
+              <span className="font-display-heavy text-2xl" style={{ color: "#8f7345" }}>%</span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-medium uppercase tracking-[0.14em]" style={{ color: "#8f7345" }}>You earn</p>
+              <p className="mt-1 font-display text-lg text-[#17151a]">Every sale</p>
+            </div>
           </div>
         </div>
       </div>

@@ -3,19 +3,23 @@ import { useDesign } from "../../lib/store";
 import { track } from "../../lib/analytics";
 
 /**
- * Compact colour picker shown directly under the product selector — colour is a core
- * product choice, not a separate settings tab the user has to go find.
+ * The product's physical colour picker — shown centered directly beneath the
+ * main product preview, since colour is a core physical choice about the
+ * object itself, not a settings-panel afterthought. Deliberately lightweight:
+ * just the current colour name and a row of small swatches, no card around it.
+ *
+ * This is the PRODUCT's base colour only — separate from (and never a
+ * substitute for) the Draw/Text/Graphics tools' own colour controls, which
+ * stay inside their respective panels.
  */
 export default function ColorSwatchRow() {
   const design = useDesign();
   const active = COLORS.find((c) => c.id === design.color)!;
 
   return (
-    <div className="mb-5">
-      <p className="mb-2 text-[10px] font-medium uppercase tracking-[0.16em] text-ink-faint">
-        Colour <span className="text-ink-soft">· {active.label}</span>
-      </p>
-      <div className="flex flex-wrap gap-2">
+    <div className="flex flex-col items-center gap-2">
+      <p className="text-[12px] font-medium text-ink">{active.label}</p>
+      <div className="flex flex-wrap items-center justify-center gap-2">
         {COLORS.map((c) => {
           const isActive = c.id === design.color;
           return (

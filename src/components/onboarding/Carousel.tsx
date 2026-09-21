@@ -128,64 +128,90 @@ export default function Carousel({
         </button>
       )}
 
-      <div
-        ref={viewportRef}
-        className="relative h-full w-full touch-none select-none overflow-hidden"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerLeave={onPointerUp}
-      >
+      {/* Previous/Next flank the slide viewport as real flex siblings (lg+) — never an overlay
+          on top of slide content. Below lg there isn't reliably enough spare width to flank
+          without squeezing the slide (and on some pages a fixed right-edge widget lives right
+          where a flanking control would), so tablet/mobile fall back to inline icons next to
+          the dots instead (see the indicator row) — the "navigation row below" the spec calls
+          for on narrower viewports. */}
+      <div className="flex h-full items-center gap-3">
+        <CarouselArrow
+          direction="prev"
+          onClick={goBack}
+          disabled={isFirst}
+          label="Previous slide"
+          text="Previous"
+          className="hidden shrink-0 lg:inline-flex"
+        />
+
         <div
-          className="flex h-full"
-          style={{
-            width: `${total * 100}%`,
-            transform: `translateX(calc(${(-index * 100) / total}% + ${dragPx}px))`,
-            transition: dragging.current ? "none" : "transform 0.5s cubic-bezier(0.22,1,0.36,1)",
-          }}
+          ref={viewportRef}
+          className="relative h-full min-w-0 flex-1 touch-none select-none overflow-hidden"
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerLeave={onPointerUp}
         >
-          {slides.map((slide, i) => (
-            <div key={i} className="h-full shrink-0" style={{ width: `${100 / total}%`, paddingBottom: indicatorGutter || undefined }}>
-              {slide}
-            </div>
-          ))}
+          <div
+            className="flex h-full"
+            style={{
+              width: `${total * 100}%`,
+              transform: `translateX(calc(${(-index * 100) / total}% + ${dragPx}px))`,
+              transition: dragging.current ? "none" : "transform 0.5s cubic-bezier(0.22,1,0.36,1)",
+            }}
+          >
+            {slides.map((slide, i) => (
+              <div key={i} className="h-full shrink-0" style={{ width: `${100 / total}%`, paddingBottom: indicatorGutter || undefined }}>
+                {slide}
+              </div>
+            ))}
+          </div>
         </div>
+
+        <CarouselArrow
+          direction="next"
+          onClick={goNext}
+          disabled={isLast && !onFinish}
+          label="Next slide"
+          text={isLast ? finishLabel : "Next"}
+          className="hidden shrink-0 lg:inline-flex"
+        />
       </div>
 
-      {/* one shared arrow implementation for both directions — see CarouselArrow.tsx */}
-      <CarouselArrow direction="prev" onClick={goBack} disabled={isFirst} visible={!isFirst} label="Previous slide" text="Previous" />
-      <CarouselArrow
-        direction="next"
-        onClick={goNext}
-        disabled={isLast && !onFinish}
-        visible={!(isLast && !onFinish)}
-        label="Next slide"
-        text={isLast ? finishLabel : "Next"}
-      />
-
-      {/* indicator: dots + counter, bottom center */}
+      {/* indicator: prev/next (mobile only) + dots + counter, bottom center — always below/beside
+          the slide, never over it */}
       <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex flex-col items-center gap-2 sm:bottom-6">
-        <div className="pointer-events-auto flex items-center gap-1.5">
-          {Array.from({ length: total }).map((_, i) => (
-            <button
-              key={i}
-              onClick={() => goTo(i)}
-              aria-label={`Go to slide ${i + 1}`}
-              className="group flex h-6 items-center px-0.5"
-            >
-              <span
-                className={`h-1 rounded-full transition-all duration-300 ${
-                  i === index
-                    ? dark
-                      ? "w-6 bg-[#faf4ea]"
-                      : "w-6 bg-ink"
-                    : dark
-                      ? "w-3 bg-[#faf4ea]/25 group-hover:bg-[#faf4ea]/45"
-                      : "w-3 bg-ink/25 group-hover:bg-ink/40"
-                }`}
-              />
-            </button>
-          ))}
+        <div className="pointer-events-auto flex items-center gap-3">
+          <CarouselArrow direction="prev" onClick={goBack} disabled={isFirst} label="Previous slide" className="inline-flex lg:hidden" />
+          <div className="flex items-center gap-1.5">
+            {Array.from({ length: total }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => goTo(i)}
+                aria-label={`Go to slide ${i + 1}`}
+                className="group flex h-6 items-center px-0.5"
+              >
+                <span
+                  className={`h-1 rounded-full transition-all duration-300 ${
+                    i === index
+                      ? dark
+                        ? "w-6 bg-[#faf4ea]"
+                        : "w-6 bg-ink"
+                      : dark
+                        ? "w-3 bg-[#faf4ea]/25 group-hover:bg-[#faf4ea]/45"
+                        : "w-3 bg-ink/25 group-hover:bg-ink/40"
+                  }`}
+                />
+              </button>
+            ))}
+          </div>
+          <CarouselArrow
+            direction="next"
+            onClick={goNext}
+            disabled={isLast && !onFinish}
+            label="Next slide"
+            className="inline-flex lg:hidden"
+          />
         </div>
         <p className={`text-[10.5px] uppercase tracking-[0.2em] ${dark ? "text-[#faf4ea]/45" : "text-ink-faint"}`}>
           {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
