@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { IconMenu, IconClose, IconStore, IconUser, IconPlus } from "./icons";
+import { LogoMark } from "./Logo";
 
 const LINK_CLS = ({ isActive }: { isActive: boolean }) =>
   `relative py-1 text-[13px] tracking-[0.14em] uppercase transition-colors ${
@@ -13,6 +14,9 @@ export default function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  // Redundant on the pages whose whole job is already creating/reviewing a design.
+  const hideCreateCta = pathname === "/create" || pathname === "/profile";
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -30,7 +34,12 @@ export default function Nav() {
         }`}
       >
         <div className="mx-auto flex max-w-[1400px] items-center justify-between px-5 py-4 sm:px-8">
-          <NavLink to="/" className="font-display text-2xl tracking-tight text-[#17151a]" onClick={() => setMobileOpen(false)}>
+          <NavLink
+            to="/"
+            className="flex items-center gap-2.5 font-display text-2xl tracking-tight text-[#17151a]"
+            onClick={() => setMobileOpen(false)}
+          >
+            <LogoMark className="h-8 w-8 sm:h-9 sm:w-9" variant="dark" />
             FORM<span className="text-[#c8a96b]">É</span>
           </NavLink>
 
@@ -52,15 +61,17 @@ export default function Nav() {
             </NavLink>
           </nav>
 
-          <div className="hidden lg:block">
-            <button
-              onClick={() => navigate("/create")}
-              className="group inline-flex items-center gap-2 rounded-full bg-[#c8a96b] px-5 py-2.5 text-[12px] font-medium uppercase tracking-[0.14em] text-[#241f1a] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-10px_rgba(36,31,26,0.4)]"
-            >
-              Create From Scratch
-              <IconPlus className="h-3.5 w-3.5 transition-transform group-hover:rotate-90" />
-            </button>
-          </div>
+          {!hideCreateCta && (
+            <div className="hidden lg:block">
+              <button
+                onClick={() => navigate("/create")}
+                className="group inline-flex items-center gap-2 rounded-full bg-[#c8a96b] px-5 py-2.5 text-[12px] font-medium uppercase tracking-[0.14em] text-[#241f1a] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_30px_-10px_rgba(36,31,26,0.4)]"
+              >
+                Create From Scratch
+                <IconPlus className="h-3.5 w-3.5 transition-transform group-hover:rotate-90" />
+              </button>
+            </div>
+          )}
 
           <button className="text-[#17151a] lg:hidden" onClick={() => setMobileOpen((v) => !v)} aria-label="Menu">
             {mobileOpen ? <IconClose className="h-6 w-6" /> : <IconMenu className="h-6 w-6" />}

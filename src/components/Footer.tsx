@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { COMING_SOON } from "../data/catalog";
 import { IconLock } from "./icons";
+import { LogoMark } from "./Logo";
 
 export default function Footer() {
   return (
@@ -26,9 +27,12 @@ export default function Footer() {
 
         <div className="grid grid-cols-2 gap-10 border-t border-white/10 pt-12 md:grid-cols-4">
           <div className="col-span-2 md:col-span-1">
-            <p className="font-display text-3xl text-[#faf4ea]">
-              FORM<span className="text-[#d4af70]">É</span>
-            </p>
+            <div className="flex items-center gap-2.5">
+              <LogoMark className="h-9 w-9" variant="light" />
+              <p className="font-display text-3xl text-[#faf4ea]">
+                FORM<span className="text-[#d4af70]">É</span>
+              </p>
+            </div>
             <p className="mt-3 text-sm uppercase tracking-[0.14em] text-[#faf4ea]/60">Imagine it. Wear it.</p>
             <p className="mt-1 font-display italic text-[#faf4ea]/40">"Give your imagination form."</p>
           </div>
