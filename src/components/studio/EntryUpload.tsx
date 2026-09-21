@@ -33,7 +33,7 @@ export default function EntryUpload({ onEnterStudio }: { onEnterStudio: (tab: st
   const useAsArtwork = () => {
     if (!staged) return;
     design.setGarment(garment);
-    design.setArtwork({ src: staged, x: 0.5, y: 0.5, scale: 1, rotation: 0 });
+    design.setArtwork(staged);
     design.setSourceMode("upload");
     onEnterStudio("image");
   };

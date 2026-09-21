@@ -1,15 +1,25 @@
 import { COLORS } from "../../data/catalog";
 import { useDesign } from "../../lib/store";
 import { track } from "../../lib/analytics";
-import { IconCheck } from "../icons";
+import { IconCheck, IconSparkle } from "../icons";
 
-export default function ColorPanel() {
+export default function ColorPanel({ onAskMuse }: { onAskMuse?: (prompt: string) => void }) {
   const design = useDesign();
   const active = COLORS.find((c) => c.id === design.color)!;
 
   return (
     <div className="animate-fade-in">
-      <p className="text-[11px] uppercase tracking-[0.25em] text-ink-faint">Choose your colour</p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[11px] uppercase tracking-[0.25em] text-ink-faint">Choose your colour</p>
+        {onAskMuse && (
+          <button
+            onClick={() => onAskMuse("Suggest a colour palette that would work well for this design.")}
+            className="flex shrink-0 items-center gap-1 text-[10.5px] uppercase tracking-[0.08em] text-[#8f7345] hover:text-[#241f1a]"
+          >
+            <IconSparkle className="h-3 w-3" /> Suggest palette
+          </button>
+        )}
+      </div>
 
       <div className="mt-4 grid grid-cols-3 gap-3">
         {COLORS.map((c) => {

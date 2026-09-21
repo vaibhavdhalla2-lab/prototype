@@ -102,30 +102,42 @@ export function SlideThreeWays({ active: _active }: SlideProps) {
           How do you imagine it?
         </h3>
 
-        <div className="mt-7 grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5">
-          {WAYS.map(({ id, label, body, icon: Icon, tone }) => (
-            <button
-              key={id}
-              onClick={() => {
-                track("start_creating", { mode: id, source: "home_carousel" });
-                navigate("/create", { state: { mode: id === "image" ? "upload" : id === "muse" ? "prompt" : "scratch" } });
-              }}
-              className="group flex flex-col items-start rounded-2xl border border-white/60 bg-white/45 p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:bg-white/65 sm:p-6"
-            >
-              <span
-                className="flex h-11 w-11 items-center justify-center rounded-full transition-colors"
-                style={{ color: tone, border: `1.5px solid ${tone}44`, background: `${tone}12` }}
+        <div className="mt-7 grid grid-cols-1 items-stretch gap-4 sm:grid-cols-3 sm:gap-5">
+          {WAYS.map(({ id, label, body, icon: Icon, tone }) => {
+            const isMuse = id === "muse";
+            return (
+              <button
+                key={id}
+                onClick={() => {
+                  track("start_creating", { mode: id, source: "home_carousel" });
+                  navigate("/create", { state: { mode: id === "image" ? "upload" : id === "muse" ? "prompt" : "scratch" } });
+                }}
+                className={`group relative flex flex-col items-start rounded-2xl border p-5 text-left transition-all duration-300 hover:-translate-y-1 sm:p-6 ${
+                  isMuse
+                    ? "border-[#d4af70]/50 bg-gradient-to-b from-white/70 to-[#d4af70]/10 shadow-[0_18px_50px_-28px_rgba(200,169,107,0.6)] sm:-translate-y-2 sm:scale-[1.04] sm:hover:-translate-y-3"
+                    : "border-white/60 bg-white/45 hover:bg-white/65"
+                }`}
               >
-                <Icon className="h-5 w-5" />
-              </span>
-              <p className="mt-4 font-display text-xl text-[#17151a]">{label}</p>
-              <p className="mt-1 text-[13px] text-[#17151a]/55">{body}</p>
-              <span className="mt-4 inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-[#17151a]/45 transition-colors group-hover:text-[#17151a]/80">
-                Try it
-                <IconArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
-              </span>
-            </button>
-          ))}
+                {isMuse && (
+                  <span className="absolute -top-2.5 left-5 rounded-full bg-[#241f1a] px-2.5 py-0.5 text-[9.5px] font-medium uppercase tracking-[0.12em] text-[#d4af70]">
+                    Most popular
+                  </span>
+                )}
+                <span
+                  className="flex h-11 w-11 items-center justify-center rounded-full transition-colors"
+                  style={{ color: tone, border: `1.5px solid ${tone}44`, background: `${tone}12` }}
+                >
+                  <Icon className="h-5 w-5" />
+                </span>
+                <p className="mt-4 font-display text-xl text-[#17151a]">{label}</p>
+                <p className="mt-1 text-[13px] text-[#17151a]/55">{body}</p>
+                <span className="mt-4 inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.12em] text-[#17151a]/45 transition-colors group-hover:text-[#17151a]/80">
+                  Try it
+                  <IconArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </SlideShell>
@@ -196,42 +208,68 @@ export function SlideDiscoverMarketplace({ active }: SlideProps) {
 /* SLIDE 4 — Create, share, earn                                            */
 /* ----------------------------------------------------------------------- */
 
-const EARN_FLOW = [
-  { label: "You create", icon: IconSparkle },
-  { label: "Publish", icon: IconArrowRight },
-  { label: "Someone discovers it", icon: IconStore },
-  { label: "They buy or remix", icon: IconRemix },
-  { label: "You earn", icon: IconArrowRight },
-];
+const SELL_SAMPLE = MARKET_DESIGNS.find((d) => d.garment === "tshirt") ?? MARKET_DESIGNS[0];
 
-export function SlideCreateShareEarn({ active: _active }: SlideProps) {
+export function SlideCreateShareEarn({ active }: SlideProps) {
   const navigate = useNavigate();
+  const ready = useLazyActive(active);
   return (
     <SlideShell tone={GOLD} plumBg>
       <div className="flex h-full flex-col justify-center px-6 py-9 sm:px-10 sm:py-12 lg:px-14">
-        <Eyebrow tone={GOLD} onPlum>From idea to income</Eyebrow>
+        <Eyebrow tone={GOLD} onPlum>You can sell what you create</Eyebrow>
         <h3 className="font-display-heavy max-w-2xl text-[clamp(1.9rem,6vw,3.6rem)] uppercase leading-[0.9] tracking-tight text-[#faf4ea]">
-          Your design.
+          Create it. Sell it.
           <br />
-          Their next favourite.
+          Earn from it.
         </h3>
+        <p className="mt-4 max-w-md text-[14px] leading-relaxed text-[#faf4ea]/60">
+          Turn your creation into a marketplace listing. When someone buys it, FORMÉ produces and ships it — you earn on every sale.
+        </p>
 
-        <div className="mt-8 flex flex-1 flex-col justify-center gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
-          {EARN_FLOW.map(({ label, icon: Icon }, i) => (
-            <div key={label} className="flex items-center gap-2 sm:gap-3">
-              <div className="glass-plum flex items-center gap-2.5 rounded-full px-4 py-2.5">
-                <Icon className="h-3.5 w-3.5" style={{ color: GOLD }} />
-                <span className="whitespace-nowrap text-[11.5px] font-medium uppercase tracking-[0.1em] text-[#faf4ea]">{label}</span>
-              </div>
-              {i < EARN_FLOW.length - 1 && <IconArrowRight className="hidden h-3.5 w-3.5 text-[#faf4ea]/25 sm:block" />}
+        <div className="mt-8 flex flex-1 flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+          {/* your design */}
+          <div className="glass-plum flex w-full max-w-[220px] flex-col overflow-hidden rounded-2xl border border-white/10 sm:w-[168px]">
+            <div className="flex h-24 items-center justify-center p-4" style={{ background: `${GOLD}14` }}>
+              {ready ? (
+                <GarmentStage garment={SELL_SAMPLE.garment} colorHex={colorById(SELL_SAMPLE.color).hex} view="front" className="h-full w-full" />
+              ) : (
+                <VisualSkeleton className="h-full w-full" />
+              )}
             </div>
-          ))}
+            <div className="px-3 py-2.5 text-center">
+              <p className="text-[9.5px] font-medium uppercase tracking-[0.14em] text-[#faf4ea]/45">Your design</p>
+              <p className="mt-0.5 truncate font-display text-[13px] text-[#faf4ea]">{SELL_SAMPLE.name}</p>
+            </div>
+          </div>
+
+          <IconArrowRight className="h-4 w-4 rotate-90 shrink-0 text-[#faf4ea]/25 sm:rotate-0" />
+
+          {/* marketplace listing */}
+          <div className="glass-plum flex w-full max-w-[220px] flex-col overflow-hidden rounded-2xl border border-white/10 sm:w-[168px]">
+            <div className="flex h-24 flex-col items-center justify-center gap-1.5 p-4" style={{ background: `${GOLD}14` }}>
+              <IconStore className="h-6 w-6" style={{ color: GOLD }} />
+              <p className="text-[9.5px] uppercase tracking-[0.12em] text-[#faf4ea]/45">Live on marketplace</p>
+            </div>
+            <div className="px-3 py-2.5 text-center">
+              <p className="text-[9.5px] font-medium uppercase tracking-[0.14em] text-[#faf4ea]/45">Marketplace listing</p>
+              <p className="mt-0.5 text-[13px] text-[#faf4ea]/80">₹{SELL_SAMPLE.price.toLocaleString("en-IN")} · sold</p>
+            </div>
+          </div>
+
+          <IconArrowRight className="h-4 w-4 rotate-90 shrink-0 text-[#faf4ea]/25 sm:rotate-0" />
+
+          {/* you earn */}
+          <div className="flex w-full max-w-[220px] flex-col items-center justify-center rounded-2xl border border-[#d4af70]/30 bg-[#d4af70]/10 px-4 py-6 text-center sm:w-[168px]">
+            <p className="text-[9.5px] font-medium uppercase tracking-[0.14em]" style={{ color: GOLD }}>You earn</p>
+            <p className="mt-2 font-display-heavy text-2xl text-[#faf4ea]">Every sale</p>
+            <p className="mt-1 text-[11px] leading-snug text-[#faf4ea]/50">Your profit, calculated at checkout.</p>
+          </div>
         </div>
 
         <div className="mt-2 flex flex-wrap items-center justify-between gap-4">
-          <p className="text-[11px] italic text-[#faf4ea]/45">Illustrative creator reward — subject to final FORMÉ terms.</p>
-          <GlowButton onClick={() => navigate("/create")}>
-            Create &amp; Sell
+          <p className="text-[11px] italic text-[#faf4ea]/40">Illustrative — subject to final FORMÉ marketplace terms.</p>
+          <GlowButton onClick={() => navigate("/marketplace")}>
+            Explore Marketplace
             <IconArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </GlowButton>
         </div>

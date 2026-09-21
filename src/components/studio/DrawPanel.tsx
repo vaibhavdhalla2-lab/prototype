@@ -1,25 +1,57 @@
-import { useDesign, type DrawTool } from "../../lib/store";
+import { useDesign, type DrawTool, type SmoothingLevel } from "../../lib/store";
 import { track } from "../../lib/analytics";
 import { IconUndo, IconRedo, IconTrash, IconSparkle, IconCheck } from "../icons";
 
 const TOOLS: { id: DrawTool; label: string }[] = [
-  { id: "marker", label: "Marker" },
   { id: "pencil", label: "Pencil" },
+  { id: "marker", label: "Marker" },
   { id: "brush", label: "Brush" },
+  { id: "pen", label: "Pen" },
   { id: "eraser", label: "Eraser" },
 ];
 
-const PALETTE = ["#1a1712", "#f1ead9", "#9a6a43", "#2f3d2e", "#5a2331", "#232d3f", "#c99a6f", "#ffffff"];
+const BRUSH_SIZES = [1, 2, 4, 8, 12, 16, 24, 40];
+const SMOOTHING: { id: SmoothingLevel; label: string }[] = [
+  { id: "none", label: "None" },
+  { id: "light", label: "Light" },
+  { id: "medium", label: "Medium" },
+  { id: "strong", label: "Strong" },
+];
+const PALETTE = ["#1a1712", "#f1ead9", "#9a6a43", "#c8a96b", "#2f3d2e", "#5a2331", "#232d3f", "#ffffff"];
 
 interface DrawPanelProps {
   tool: DrawTool;
   setTool: (t: DrawTool) => void;
   color: string;
   setColor: (c: string) => void;
+  brushSize: number;
+  setBrushSize: (n: number) => void;
+  opacity: number;
+  setOpacity: (n: number) => void;
+  smoothing: SmoothingLevel;
+  setSmoothing: (s: SmoothingLevel) => void;
+  recentColors: string[];
   onRefine?: () => void;
 }
 
-export default function DrawPanel({ tool, setTool, color, setColor, onRefine }: DrawPanelProps) {
+function Slider({ value, min, max, step = 1, onChange, format }: { value: number; min: number; max: number; step?: number; onChange: (v: number) => void; format?: (v: number) => string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="h-1.5 w-full flex-1 cursor-pointer appearance-none rounded-full bg-line accent-[#241f1a]"
+      />
+      <span className="w-12 shrink-0 text-right text-[11.5px] tabular-nums text-ink-soft">{format ? format(value) : value}</span>
+    </div>
+  );
+}
+
+export default function DrawPanel({ tool, setTool, color, setColor, brushSize, setBrushSize, opacity, setOpacity, smoothing, setSmoothing, recentColors, onRefine }: DrawPanelProps) {
   const design = useDesign();
   const side = design.view === "back" ? "back" : "front";
   const strokes = side === "back" ? design.strokesBack : design.strokesFront;
@@ -30,32 +62,13 @@ export default function DrawPanel({ tool, setTool, color, setColor, onRefine }: 
       <p className="text-[11px] uppercase tracking-[0.25em] text-ink-faint">Draw</p>
       <p className="mt-1 text-sm text-ink-soft">Don't overthink it. Draw something only you would wear.</p>
 
-      <div className="mt-4 flex gap-2">
-        <button
-          onClick={() => design.setView("front")}
-          className={`flex-1 rounded-xl border py-2 text-[12px] uppercase tracking-[0.08em] transition-colors ${
-            side === "front" ? "border-ink bg-ink text-ivory" : "border-line text-ink-soft"
-          }`}
-        >
-          Front
-        </button>
-        <button
-          onClick={() => design.setView("back")}
-          className={`flex-1 rounded-xl border py-2 text-[12px] uppercase tracking-[0.08em] transition-colors ${
-            side === "back" ? "border-ink bg-ink text-ivory" : "border-line text-ink-soft"
-          }`}
-        >
-          Back
-        </button>
-      </div>
-
-      <div className="mt-5 grid grid-cols-2 gap-2">
+      <div className="mt-4 grid grid-cols-5 gap-1.5">
         {TOOLS.map((t) => (
           <button
             key={t.id}
             onClick={() => setTool(t.id)}
-            className={`rounded-xl border py-2.5 text-[11.5px] uppercase tracking-[0.04em] transition-colors ${
-              tool === t.id ? "border-ink bg-ivory-dim text-ink" : "border-line text-ink-soft hover:border-ink-soft"
+            className={`rounded-xl border py-2.5 text-[10.5px] uppercase tracking-[0.02em] transition-colors ${
+              tool === t.id ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-line text-ink-soft hover:border-ink-soft"
             }`}
           >
             {t.label}
@@ -63,8 +76,48 @@ export default function DrawPanel({ tool, setTool, color, setColor, onRefine }: 
         ))}
       </div>
 
+      <div className="mt-5">
+        <p className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.1em] text-ink-faint">Brush size</p>
+        <Slider value={brushSize} min={1} max={40} onChange={setBrushSize} format={(v) => `${v}px`} />
+        <div className="mt-1.5 flex flex-wrap gap-1.5">
+          {BRUSH_SIZES.map((s) => (
+            <button
+              key={s}
+              onClick={() => setBrushSize(s)}
+              className={`rounded-full border px-2.5 py-1 text-[10.5px] transition-colors ${
+                brushSize === s ? "border-[#241f1a] bg-ivory-dim text-ink" : "border-line-soft text-ink-faint hover:border-ink-soft"
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-5">
+        <p className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.1em] text-ink-faint">Opacity</p>
+        <Slider value={Math.round(opacity * 100)} min={5} max={100} onChange={(v) => setOpacity(v / 100)} format={(v) => `${v}%`} />
+      </div>
+
+      <div className="mt-5">
+        <p className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.1em] text-ink-faint">Smoothing</p>
+        <div className="grid grid-cols-4 gap-1.5">
+          {SMOOTHING.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => setSmoothing(s.id)}
+              className={`rounded-lg border py-2 text-[11px] transition-colors ${
+                smoothing === s.id ? "border-[#241f1a] bg-ivory-dim text-ink" : "border-line-soft text-ink-faint hover:border-ink-soft"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <p className="mb-2 mt-5 text-[11px] uppercase tracking-[0.2em] text-ink-faint">Colour</p>
-      <div className="flex flex-wrap gap-2.5">
+      <div className="flex flex-wrap items-center gap-2.5">
         {PALETTE.map((hex) => (
           <button
             key={hex}
@@ -74,7 +127,16 @@ export default function DrawPanel({ tool, setTool, color, setColor, onRefine }: 
             aria-label={hex}
           />
         ))}
+        <input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="h-8 w-10 cursor-pointer rounded-md border border-line-soft bg-transparent p-0.5" aria-label="Custom colour" />
       </div>
+      {recentColors.length > 0 && (
+        <div className="mt-2.5 flex items-center gap-2">
+          <span className="text-[10.5px] uppercase tracking-[0.08em] text-ink-faint">Recent</span>
+          {recentColors.map((hex, i) => (
+            <button key={`${hex}-${i}`} onClick={() => setColor(hex)} className="h-5 w-5 rounded-full border border-line-soft" style={{ background: hex }} aria-label={hex} />
+          ))}
+        </div>
+      )}
 
       <div className="mt-6 flex gap-2">
         <button

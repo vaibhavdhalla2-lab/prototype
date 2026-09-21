@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useDesign } from "../lib/store";
-import type { DrawTool } from "../lib/store";
+import type { DrawTool, SmoothingLevel } from "../lib/store";
 import { colorById, materialById, type GarmentType } from "../data/catalog";
 import { isApparel, productById, type ProductId } from "../data/products";
 import ProductStage, { printAreaFor, hasSecondaryView, secondaryViewLabel, primaryViewLabel } from "../components/products/ProductStage";
@@ -25,14 +25,14 @@ import ImagePanel from "../components/studio/ImagePanel";
 import DrawPanel from "../components/studio/DrawPanel";
 import DetailsPanel from "../components/studio/DetailsPanel";
 import GraphicsPanel from "../components/studio/GraphicsPanel";
+import LayersPanel from "../components/studio/LayersPanel";
 import SummaryPanel from "../components/studio/SummaryPanel";
 import MusePanel from "../components/studio/MusePanel";
-import { MagnifierLens, MagnifiedView, type LensPos } from "../components/studio/Magnifier";
+import LayerStack, { type CanvasMode } from "../components/studio/LayerStack";
+import { MagnifierLens, MagnifiedView, lensToRegion, type LensPos } from "../components/studio/Magnifier";
 import BottomSheet from "../components/studio/BottomSheet";
-import DrawLayer from "../components/studio/DrawLayer";
-import ArtworkLayer from "../components/studio/ArtworkLayer";
 import RefineDrawing from "../components/studio/RefineDrawing";
-import { IconSparkle, IconArrowRight, IconClose, IconPencil, IconType, IconUpload, IconLayers, IconEye } from "../components/icons";
+import { IconSparkle, IconArrowRight, IconClose, IconPencil, IconType, IconUpload, IconLayers, IconEye, IconMove, IconStore } from "../components/icons";
 
 type Stage = "pick" | "upload" | "prompt" | "gift" | "studio";
 type ViewTab = "front" | "back" | "detail" | "3d" | "wrap";
@@ -40,23 +40,21 @@ type ViewTab = "front" | "back" | "detail" | "3d" | "wrap";
 interface TabDef {
   id: string;
   label: string;
-  /** For dynamic, data-driven variant-group tabs (mug Finish, poster Frame, etc.) — omitted for the fixed apparel/design/colour/details tabs. */
   groupKeys?: string[];
 }
 
-/** Object-specific left-panel information architecture — every product keeps its own terminology and its own set of sections, never a generic one-size-fits-all menu. */
 function leftPanelTabsFor(product: ProductId, apparel: boolean): TabDef[] {
+  let base: TabDef[];
   if (apparel) {
-    return [
+    base = [
       { id: "design", label: "Design" },
       { id: "material", label: "Material" },
       { id: "color", label: "Colour" },
       { id: "fit", label: "Fit" },
       { id: "details", label: "Details" },
     ];
-  }
-  if (product === "mug") {
-    return [
+  } else if (product === "mug") {
+    base = [
       { id: "design", label: "Design" },
       { id: "material", label: "Material", groupKeys: ["material"] },
       { id: "finish", label: "Finish", groupKeys: ["finish"] },
@@ -64,18 +62,16 @@ function leftPanelTabsFor(product: ProductId, apparel: boolean): TabDef[] {
       { id: "color", label: "Colour" },
       { id: "details", label: "Details" },
     ];
-  }
-  if (product === "poster") {
-    return [
+  } else if (product === "poster") {
+    base = [
       { id: "design", label: "Design" },
       { id: "size-orientation", label: "Size & Orientation", groupKeys: ["orientation", "size"] },
       { id: "paper", label: "Paper", groupKeys: ["paper"] },
       { id: "frame", label: "Frame", groupKeys: ["frame"] },
       { id: "details", label: "Details" },
     ];
-  }
-  if (product === "bottle") {
-    return [
+  } else if (product === "bottle") {
+    base = [
       { id: "design", label: "Design" },
       { id: "material", label: "Material", groupKeys: ["material"] },
       { id: "capacity", label: "Capacity", groupKeys: ["capacity"] },
@@ -83,9 +79,8 @@ function leftPanelTabsFor(product: ProductId, apparel: boolean): TabDef[] {
       { id: "color", label: "Colour" },
       { id: "details", label: "Details" },
     ];
-  }
-  if (product === "deskpad") {
-    return [
+  } else if (product === "deskpad") {
+    base = [
       { id: "design", label: "Design" },
       { id: "size", label: "Size", groupKeys: ["size"] },
       { id: "surface", label: "Surface", groupKeys: ["surface"] },
@@ -93,9 +88,8 @@ function leftPanelTabsFor(product: ProductId, apparel: boolean): TabDef[] {
       { id: "base", label: "Base", groupKeys: ["base"] },
       { id: "details", label: "Details" },
     ];
-  }
-  if (product === "phonecase") {
-    return [
+  } else if (product === "phonecase") {
+    base = [
       { id: "device", label: "Device", groupKeys: ["model"] },
       { id: "design", label: "Design" },
       { id: "casetype", label: "Case Type", groupKeys: ["type"] },
@@ -103,48 +97,29 @@ function leftPanelTabsFor(product: ProductId, apparel: boolean): TabDef[] {
       { id: "color", label: "Colour" },
       { id: "details", label: "Details" },
     ];
+  } else {
+    base = [
+      { id: "design", label: "Design" },
+      { id: "color", label: "Colour" },
+      { id: "details", label: "Details" },
+    ];
   }
-  return [
-    { id: "design", label: "Design" },
-    { id: "color", label: "Colour" },
-    { id: "details", label: "Details" },
-  ];
+  return [...base, { id: "layers", label: "Layers" }];
 }
 
 function initialCategoryFor(product: ProductId): string {
   return product === "phonecase" ? "device" : "design";
 }
 
-type DesignSub = "muse" | "image" | "draw" | "text" | "graphics";
+type DesignSub = "move" | "image" | "draw" | "text" | "graphics";
 
-// MUSE leads — it's a primary creation mode, not a secondary assistant.
 const DESIGN_SUB_TABS: { id: DesignSub; label: string; icon: typeof IconPencil }[] = [
-  { id: "muse", label: "Muse", icon: IconSparkle },
+  { id: "move", label: "Move", icon: IconMove },
   { id: "image", label: "Upload", icon: IconUpload },
   { id: "draw", label: "Draw", icon: IconPencil },
   { id: "text", label: "Text", icon: IconType },
   { id: "graphics", label: "Graphics", icon: IconLayers },
 ];
-
-function TextOverlay({
-  content,
-  placement,
-  printArea,
-  colorHex,
-}: {
-  content: string;
-  placement: "top" | "center" | "bottom";
-  printArea: { x: number; y: number; width: number; height: number };
-  colorHex: string;
-}) {
-  const cx = printArea.x + printArea.width / 2;
-  const cy = placement === "top" ? printArea.y + 14 : placement === "bottom" ? printArea.y + printArea.height - 6 : printArea.y + printArea.height / 2;
-  return (
-    <text x={cx} y={cy} textAnchor="middle" fontFamily="Inter, sans-serif" fontWeight={600} fontSize="14" letterSpacing="2.5" fill={colorHex}>
-      {content}
-    </text>
-  );
-}
 
 export default function Create() {
   const design = useDesign();
@@ -153,19 +128,42 @@ export default function Create() {
 
   const [stage, setStage] = useState<Stage>("studio");
   const [category, setCategory] = useState<string>("design");
-  const [designSub, setDesignSub] = useState<DesignSub>("muse");
+  const [designSub, setDesignSub] = useState<DesignSub>("move");
   const [drawTool, setDrawTool] = useState<DrawTool>("marker");
   const [drawColor, setDrawColor] = useState("#1a1712");
+  const [drawBrushSize, setDrawBrushSize] = useState(7);
+  const [drawOpacity, setDrawOpacity] = useState(0.95);
+  const [drawSmoothing, setDrawSmoothing] = useState<SmoothingLevel>("none");
+  const [recentColors, setRecentColors] = useState<string[]>([]);
   const [zoomed, setZoomed] = useState(false);
   const [wrapView, setWrapView] = useState(false);
   const [inspecting, setInspecting] = useState(false);
   const [lens, setLens] = useState<LensPos>({ x: 0.5, y: 0.42 });
   const [lensZoom, setLensZoom] = useState(2.5);
+  const [musePrefill, setMusePrefill] = useState<string | null>(null);
+  const [museSheetOpen, setMuseSheetOpen] = useState(false);
+  const [productSheetOpen, setProductSheetOpen] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [moreOpen, setMoreOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
   const [refiningOpen, setRefiningOpen] = useState(false);
+
+  const setDrawColorTracked = (c: string) => {
+    setDrawColor(c);
+    setRecentColors((prev) => [c, ...prev.filter((x) => x !== c)].slice(0, 6));
+  };
+
+  const closeAllSheets = () => {
+    setProductSheetOpen(false);
+    setSheetOpen(false);
+    setMuseSheetOpen(false);
+  };
+
+  const askMuse = (prompt: string) => {
+    setMusePrefill(prompt);
+    closeAllSheets();
+    setMuseSheetOpen(true);
+  };
 
   useEffect(() => {
     if (initialized.current) return;
@@ -207,15 +205,12 @@ export default function Create() {
     window.scrollTo({ top: 0 });
   }, [stage]);
 
-  // hide the global mobile chrome (top header / bottom tab bar) while the studio is active
   useEffect(() => {
     if (stage !== "studio") return;
     document.documentElement.classList.add("studio-active");
     return () => document.documentElement.classList.remove("studio-active");
   }, [stage]);
 
-  // keeps the left panel + view state honest whenever the product changes — including a
-  // switch made from inside the studio via the product switcher, not just on first entry.
   useEffect(() => {
     if (!design.garment) return;
     const validIds = leftPanelTabsFor(design.garment, isApparel(design.garment)).map((t) => t.id);
@@ -223,7 +218,6 @@ export default function Create() {
     setWrapView(false);
     setZoomed(false);
     setInspecting(false);
-    design.setView("front"); // every product starts on its primary view — a stale "back"/"3d" from a previous product should never carry over
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [design.garment]);
 
@@ -247,18 +241,10 @@ export default function Create() {
   const jump = (cat: string, sub?: string) => {
     setCategory(cat);
     if (sub) setDesignSub(sub as DesignSub);
+    closeAllSheets();
     setSheetOpen(true);
     setReviewOpen(false);
   };
-  const jumpToMuse = () => jump("design", "muse");
-
-  const openCategory = (cat: string) => {
-    setCategory(cat);
-    setSheetOpen(true);
-    setMoreOpen(false);
-  };
-
-  const drawExpanded = sheetOpen && category === "design" && designSub === "draw";
 
   if (stage === "pick") {
     return (
@@ -306,7 +292,6 @@ export default function Create() {
           track("garment_selected", { garment: productId, source: "gift" });
           setStage("studio");
           setCategory(initialCategoryFor(productId));
-          setDesignSub("muse");
         }}
       />
     );
@@ -330,56 +315,30 @@ export default function Create() {
   const colorHex = colorById(design.color).hex;
   const printArea = printAreaFor(design.garment, "front");
   const backPrintArea = printAreaFor(design.garment, "back");
-  const textColor = ["offwhite", "stone"].includes(design.color) ? "#1a1712" : "#f6f3ec";
+  const activeSide = design.view === "back" ? "back" : "front";
+  const activePrintArea = activeSide === "back" ? backPrintArea : printArea;
 
-  const drawInteractive = !wrapView; // the wraparound view is a read-only composite reference, not a third canvas
+  const canvasMode: CanvasMode = !wrapView && (category === "design" || category === "layers") ? (category === "design" && designSub === "draw" ? "draw" : "move") : "none";
 
-  const frontContent = (
-    <>
-      <DrawLayer
-        strokes={design.strokesFront}
-        interactive={drawInteractive && category === "design" && designSub === "draw" && design.view === "front"}
-        tool={drawTool}
-        color={drawColor}
-        eraseColor={colorHex}
-        refined={design.refinedFront}
-        printArea={printArea}
-        onStrokeEnd={(s) => {
-          design.addStroke("front", s);
-          track("drawing_started", { side: "front", tool: drawTool });
-        }}
-      />
-      {design.artwork && (
-        <ArtworkLayer
-          artwork={design.artwork}
-          printArea={printArea}
-          interactive={drawInteractive && category === "design" && designSub === "image"}
-          onChange={(p) => design.setArtwork({ ...design.artwork!, ...p })}
-        />
-      )}
-      {design.text?.content && <TextOverlay content={design.text.content} placement={design.text.placement} printArea={printArea} colorHex={textColor} />}
-    </>
+  const layerStackCommon = {
+    drawTool,
+    drawColor,
+    drawWidth: drawBrushSize,
+    drawOpacity,
+    smoothing: drawSmoothing,
+    eraseColor: colorHex,
+  };
+
+  const frontOverlay = (
+    <g filter={design.finish === "embroidery" ? `url(#embroidery-${design.garment}-front)` : undefined}>
+      <LayerStack side="front" printArea={printArea} mode={activeSide === "front" ? canvasMode : "none"} {...layerStackCommon} />
+    </g>
   );
-  const backContent = (
-    <DrawLayer
-      strokes={design.strokesBack}
-      interactive={drawInteractive && category === "design" && designSub === "draw" && design.view === "back"}
-      tool={drawTool}
-      color={drawColor}
-      eraseColor={colorHex}
-      refined={design.refinedBack}
-      printArea={backPrintArea}
-      onStrokeEnd={(s) => {
-        design.addStroke("back", s);
-        track("drawing_started", { side: "back", tool: drawTool });
-      }}
-    />
+  const backOverlay = (
+    <g filter={design.finish === "embroidery" ? `url(#embroidery-${design.garment}-back)` : undefined}>
+      <LayerStack side="back" printArea={backPrintArea} mode={activeSide === "back" ? canvasMode : "none"} {...layerStackCommon} />
+    </g>
   );
-
-  const frontOverlay =
-    design.finish === "embroidery" ? <g filter={`url(#embroidery-${design.garment}-front)`}>{frontContent}</g> : frontContent;
-  const backOverlay =
-    design.finish === "embroidery" ? <g filter={`url(#embroidery-${design.garment}-back)`}>{backContent}</g> : backContent;
 
   const issue = apparelGarment ? checkManufacturability({ garment: apparelGarment, material: design.material, fit: design.fit, finish: design.finish }) : null;
   const tip = apparelGarment && !issue ? contextualTip({ garment: apparelGarment, material: design.material, fit: design.fit, finish: design.finish }) : null;
@@ -403,17 +362,40 @@ export default function Create() {
 
   const renderPanel = () => {
     if (category === "design") {
-      if (designSub === "draw") return <DrawPanel tool={drawTool} setTool={setDrawTool} color={drawColor} setColor={setDrawColor} onRefine={startRefine} />;
-      if (designSub === "muse") return <MusePanel />;
+      if (designSub === "draw")
+        return (
+          <DrawPanel
+            tool={drawTool}
+            setTool={setDrawTool}
+            color={drawColor}
+            setColor={setDrawColorTracked}
+            brushSize={drawBrushSize}
+            setBrushSize={setDrawBrushSize}
+            opacity={drawOpacity}
+            setOpacity={setDrawOpacity}
+            smoothing={drawSmoothing}
+            setSmoothing={setDrawSmoothing}
+            recentColors={recentColors}
+            onRefine={startRefine}
+          />
+        );
       if (designSub === "text") return <TextPanel />;
       if (designSub === "image") return <ImagePanel />;
-      return <GraphicsPanel />;
+      if (designSub === "graphics") return <GraphicsPanel />;
+      return (
+        <div className="animate-fade-in text-sm text-ink-soft">
+          <p className="text-[11px] uppercase tracking-[0.25em] text-ink-faint">Move</p>
+          <p className="mt-2">Tap anything already on the product to select it, then drag to move, use the corner handle to resize, or the top handle to rotate.</p>
+          <p className="mt-3">Nothing here yet? Choose Upload, Draw, Text or Graphics above to add your first element.</p>
+        </div>
+      );
     }
-    if (category === "material" && apparel) return <MaterialPanel onOpenMuse={jumpToMuse} />;
-    if (category === "color") return <ColorPanel />;
+    if (category === "material" && apparel) return <MaterialPanel onOpenMuse={() => askMuse("What material would work best for this design?")} />;
+    if (category === "color") return <ColorPanel onAskMuse={askMuse} />;
     if (category === "fit" && apparel) return <FitPanel />;
     if (category === "details") return <DetailsPanel />;
     if (category === "device") return <DeviceSelector />;
+    if (category === "layers") return <LayersPanel onAskMuse={askMuse} />;
     if (activeTabDef?.groupKeys) return <OptionsPanel groupKeys={activeTabDef.groupKeys} title={activeTabDef.label} />;
     return null;
   };
@@ -476,7 +458,7 @@ export default function Create() {
 
   const GarmentCard = ({ size }: { size: "sm" | "lg" }) => (
     <div
-      className={`relative mx-auto w-full ${size === "lg" ? "max-w-[560px]" : "max-w-[420px]"} aspect-square rounded-[32px] border border-[#d4af70]/25 bg-paper shadow-[0_30px_80px_-45px_rgba(36,31,26,0.35)] grain`}
+      className={`relative mx-auto w-full ${size === "lg" ? "max-w-[640px]" : "max-w-[420px]"} aspect-square rounded-[32px] border border-[#d4af70]/25 bg-paper shadow-[0_30px_80px_-45px_rgba(36,31,26,0.35)] grain`}
       style={{ overflow: zoomed ? "hidden" : "visible" }}
     >
       <div
@@ -486,7 +468,7 @@ export default function Create() {
         {stageElement()}
       </div>
 
-      <MagnifierLens lens={lens} onMove={setLens} active={inspecting} />
+      {!wrapView && <MagnifierLens lens={lens} onMove={setLens} printArea={activePrintArea} active={inspecting} />}
 
       {design.view === "3d" && !zoomed && !wrapView && (
         <p className="absolute left-1/2 top-4 -translate-x-1/2 text-[11px] uppercase tracking-[0.14em] text-ink-faint">Drag to rotate</p>
@@ -527,30 +509,62 @@ export default function Create() {
     </button>
   );
 
+  const InspectToolbar = () => (
+    <div className="mb-2.5 flex flex-wrap items-center gap-1.5">
+      {DESIGN_SUB_TABS.filter((t) => t.id !== "graphics").map((t) => (
+        <button
+          key={t.id}
+          onClick={() => {
+            setCategory("design");
+            setDesignSub(t.id);
+          }}
+          className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-[0.06em] transition-colors ${
+            category === "design" && designSub === t.id ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-line-soft text-ink-soft hover:border-ink-soft"
+          }`}
+        >
+          <t.icon className="h-3.5 w-3.5" />
+          {t.label}
+        </button>
+      ))}
+      <button onClick={() => askMuse("")} className="flex items-center gap-1.5 rounded-full border border-[#c8a96b]/50 px-3 py-1.5 text-[11px] uppercase tracking-[0.06em] text-[#8f7345] hover:border-[#c8a96b]">
+        <IconSparkle className="h-3.5 w-3.5" /> MUSE
+      </button>
+      <div className="flex-1" />
+      <button onClick={() => setInspecting(false)} className="rounded-full border border-line px-3 py-1.5 text-[11px] uppercase tracking-[0.06em] text-ink-soft hover:border-ink-soft">
+        Done
+      </button>
+    </div>
+  );
+
+  const region = inspecting && !wrapView ? lensToRegion(lens, activePrintArea, activeSide) : null;
+
   return (
-    <div className="relative lg:mx-auto lg:max-w-[1500px] lg:px-5 lg:pb-16 lg:pt-10 xl:px-8">
+    <div className="relative">
       <GradientMesh fixed className="opacity-70" />
+
       {/* ============================= DESKTOP (lg+) ============================= */}
-      <div className="hidden lg:block">
-        <div className="mb-8">
+      <div className="hidden lg:flex lg:h-[calc(100vh-73px)] lg:flex-col">
+        <div className="flex shrink-0 items-center justify-between border-b border-line-soft bg-paper/70 px-6 py-2.5">
           <button
             onClick={() => {
               design.startFresh();
               setStage("pick");
             }}
-            className="mb-3 text-[11px] uppercase tracking-[0.18em] text-ink-faint hover:text-ink-soft"
+            className="text-[11px] uppercase tracking-[0.18em] text-ink-faint hover:text-ink-soft"
           >
             ← Start Over
           </button>
-          <h1 className="font-display text-4xl text-ink">FORMÉ Create</h1>
-          <p className="mt-1.5 max-w-md text-sm text-ink-soft">Your canvas. Your rules.</p>
-          <PrototypeNotice className="mt-4 max-w-lg" />
+          <PrototypeNotice compact />
         </div>
 
-        <div className="grid grid-cols-[210px_1fr_280px] items-start gap-5 xl:grid-cols-[280px_1fr_360px] xl:gap-8">
-          {/* LEFT: product switcher + tools — scrolls independently */}
-          <div>
-            <ProductSwitcher className="mb-6" />
+        <div className="flex flex-1 overflow-hidden">
+          {/* LEFT — product config + summary, own scroll */}
+          <div className="scrollbar-thin w-[300px] shrink-0 overflow-y-auto border-r border-line-soft px-5 py-6 xl:w-[320px]">
+            <ProductSwitcher className="mb-5" />
+
+            <div className="mb-5 rounded-2xl border border-line-soft bg-paper p-4">
+              <SummaryPanel onJump={jump} previewFrontOverlay={frontOverlay} previewBackOverlay={backOverlay} />
+            </div>
 
             <div className="flex flex-col gap-1.5">
               {tabs.map((t) => (
@@ -567,70 +581,53 @@ export default function Create() {
             </div>
 
             {category === "design" && (
-              <div className="mt-3">
-                <button
-                  onClick={() => setDesignSub("muse")}
-                  className={`flex w-full items-center gap-2.5 rounded-xl border px-3.5 py-3 text-left transition-all ${
-                    designSub === "muse" ? "border-[#c8a96b] bg-[#c8a96b]/[0.1]" : "border-line-soft hover:border-[#c8a96b]/50"
-                  }`}
-                >
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#241f1a] text-[#c8a96b]">
-                    <IconSparkle className="h-3.5 w-3.5" />
-                  </span>
-                  <span>
-                    <span className="block text-[12.5px] font-semibold uppercase tracking-[0.06em] text-ink">Muse</span>
-                    <span className="block text-[11px] text-ink-soft">Describe it — AI does the rest</span>
-                  </span>
-                </button>
-                <div className="mt-1.5 grid grid-cols-4 gap-1.5">
-                  {DESIGN_SUB_TABS.filter((t) => t.id !== "muse").map((t) => (
-                    <button
-                      key={t.id}
-                      onClick={() => setDesignSub(t.id)}
-                      className={`flex flex-col items-center gap-1 rounded-lg border py-2 text-[10px] uppercase tracking-[0.04em] transition-colors ${
-                        designSub === t.id ? "border-[#241f1a] text-[#241f1a]" : "border-line-soft text-ink-faint hover:border-ink-soft"
-                      }`}
-                    >
-                      <t.icon className="h-3.5 w-3.5" />
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
+              <div className="mt-3 grid grid-cols-5 gap-1.5">
+                {DESIGN_SUB_TABS.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setDesignSub(t.id)}
+                    className={`flex flex-col items-center gap-1 rounded-lg border py-2 text-[9.5px] uppercase tracking-[0.02em] transition-colors ${
+                      designSub === t.id ? "border-[#241f1a] text-[#241f1a]" : "border-line-soft text-ink-faint hover:border-ink-soft"
+                    }`}
+                  >
+                    <t.icon className="h-3.5 w-3.5" />
+                    {t.label}
+                  </button>
+                ))}
               </div>
             )}
 
-            <div className="mt-4 rounded-3xl border border-line-soft bg-paper p-5 xl:p-6">{renderPanel()}</div>
+            <div className="mt-4 rounded-3xl border border-line-soft bg-paper p-5">{renderPanel()}</div>
           </div>
 
-          {/* CENTER: product stage — sticky, stays visible while the left column scrolls */}
-          <div className="lg:sticky lg:top-24 lg:self-start">
-            <div className="flex items-center justify-between gap-3">
+          {/* CENTER — canvas, never scrolls */}
+          <div className="flex flex-1 flex-col overflow-hidden px-8 py-5">
+            <div className="flex shrink-0 items-center justify-between gap-3">
               <div className="flex-1" />
               <ViewTabRow />
-              <div className="flex flex-1 justify-end">
-                <InspectToggle />
-              </div>
+              <div className="flex flex-1 justify-end">{!wrapView && <InspectToggle />}</div>
             </div>
-            <div className="mt-6">
+
+            <div className="flex min-h-0 flex-1 items-center justify-center py-4">
               <GarmentCard size="lg" />
             </div>
-            <p className="mt-5 text-center text-sm text-ink-soft">{caption}</p>
-            <div className="mx-auto mt-2 flex max-w-md justify-center">
-              <button onClick={jumpToMuse} className="inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.1em] text-[#8f7345] hover:text-[#241f1a]">
-                <IconSparkle className="h-3 w-3" /> Ask MUSE
-              </button>
+
+            {inspecting && !wrapView && (
+              <div className="shrink-0 border-t border-line-soft pt-4">
+                <InspectToolbar />
+                <MagnifiedView lens={lens} zoom={lensZoom} setZoom={setLensZoom} renderStage={() => stageElement()} panelSize={200} />
+              </div>
+            )}
+
+            <div className="shrink-0 pt-3 text-center">
+              <p className="text-sm text-ink-soft">{caption}</p>
+              {IssueOrTip && <div className="mx-auto mt-3 max-w-md">{IssueOrTip}</div>}
             </div>
-            {IssueOrTip && <div className="mx-auto mt-5 max-w-md">{IssueOrTip}</div>}
           </div>
 
-          {/* RIGHT: detail inspector (when active) + creation summary — sticky */}
-          <div className="lg:sticky lg:top-24 lg:self-start lg:space-y-5">
-            {inspecting && (
-              <MagnifiedView lens={lens} zoom={lensZoom} setZoom={setLensZoom} renderStage={() => stageElement()} onClose={() => setInspecting(false)} />
-            )}
-            <div className="rounded-3xl border border-line-soft bg-paper p-5 xl:p-6">
-              <SummaryPanel onJump={jump} previewFrontOverlay={frontOverlay} previewBackOverlay={backOverlay} />
-            </div>
+          {/* RIGHT — MUSE, full height, own scroll */}
+          <div className="scrollbar-thin w-[360px] shrink-0 overflow-y-auto border-l border-line-soft bg-paper/40 px-5 py-6 xl:w-[400px]">
+            <MusePanel inspecting={inspecting && !wrapView} region={region} prefill={musePrefill} onPrefillConsumed={() => setMusePrefill(null)} />
           </div>
         </div>
       </div>
@@ -653,26 +650,20 @@ export default function Create() {
           </button>
         </div>
 
-        <div className="px-4 pb-40 pt-16">
+        <div className="px-4 pb-32 pt-16">
           <PrototypeNotice className="mb-4" />
-          <ProductSwitcher className="mb-4" />
           <div className="flex flex-col items-center gap-2">
             <div className="w-full overflow-x-auto scrollbar-none">
               <div className="flex justify-center">
                 <ViewTabRow />
               </div>
             </div>
-            <InspectToggle />
+            {!wrapView && <InspectToggle />}
           </div>
           <div className="mt-5">
             <GarmentCard size="sm" />
           </div>
           <p className="mt-4 text-center text-[13px] text-ink-soft">{caption}</p>
-          <div className="mt-2 flex justify-center">
-            <button onClick={jumpToMuse} className="inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.1em] text-[#8f7345]">
-              <IconSparkle className="h-3 w-3" /> Ask MUSE
-            </button>
-          </div>
 
           {IssueOrTip && <div className="mt-4">{IssueOrTip}</div>}
 
@@ -688,35 +679,66 @@ export default function Create() {
           </button>
         </div>
 
-        {/* bottom toolbar */}
-        <div className="fixed inset-x-0 bottom-0 z-40 flex items-stretch justify-around border-t border-line-soft bg-paper/95 px-1 pt-1.5 pb-[max(6px,env(safe-area-inset-bottom))] backdrop-blur-md">
-          {tabs.slice(0, 4).map((t) => (
-            <button
-              key={t.id}
-              onClick={() => openCategory(t.id)}
-              className={`flex-1 rounded-xl py-2 text-center text-[10.5px] font-medium uppercase tracking-[0.06em] transition-colors ${
-                sheetOpen && category === t.id ? "bg-ivory-dim text-ink" : "text-ink-soft"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+        {/* bottom nav — Product / Tools / MUSE */}
+        <div className="fixed inset-x-0 bottom-0 z-40 flex items-stretch justify-around border-t border-line-soft bg-paper/95 px-2 pt-2 pb-[max(8px,env(safe-area-inset-bottom))] backdrop-blur-md">
           <button
             onClick={() => {
-              setMoreOpen(true);
-              setSheetOpen(false);
+              const next = !productSheetOpen;
+              closeAllSheets();
+              setProductSheetOpen(next);
             }}
-            className="flex-1 rounded-xl py-2 text-center text-[10.5px] font-medium uppercase tracking-[0.06em] text-ink-soft"
+            className="flex flex-1 flex-col items-center gap-1 rounded-xl py-1.5 text-ink-soft"
           >
-            More
+            <IconStore className="h-5 w-5" />
+            <span className="text-[10.5px] font-medium uppercase tracking-[0.06em]">Product</span>
+          </button>
+          <button
+            onClick={() => {
+              const next = !sheetOpen;
+              closeAllSheets();
+              setSheetOpen(next);
+            }}
+            className="flex flex-1 flex-col items-center gap-1 rounded-xl py-1.5 text-ink-soft"
+          >
+            <IconPencil className="h-5 w-5" />
+            <span className="text-[10.5px] font-medium uppercase tracking-[0.06em]">Tools</span>
+          </button>
+          <button
+            onClick={() => {
+              const next = !museSheetOpen;
+              closeAllSheets();
+              setMuseSheetOpen(next);
+            }}
+            className="flex flex-1 flex-col items-center gap-1 rounded-xl py-1.5 text-[#8f7345]"
+          >
+            <IconSparkle className="h-5 w-5" />
+            <span className="text-[10.5px] font-medium uppercase tracking-[0.06em]">MUSE</span>
           </button>
         </div>
 
+        <BottomSheet open={productSheetOpen} title="Product" onClose={() => setProductSheetOpen(false)}>
+          <ProductSwitcher className="mb-5" />
+          <SummaryPanel onJump={jump} previewFrontOverlay={frontOverlay} previewBackOverlay={backOverlay} />
+        </BottomSheet>
+
         <BottomSheet
-          open={sheetOpen && !drawExpanded}
-          title={category === "design" ? `Design · ${DESIGN_SUB_TABS.find((t) => t.id === designSub)!.label}` : tabs.find((t) => t.id === category)?.label ?? "Options"}
+          open={sheetOpen && !(category === "design" && designSub === "draw")}
+          title={category === "design" ? `Design · ${DESIGN_SUB_TABS.find((t) => t.id === designSub)!.label}` : (tabs.find((t) => t.id === category)?.label ?? "Tools")}
           onClose={() => setSheetOpen(false)}
         >
+          <div className="mb-4 flex flex-wrap gap-1.5">
+            {tabs.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setCategory(t.id)}
+                className={`rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-[0.06em] transition-colors ${
+                  category === t.id ? "border-[#241f1a] bg-[#241f1a] text-[#d4af70]" : "border-line-soft text-ink-soft"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
           {category === "design" && (
             <div className="mb-4 grid grid-cols-5 gap-1.5">
               {DESIGN_SUB_TABS.map((t) => (
@@ -724,11 +746,7 @@ export default function Create() {
                   key={t.id}
                   onClick={() => setDesignSub(t.id)}
                   className={`flex flex-col items-center gap-1 rounded-lg border py-2 text-[9.5px] uppercase tracking-[0.03em] transition-colors ${
-                    designSub === t.id
-                      ? t.id === "muse"
-                        ? "border-[#c8a96b] bg-[#c8a96b]/[0.12] text-[#241f1a]"
-                        : "border-[#241f1a] text-[#241f1a]"
-                      : "border-line-soft text-ink-faint hover:border-ink-soft"
+                    designSub === t.id ? "border-[#241f1a] text-[#241f1a]" : "border-line-soft text-ink-faint hover:border-ink-soft"
                   }`}
                 >
                   <t.icon className="h-3.5 w-3.5" />
@@ -740,8 +758,8 @@ export default function Create() {
           {renderPanel()}
         </BottomSheet>
 
-        {/* dedicated full-canvas drawing mode — the product stays large while you draw */}
-        {drawExpanded && (
+        {/* dedicated full-canvas drawing mode */}
+        {sheetOpen && category === "design" && designSub === "draw" && (
           <div className="fixed inset-0 z-50 flex flex-col bg-ivory animate-fade-in">
             <div className="flex items-center justify-between border-b border-line-soft px-4 py-3">
               <p className="text-[11px] uppercase tracking-[0.2em] text-ink-faint">Draw on the {productById(design.garment).label.toLowerCase()}</p>
@@ -764,7 +782,19 @@ export default function Create() {
               </div>
             </div>
             <div className="max-h-[42vh] overflow-y-auto border-t border-line-soft px-5 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-4">
-              <DrawPanel tool={drawTool} setTool={setDrawTool} color={drawColor} setColor={setDrawColor} />
+              <DrawPanel
+                tool={drawTool}
+                setTool={setDrawTool}
+                color={drawColor}
+                setColor={setDrawColorTracked}
+                brushSize={drawBrushSize}
+                setBrushSize={setDrawBrushSize}
+                opacity={drawOpacity}
+                setOpacity={setDrawOpacity}
+                smoothing={drawSmoothing}
+                setSmoothing={setDrawSmoothing}
+                recentColors={recentColors}
+              />
             </div>
           </div>
         )}
@@ -789,27 +819,30 @@ export default function Create() {
           />
         )}
 
-        <BottomSheet open={inspecting} title="Detail View" onClose={() => setInspecting(false)}>
-          <MagnifiedView lens={lens} zoom={lensZoom} setZoom={setLensZoom} renderStage={() => stageElement()} panelSize={320} />
-        </BottomSheet>
-
-        <BottomSheet open={moreOpen} title="More tools" onClose={() => setMoreOpen(false)}>
-          <div className="grid grid-cols-2 gap-3">
-            {tabs.slice(4).map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setCategory(item.id);
-                  setMoreOpen(false);
-                  setSheetOpen(true);
-                }}
-                className="flex flex-col items-center gap-2 rounded-2xl border border-line py-6 text-ink-soft"
-              >
-                <IconSparkle className="h-5 w-5" />
-                <span className="text-[11px] uppercase tracking-[0.08em]">{item.label}</span>
+        {/* magnifier — full-screen detail editor on mobile */}
+        {inspecting && !wrapView && (
+          <div className="fixed inset-0 z-50 flex flex-col bg-ivory animate-fade-in">
+            <div className="flex items-center justify-between border-b border-line-soft px-4 py-3">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-ink-faint">Detail editor</p>
+              <button onClick={() => setInspecting(false)} className="text-[12px] font-medium uppercase tracking-[0.14em] text-ink">
+                Done
               </button>
-            ))}
+            </div>
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+              <div className="relative mx-auto aspect-square w-full max-w-[360px] rounded-[28px] border border-line-soft bg-paper p-5 shadow-[0_20px_60px_-30px_rgba(26,23,18,0.35)]">
+                {stageElement()}
+                <MagnifierLens lens={lens} onMove={setLens} printArea={activePrintArea} active />
+              </div>
+              <div className="mt-5">
+                <InspectToolbar />
+                <MagnifiedView lens={lens} zoom={lensZoom} setZoom={setLensZoom} renderStage={() => stageElement()} panelSize={320} />
+              </div>
+            </div>
           </div>
+        )}
+
+        <BottomSheet open={museSheetOpen} title="MUSE" onClose={() => setMuseSheetOpen(false)}>
+          <MusePanel inspecting={inspecting && !wrapView} region={region} prefill={musePrefill} onPrefillConsumed={() => setMusePrefill(null)} />
         </BottomSheet>
 
         {reviewOpen && (

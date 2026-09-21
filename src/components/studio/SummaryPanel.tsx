@@ -5,7 +5,7 @@ import { colorById, materialById, fitById, estimatePrice, DELIVERY_ESTIMATE } fr
 import { isApparel, productById, variantGroupsFor, variantPriceImpact } from "../../data/products";
 import ProductStage from "../products/ProductStage";
 import { track } from "../../lib/analytics";
-import { IconCheck, IconSparkle, IconArrowRight } from "../icons";
+import { IconCheck, IconSparkle, IconArrowRight, IconChevronDown } from "../icons";
 import MicroPrompt from "../MicroPrompt";
 
 interface SummaryPanelProps {
@@ -14,12 +14,13 @@ interface SummaryPanelProps {
   previewBackOverlay?: ReactNode;
 }
 
-type Stage = "review" | "final";
+type Stage = "compact" | "final";
 
 export default function SummaryPanel({ onJump, previewFrontOverlay, previewBackOverlay }: SummaryPanelProps) {
   const design = useDesign();
   const navigate = useNavigate();
-  const [stage, setStage] = useState<Stage>("review");
+  const [stage, setStage] = useState<Stage>("compact");
+  const [expanded, setExpanded] = useState(false);
   const [saved, setSaved] = useState(false);
   const [ordered, setOrdered] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
@@ -31,11 +32,14 @@ export default function SummaryPanel({ onJump, previewFrontOverlay, previewBackO
   const apparel = isApparel(productId);
   const product = productById(productId);
   const color = colorById(design.color);
-  const hasGraphic = !!design.artwork || design.strokesFront.length > 0 || design.strokesBack.length > 0;
+  const hasImageOrGraphic = design.layers.some((l) => l.type === "image" || l.type === "graphic");
+  const hasDrawing = design.layers.some((l) => l.type === "drawing" && l.strokes.length > 0);
+  const hasText = design.layers.some((l) => l.type === "text" && l.content.trim());
+  const hasGraphic = hasImageOrGraphic || hasDrawing;
 
   const price = apparel
-    ? estimatePrice({ garment: productId, material: design.material, hasGraphic, hasText: !!design.text })
-    : product.basePrice + variantPriceImpact(productId, design.variants) + (hasGraphic ? 250 : 0) + (design.text ? 100 : 0);
+    ? estimatePrice({ garment: productId, material: design.material, hasGraphic, hasText })
+    : product.basePrice + variantPriceImpact(productId, design.variants) + (hasGraphic ? 250 : 0) + (hasText ? 100 : 0);
 
   const rows: { label: string; value: string; category: string | null; sub?: string }[] = [
     { label: "Product", value: product.label, category: null },
@@ -50,8 +54,16 @@ export default function SummaryPanel({ onJump, previewFrontOverlay, previewBackO
       rows.push({ label: group.label, value: chosen.label, category: "fit" });
     }
   }
-  rows.push({ label: "Design", value: hasGraphic ? "Custom graphic" : design.text ? "Text only" : "Plain", category: "design", sub: "draw" });
+  const designValue = hasGraphic && hasText ? "Custom graphic + text" : hasGraphic ? "Custom graphic" : hasText ? "Text only" : "Plain";
+  rows.push({ label: "Design", value: designValue, category: "design", sub: "draw" });
   if (apparel) rows.push({ label: "Details", value: design.accentTrim ? "Contrast trim" : "Tonal trim", category: "details" });
+
+  const oneLine = apparel
+    ? `${color.label} · ${materialById(design.material).label} · ${fitById(design.fit).label}`
+    : rows
+        .slice(1, -1)
+        .map((r) => r.value)
+        .join(" · ");
 
   const goToFinal = () => {
     setStage("final");
@@ -60,33 +72,46 @@ export default function SummaryPanel({ onJump, previewFrontOverlay, previewBackO
     track("delivery_viewed", { garment: design.garment });
   };
 
-  if (stage === "review") {
+  if (stage === "compact") {
     return (
       <div className="animate-fade-in">
         {design.sourceMode === "remix" && (
-          <div className="mb-5 rounded-2xl border border-clay/30 bg-clay/[0.06] px-4 py-3 text-[13px] text-clay-deep">
+          <div className="mb-4 rounded-2xl border border-clay/30 bg-clay/[0.06] px-4 py-3 text-[13px] text-clay-deep">
             You're remixing an existing creation. Make it yours.
           </div>
         )}
 
         <p className="text-[11px] uppercase tracking-[0.25em] text-ink-faint">Your creation</p>
-        <div className="mt-3 divide-y divide-line-soft rounded-2xl border border-line-soft">
-          {rows.map((r) => (
-            <button
-              key={r.label}
-              onClick={() => r.category && onJump(r.category, r.sub)}
-              className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-ivory-dim disabled:cursor-default"
-              disabled={!r.category}
-            >
-              <span className="text-[12.5px] uppercase tracking-[0.06em] text-ink-faint">{r.label}</span>
-              <span className="text-sm text-ink">{r.value}</span>
-            </button>
-          ))}
-        </div>
+        <button onClick={() => setExpanded((v) => !v)} className="mt-2.5 flex w-full items-start justify-between gap-3 text-left">
+          <div>
+            <p className="font-display text-lg text-ink">{product.label}</p>
+            <p className="mt-0.5 text-[12.5px] text-ink-soft">{oneLine}</p>
+          </div>
+          <span className="mt-1 flex items-center gap-1 shrink-0 text-[10.5px] uppercase tracking-[0.1em] text-ink-faint">
+            {expanded ? "Hide" : "View details"}
+            <IconChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-180" : ""}`} />
+          </span>
+        </button>
+
+        {expanded && (
+          <div className="mt-3 animate-fade-up divide-y divide-line-soft rounded-2xl border border-line-soft">
+            {rows.map((r) => (
+              <button
+                key={r.label}
+                onClick={() => r.category && onJump(r.category, r.sub)}
+                className="flex w-full items-center justify-between px-4 py-2.5 text-left transition-colors hover:bg-ivory-dim disabled:cursor-default"
+                disabled={!r.category}
+              >
+                <span className="text-[11.5px] uppercase tracking-[0.06em] text-ink-faint">{r.label}</span>
+                <span className="text-[13px] text-ink">{r.value}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
         <button
           onClick={goToFinal}
-          className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-[#c8a96b] py-3.5 text-[12.5px] font-medium uppercase tracking-[0.16em] text-[#241f1a] transition-transform hover:-translate-y-0.5"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-[#c8a96b] py-3.5 text-[12.5px] font-medium uppercase tracking-[0.16em] text-[#241f1a] transition-transform hover:-translate-y-0.5"
         >
           Make It Real
           <IconArrowRight className="h-4 w-4" />
@@ -98,7 +123,7 @@ export default function SummaryPanel({ onJump, previewFrontOverlay, previewBackO
             track("design_completed", { garment: design.garment });
             window.setTimeout(() => setSaved(false), 2400);
           }}
-          className="mt-3 w-full rounded-full border border-line py-3 text-[12px] uppercase tracking-[0.14em] text-ink-soft transition-colors hover:border-ink hover:text-ink"
+          className="mt-2.5 w-full rounded-full border border-line py-2.5 text-[12px] uppercase tracking-[0.14em] text-ink-soft transition-colors hover:border-ink hover:text-ink"
         >
           {saved ? "Saved to My Creations" : "Save Design"}
         </button>
@@ -108,7 +133,7 @@ export default function SummaryPanel({ onJump, previewFrontOverlay, previewBackO
 
   return (
     <div className="animate-fade-in">
-      <button onClick={() => setStage("review")} className="mb-4 text-[11px] font-medium uppercase tracking-[0.1em] text-ink-faint transition-colors hover:text-ink-soft">
+      <button onClick={() => setStage("compact")} className="mb-4 text-[11px] font-medium uppercase tracking-[0.1em] text-ink-faint transition-colors hover:text-ink-soft">
         ← Back to review
       </button>
 

@@ -8,7 +8,7 @@ import { IconChevronDown, IconClose } from "../icons";
 
 /** True when the current design has anything worth protecting — gates whether switching products needs to ask first. */
 function hasWorkInProgress(design: ReturnType<typeof useDesign>): boolean {
-  return Boolean(design.artwork || design.text?.content || design.strokesFront.length > 0 || design.strokesBack.length > 0);
+  return design.layers.length > 0;
 }
 
 export default function ProductSwitcher({ className = "" }: { className?: string }) {

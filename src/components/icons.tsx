@@ -192,6 +192,50 @@ export function IconInfo(props: IconProps) {
   );
 }
 
+export function IconCopy(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" {...base} {...props}>
+      <rect x="8" y="8" width="12" height="12" rx="1.5" />
+      <path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3" />
+    </svg>
+  );
+}
+
+export function IconEyeOff(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" {...base} {...props}>
+      <path d="M3 3l18 18" />
+      <path d="M10.6 5.2A10.6 10.6 0 0 1 12 5c6.5 0 10 7 10 7a17.9 17.9 0 0 1-3.7 4.6M6.5 6.6C3.4 8.5 2 12 2 12s3.5 7 10 7a9.6 9.6 0 0 0 4-.85" />
+      <path d="M9.5 9.7a3 3 0 0 0 4.2 4.2" />
+    </svg>
+  );
+}
+
+export function IconMove(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" {...base} {...props}>
+      <path d="M12 3v18M3 12h18M6 6l-3 3 3 3M18 6l3 3-3 3M6 18l-3-3 3-3M18 18l3-3-3-3" />
+    </svg>
+  );
+}
+
+export function IconCrop(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" {...base} {...props}>
+      <path d="M6 2v14a2 2 0 0 0 2 2h14M2 6h14a2 2 0 0 1 2 2v14" />
+    </svg>
+  );
+}
+
+export function IconRotateCw(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" {...base} {...props}>
+      <path d="M3 12a9 9 0 1 0 3-6.7" />
+      <path d="M3 3v5h5" />
+    </svg>
+  );
+}
+
 export function IconStar(props: IconProps & { filled?: boolean }) {
   const { filled, ...rest } = props;
   return (

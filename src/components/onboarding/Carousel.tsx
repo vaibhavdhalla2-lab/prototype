@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode, type PointerEvent as ReactPointerEvent } from "react";
-import { IconArrowRight } from "../icons";
+import CarouselArrow from "./CarouselArrow";
 
 interface CarouselProps {
   slides: ReactNode[];
@@ -152,55 +152,16 @@ export default function Carousel({
         </div>
       </div>
 
-      {/* desktop: labeled prev / next flanking the slide — identical size/padding/position on both sides */}
-      <button
-        onClick={goBack}
-        disabled={isFirst}
-        aria-label="Previous slide"
-        className={`absolute left-2 top-1/2 z-20 hidden -translate-y-1/2 items-center gap-2 rounded-full border px-3.5 py-2.5 text-[11px] font-medium uppercase tracking-[0.14em] transition-all sm:flex ${
-          dark
-            ? "border-white/15 bg-white/5 text-[#faf4ea]/70 backdrop-blur hover:border-[#c8a96b]/50 hover:text-[#d4af70]"
-            : "border-transparent text-ink-soft hover:border-line hover:text-ink"
-        } ${isFirst ? "pointer-events-none opacity-0" : "opacity-100"}`}
-      >
-        <IconArrowRight className="h-4 w-4 rotate-180" />
-        Previous
-      </button>
-      <button
+      {/* one shared arrow implementation for both directions — see CarouselArrow.tsx */}
+      <CarouselArrow direction="prev" onClick={goBack} disabled={isFirst} visible={!isFirst} label="Previous slide" text="Previous" />
+      <CarouselArrow
+        direction="next"
         onClick={goNext}
         disabled={isLast && !onFinish}
-        aria-label="Next slide"
-        className={`absolute right-2 top-1/2 z-20 hidden -translate-y-1/2 items-center gap-2 rounded-full border px-3.5 py-2.5 text-[11px] font-medium uppercase tracking-[0.14em] transition-all sm:flex ${
-          dark
-            ? "border-white/15 bg-white/5 text-[#faf4ea]/70 backdrop-blur hover:border-[#c8a96b]/50 hover:text-[#d4af70]"
-            : "border-transparent text-ink-soft hover:border-line hover:text-ink"
-        } ${isLast && !onFinish ? "pointer-events-none opacity-0" : "opacity-100"}`}
-      >
-        {isLast ? finishLabel : "Next"}
-        <IconArrowRight className="h-4 w-4" />
-      </button>
-
-      {/* mobile: compact icon-only arrows — identical size/position on both sides */}
-      <button
-        onClick={goBack}
-        disabled={isFirst}
-        aria-label="Previous slide"
-        className={`absolute left-2 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full shadow-sm backdrop-blur transition-opacity sm:hidden ${
-          dark ? "bg-white/85 text-[#241f1a]" : "bg-paper/80 text-ink-soft"
-        } ${isFirst ? "pointer-events-none opacity-0" : "opacity-100"}`}
-      >
-        <IconArrowRight className="h-4 w-4 rotate-180" />
-      </button>
-      <button
-        onClick={goNext}
-        disabled={isLast && !onFinish}
-        aria-label="Next slide"
-        className={`absolute right-2 top-1/2 z-20 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full shadow-sm backdrop-blur transition-opacity sm:hidden ${
-          dark ? "bg-white/85 text-[#241f1a]" : "bg-paper/80 text-ink-soft"
-        } ${isLast && !onFinish ? "pointer-events-none opacity-0" : "opacity-100"}`}
-      >
-        <IconArrowRight className="h-4 w-4" />
-      </button>
+        visible={!(isLast && !onFinish)}
+        label="Next slide"
+        text={isLast ? finishLabel : "Next"}
+      />
 
       {/* indicator: dots + counter, bottom center */}
       <div className="pointer-events-none absolute inset-x-0 bottom-4 z-20 flex flex-col items-center gap-2 sm:bottom-6">

@@ -219,7 +219,7 @@ export default function Marketplace() {
   const goCustomizePrint = (d: DesignAsset, colorName: string) => {
     design.setGarment("tshirt");
     design.setColor(CATALOG_COLOR_FOR_GARMENT_COLOR[colorName] ?? "offwhite");
-    design.setArtwork({ src: d.image, x: 0.5, y: 0.5, scale: 1, rotation: 0 });
+    design.setArtwork(d.image);
     design.setSourceMode("remix");
     design.setName(`${d.name} (Custom)`);
     track("remix_clicked", { design: d.id, source: "ai-print" });

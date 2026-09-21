@@ -11,7 +11,8 @@ import { COLORS, GARMENTS, colorById } from "../data/catalog";
 import { PRODUCTS } from "../data/products";
 import ProductStage from "../components/products/ProductStage";
 import { useDesign } from "../lib/store";
-import { IconArrowRight, IconPencil, IconRemix, IconStore, IconLock, IconSparkle, IconType, IconUpload, IconDraw, IconHeart } from "../components/icons";
+import { IconArrowRight, IconPencil, IconRemix, IconStore, IconLock, IconHeart } from "../components/icons";
+import type { ProductDef } from "../data/products";
 import MicroPrompt from "../components/MicroPrompt";
 import { track } from "../lib/analytics";
 import { useFeedback } from "../lib/feedback";
@@ -194,16 +195,53 @@ const EARN_FLOW = [
 ];
 
 /* ----------------------------------------------------------------------- */
-/* HOW DO YOU WANT TO CREATE — the 5 entry points into the studio            */
+/* PRODUCT CATALOGUE — a bento layout with a "visual world" per product,    */
+/* instead of six uniform cards in a straight line.                        */
 /* ----------------------------------------------------------------------- */
 
-const CREATION_METHODS: { id: "prompt" | "manual" | "upload" | "draw" | "gift"; label: string; body: string; icon: typeof IconSparkle }[] = [
-  { id: "prompt", label: "Write A Prompt", body: "Describe it — MUSE turns words into a starting point.", icon: IconSparkle },
-  { id: "manual", label: "Manual Design", body: "Blank canvas — arrange text, shapes and graphics yourself.", icon: IconType },
-  { id: "upload", label: "Upload A Graphic", body: "Show us your artwork, logo or photo.", icon: IconUpload },
-  { id: "draw", label: "Freehand Draw", body: "Sketch it rough. We'll help make it real.", icon: IconDraw },
-  { id: "gift", label: "Describe A Person", body: "Gift mode — MUSE suggests concepts for someone else.", icon: IconHeart },
-];
+const PRODUCT_WORLDS: Record<string, { bg: string; materials?: string; dark?: boolean }> = {
+  tshirt: { bg: "radial-gradient(120% 120% at 28% 15%, rgba(212,175,112,0.24) 0%, rgba(250,244,234,0) 68%)" },
+  mug: { bg: "radial-gradient(120% 130% at 75% 15%, rgba(201,154,111,0.3) 0%, rgba(250,244,234,0) 68%)", materials: "Ceramic · Enamel · Steel" },
+  poster: { bg: "radial-gradient(120% 130% at 25% 85%, rgba(200,169,107,0.2) 0%, rgba(233,213,255,0.22) 45%, rgba(250,244,234,0) 75%)" },
+  bottle: { bg: "radial-gradient(120% 130% at 75% 20%, rgba(127,166,171,0.28) 0%, rgba(250,244,234,0) 68%)", materials: "Steel · Aluminum · Insulated" },
+  deskpad: { bg: "radial-gradient(120% 130% at 25% 80%, rgba(169,130,90,0.24) 0%, rgba(250,244,234,0) 68%)" },
+  phonecase: { bg: "linear-gradient(155deg, #241f1a 0%, #140f0c 100%)", dark: true },
+};
+
+function ProductCard({ p, hero, className, onSelect }: { p: ProductDef; hero?: boolean; className?: string; onSelect: () => void }) {
+  const world = PRODUCT_WORLDS[p.id] ?? {};
+  return (
+    <button
+      onClick={onSelect}
+      className={`group relative flex aspect-[4/5] flex-col overflow-hidden rounded-3xl border text-left transition-all duration-300 hover:-translate-y-1 lg:aspect-auto ${
+        world.dark ? "border-white/10 bg-[#241f1a]" : "border-[#241f1a]/10 bg-[#faf4ea]"
+      } ${className ?? ""}`}
+    >
+      <div className="relative flex flex-1 items-center justify-center overflow-hidden p-4 sm:p-5" style={{ background: world.bg }}>
+        <div className={`h-full w-full transition-transform duration-500 group-hover:scale-[1.1] ${hero ? "" : "scale-125"}`}>
+          <ProductStage product={p.id} colorHex={COLORS[2].hex} view="front" variants={{}} className="h-full w-full" />
+        </div>
+      </div>
+      <div className={`flex items-end justify-between gap-3 p-4 sm:p-5 ${world.dark ? "text-[#faf4ea]" : "text-[#17151a]"}`}>
+        <div className="min-w-0">
+          <p className={`truncate font-display ${hero ? "text-xl sm:text-2xl" : "text-base sm:text-lg"}`}>{p.label}</p>
+          {world.materials && (
+            <p className={`mt-0.5 truncate text-[11px] ${world.dark ? "text-[#faf4ea]/45" : "text-[#17151a]/40"}`}>{world.materials}</p>
+          )}
+          <p className={`mt-0.5 text-[11px] uppercase tracking-[0.1em] ${world.dark ? "text-[#faf4ea]/40" : "text-[#17151a]/35"}`}>
+            From ₹{p.basePrice.toLocaleString("en-IN")}
+          </p>
+        </div>
+        <span
+          className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium uppercase tracking-[0.12em] opacity-60 transition-opacity group-hover:opacity-100"
+          style={{ color: world.dark ? GOLD : PLUM }}
+        >
+          Customize <IconArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
+        </span>
+      </div>
+    </button>
+  );
+}
 
 /* ----------------------------------------------------------------------- */
 /* GIFTING — example prompts shown on the homepage gifting teaser           */
@@ -254,64 +292,60 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SIX PRODUCTS — the real V1 product range, all live today. Every card goes straight into the studio pre-set to that product. */}
+      {/* THINGS YOU CAN MAKE — the real V1 product range, all live today, in a varied bento layout instead of six uniform cards in a row. */}
       <section className="relative border-t border-[#241f1a]/10 py-20 sm:py-28">
         <div className="mx-auto max-w-[1400px] px-5 sm:px-8">
-          <div className="mb-12 max-w-xl">
-            <p className="mb-3 text-[12px] uppercase tracking-[0.3em]" style={{ color: GOLD }}>The FORMÉ canvas</p>
-            <h2 className="font-display-heavy text-[clamp(2rem,5.5vw,3.6rem)] uppercase leading-[0.92] text-[#17151a]">
-              Six products. One canvas.
-            </h2>
-            <p className="mt-4 max-w-md text-[15px] text-[#17151a]/55">Pick a product, then design it your way.</p>
+          <div className="mb-12 flex flex-wrap items-end justify-between gap-6">
+            <div className="max-w-xl">
+              <p className="mb-3 text-[12px] uppercase tracking-[0.3em]" style={{ color: GOLD }}>The FORMÉ canvas</p>
+              <h2 className="font-display-heavy text-[clamp(2rem,5.5vw,3.6rem)] uppercase leading-[0.92] text-[#17151a]">
+                Things you can make.
+              </h2>
+              <p className="mt-4 max-w-md text-[15px] text-[#17151a]/55">Start with six — with many more to come.</p>
+            </div>
+            <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#17151a]/35">And this is just the start →</p>
           </div>
 
-          <LazyMount className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-            {PRODUCTS.map((p) => (
-              <button
+          <LazyMount className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6 lg:auto-rows-[210px]">
+            <ProductCard
+              key={PRODUCTS[0].id}
+              p={PRODUCTS[0]}
+              hero
+              className="col-span-2 sm:col-span-3 lg:col-span-3 lg:row-span-2"
+              onSelect={() => {
+                design.startFresh();
+                design.setGarment(PRODUCTS[0].id);
+                track("garment_selected", { garment: PRODUCTS[0].id, source: "home_products" });
+                navigate("/create");
+              }}
+            />
+            {[PRODUCTS[1], PRODUCTS[2]].map((p) => (
+              <ProductCard
                 key={p.id}
-                onClick={() => {
+                p={p}
+                className="lg:col-span-3 lg:row-span-1"
+                onSelect={() => {
                   design.startFresh();
                   design.setGarment(p.id);
                   track("garment_selected", { garment: p.id, source: "home_products" });
                   navigate("/create");
                 }}
-                className="card-atelier group flex flex-col items-center overflow-hidden p-4 text-center transition-all duration-300 hover:-translate-y-1"
-              >
-                <div className="flex h-24 w-full items-center justify-center sm:h-28">
-                  <ProductStage product={p.id} colorHex={COLORS[1].hex} view="front" variants={{}} className="h-full w-full" />
-                </div>
-                <p className="mt-3 font-display text-base text-[#17151a]">{p.label}</p>
-                <p className="mt-1 text-[11px] uppercase tracking-[0.1em] text-[#17151a]/40">From ₹{p.basePrice.toLocaleString("en-IN")}</p>
-              </button>
+              />
+            ))}
+            {PRODUCTS.slice(3).map((p) => (
+              <ProductCard
+                key={p.id}
+                p={p}
+                className="lg:col-span-2 lg:row-span-1"
+                onSelect={() => {
+                  design.startFresh();
+                  design.setGarment(p.id);
+                  track("garment_selected", { garment: p.id, source: "home_products" });
+                  navigate("/create");
+                }}
+              />
             ))}
           </LazyMount>
-
-          {/* how do you want to create — the 5 entry points, surfaced beyond the hero carousel's 3 */}
-          <div className="mt-16">
-            <p className="mb-6 text-center text-[12px] uppercase tracking-[0.25em] text-[#17151a]/40">How do you want to create?</p>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-              {CREATION_METHODS.map(({ id, label, body, icon: Icon }) => (
-                <button
-                  key={id}
-                  onClick={() => {
-                    track("start_creating", { mode: id, source: "home_methods" });
-                    const routeMode = id === "prompt" || id === "upload" || id === "gift" ? id : "scratch";
-                    navigate("/create", { state: { mode: routeMode } });
-                  }}
-                  className="group flex flex-col items-start rounded-2xl border border-[#241f1a]/12 bg-white/50 p-5 text-left transition-all duration-300 hover:-translate-y-1 hover:bg-white/80"
-                >
-                  <span
-                    className="flex h-10 w-10 items-center justify-center rounded-full"
-                    style={{ color: PLUM, border: `1.5px solid ${GOLD}88`, background: `${GOLD}1a` }}
-                  >
-                    <Icon className="h-4.5 w-4.5" />
-                  </span>
-                  <p className="mt-3.5 font-display text-lg text-[#17151a]">{label}</p>
-                  <p className="mt-1 text-[12.5px] leading-snug text-[#17151a]/55">{body}</p>
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </section>
 

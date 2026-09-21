@@ -2,32 +2,109 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { IconClose } from "../icons";
 
 export interface LensPos {
-  x: number; // 0..1, relative to the stage box
+  x: number; // 0..1, relative to the stage's square container
   y: number;
 }
 
 const LENS_SIZE_PCT = 0.32; // the lens covers 32% of the stage's width/height
 
+// Every product face shares one 360x440 SVG viewBox (see ProductFaces.tsx / Garment.tsx).
+// The square stage container fits that viewBox via preserveAspectRatio="xMidYMid meet",
+// so the rendered art is pillarboxed horizontally — these constants convert between
+// "fraction of the square container" (what the lens is dragged in) and true viewBox
+// coordinates, so a selection can be described in the same space the product itself
+// is drawn in, not arbitrary screen pixels.
+const VIEWBOX_W = 360;
+const VIEWBOX_H = 440;
+const RENDER_W_FRACTION = VIEWBOX_W / VIEWBOX_H;
+const SIDE_GAP = (1 - RENDER_W_FRACTION) / 2;
+
+export interface PrintAreaRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface RegionSelection {
+  side: "front" | "back";
+  /** 0..1, relative to the print area — the same coordinate space every layer's x/y already uses. */
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  label: string;
+}
+
+function containerFractionToViewBox(lens: LensPos): { vx: number; vy: number } {
+  return { vx: ((lens.x - SIDE_GAP) / RENDER_W_FRACTION) * VIEWBOX_W, vy: lens.y * VIEWBOX_H };
+}
+
+function regionLabel(relX: number, relY: number): string {
+  const h = relX < 0.34 ? "left" : relX > 0.66 ? "right" : "center";
+  const v = relY < 0.34 ? "upper" : relY > 0.66 ? "lower" : "middle";
+  if (h === "center" && v === "middle") return "Center";
+  return `${v[0].toUpperCase()}${v.slice(1)} ${h}`;
+}
+
+/**
+ * Converts the on-screen lens position into a product-relative region — the
+ * conceptual {product/side/x/y/width/height} selection MUSE and the layer
+ * system reason about, rather than raw DOM/container coordinates. This is
+ * the seam a future true UV-mapped 3D selection would replace internally
+ * without changing anything that consumes `RegionSelection`.
+ */
+export function lensToRegion(lens: LensPos, printArea: PrintAreaRect, side: "front" | "back"): RegionSelection {
+  const { vx, vy } = containerFractionToViewBox(lens);
+  const relX = (vx - printArea.x) / printArea.width;
+  const relY = (vy - printArea.y) / printArea.height;
+  const relW = (LENS_SIZE_PCT * VIEWBOX_W * RENDER_W_FRACTION) / printArea.width;
+  const relH = (LENS_SIZE_PCT * VIEWBOX_H) / printArea.height;
+  return {
+    side,
+    x: Math.min(1, Math.max(0, relX)),
+    y: Math.min(1, Math.max(0, relY)),
+    width: relW,
+    height: relH,
+    label: regionLabel(relX, relY),
+  };
+}
+
 /**
  * The draggable square inspection lens, overlaid on top of a product stage.
  * Pointer-driven (works for mouse and touch alike) and constrained so the
- * lens never drifts off the valid product surface. Purely positional — the
- * actual "magnification" happens in <MagnifiedView>, which reads the same
- * lens position to crop/scale a duplicate render of the product.
+ * lens stays over the product's actual print-safe region rather than
+ * drifting into empty margin.
  */
-export function MagnifierLens({ lens, onMove, active }: { lens: LensPos; onMove: (p: LensPos) => void; active: boolean }) {
+export function MagnifierLens({ lens, onMove, printArea, active }: { lens: LensPos; onMove: (p: LensPos) => void; printArea: PrintAreaRect; active: boolean }) {
   const boxRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef(false);
 
-  const clamp = (v: number, half: number) => Math.min(1 - half, Math.max(half, v));
+  const clampToPrintArea = (candidate: LensPos): LensPos => {
+    const half = LENS_SIZE_PCT / 2;
+    let { x, y } = candidate;
+    x = Math.min(1 - half, Math.max(half, x));
+    y = Math.min(1 - half, Math.max(half, y));
+    // keep the lens center reasonably close to the print area so it never inspects pure empty margin
+    const { vx, vy } = containerFractionToViewBox({ x, y });
+    const margin = 0.15;
+    const minVx = printArea.x - printArea.width * margin;
+    const maxVx = printArea.x + printArea.width * (1 + margin);
+    const minVy = printArea.y - printArea.height * margin;
+    const maxVy = printArea.y + printArea.height * (1 + margin);
+    const cvx = Math.min(maxVx, Math.max(minVx, vx));
+    const cvy = Math.min(maxVy, Math.max(minVy, vy));
+    if (cvx !== vx || cvy !== vy) {
+      x = SIDE_GAP + (cvx / VIEWBOX_W) * RENDER_W_FRACTION;
+      y = cvy / VIEWBOX_H;
+    }
+    return { x, y };
+  };
 
   const moveFromClient = (clientX: number, clientY: number) => {
     const rect = boxRef.current?.parentElement?.getBoundingClientRect();
     if (!rect) return;
-    const half = LENS_SIZE_PCT / 2;
-    const x = clamp((clientX - rect.left) / rect.width, half);
-    const y = clamp((clientY - rect.top) / rect.height, half);
-    onMove({ x, y });
+    onMove(clampToPrintArea({ x: (clientX - rect.left) / rect.width, y: (clientY - rect.top) / rect.height }));
   };
 
   useEffect(() => {
@@ -46,7 +123,7 @@ export function MagnifierLens({ lens, onMove, active }: { lens: LensPos; onMove:
       window.removeEventListener("pointerup", onPointerUp);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active]);
+  }, [active, printArea.x, printArea.y, printArea.width, printArea.height]);
 
   if (!active) return null;
 
@@ -80,7 +157,10 @@ export function MagnifierLens({ lens, onMove, active }: { lens: LensPos; onMove:
  * so the crop always corresponds precisely to the lens position. Because
  * everything the studio renders is vector (SVG), this stays crisp at any
  * zoom — and uploaded raster artwork will visibly show its real resolution,
- * which is the point of a print-quality inspector.
+ * which is the point of a print-quality inspector. When `renderStage`
+ * includes the interactive layer stack, this doubles as a real editing
+ * surface: drawing/dragging here hits the exact same SVG coordinate space
+ * as the main canvas (via getScreenCTM), just rendered larger.
  */
 export function MagnifiedView({
   lens,
@@ -89,6 +169,7 @@ export function MagnifiedView({
   renderStage,
   onClose,
   panelSize = 240,
+  toolbar,
 }: {
   lens: LensPos;
   zoom: number;
@@ -96,6 +177,7 @@ export function MagnifiedView({
   renderStage: (pxSize: number) => ReactNode;
   onClose?: () => void;
   panelSize?: number;
+  toolbar?: ReactNode;
 }) {
   const inner = panelSize * zoom;
   const tx = -(lens.x * inner - panelSize / 2);
@@ -111,6 +193,7 @@ export function MagnifiedView({
           </button>
         )}
       </div>
+      {toolbar}
       <div
         className="relative mt-3 overflow-hidden rounded-xl border border-line-soft bg-ivory-dim"
         style={{ width: "100%", aspectRatio: "1 / 1", maxWidth: panelSize }}

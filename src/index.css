@@ -162,6 +162,10 @@
   .font-display { font-family: var(--font-display); }
   .font-display-heavy { font-family: var(--font-display-heavy); letter-spacing: 0.01em; }
   .scrollbar-none { scrollbar-width: none; -ms-overflow-style: none; }
+  .scrollbar-thin { scrollbar-width: thin; scrollbar-color: var(--color-line) transparent; }
+  .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb { background: var(--color-line); border-radius: 999px; }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: var(--color-ink-faint); }
   .scrollbar-none::-webkit-scrollbar { display: none; }
   .text-balance { text-wrap: balance; }
   .tracking-tightest { letter-spacing: -0.04em; }

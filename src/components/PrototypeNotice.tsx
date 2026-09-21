@@ -6,7 +6,15 @@ import { IconInfo } from "./icons";
  * path someone takes in: this is a prototype, and nothing typed, drawn, or
  * uploaded here results in a real, physical garment.
  */
-export default function PrototypeNotice({ className = "" }: { className?: string }) {
+export default function PrototypeNotice({ className = "", compact = false }: { className?: string; compact?: boolean }) {
+  if (compact) {
+    return (
+      <div className={`flex items-center gap-1.5 text-[11px] text-[#17151a]/60 ${className}`} title="Nothing here is manufactured or shipped — a demo of the design experience only.">
+        <IconInfo className="h-3.5 w-3.5 shrink-0 text-[#241f1a]/70" />
+        <span className="hidden sm:inline">Prototype — nothing here is manufactured or shipped.</span>
+      </div>
+    );
+  }
   return (
     <div
       className={`flex items-start gap-2.5 rounded-2xl border border-[#d4af70]/40 bg-[#d4af70]/[0.08] px-4 py-3 text-left text-[12.5px] leading-relaxed text-[#17151a]/75 ${className}`}
