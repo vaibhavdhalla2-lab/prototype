@@ -146,7 +146,13 @@ export default function Carousel({
 
         <div
           ref={viewportRef}
-          className="relative h-full min-w-0 flex-1 touch-none select-none overflow-hidden"
+          // touch-pan-y (not touch-none): lets the browser handle vertical page
+          // scroll natively when a touch starts inside the carousel — touch-none
+          // blocked ALL touch panning here, and since this viewport spans nearly
+          // a full mobile screen, that made the page feel frozen on touch devices
+          // (no native scroll, and our pointer handlers below only ever act on
+          // detected *horizontal* drags, so a vertical touch did nothing at all).
+          className="relative h-full min-w-0 flex-1 touch-pan-y select-none overflow-hidden"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
