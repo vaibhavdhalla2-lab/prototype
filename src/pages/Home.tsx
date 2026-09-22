@@ -177,15 +177,15 @@ function SlideHeroIntro() {
           <IconSparkle className="h-3.5 w-3.5" /> Create with MUSE
         </p>
         <h1 className="font-display-heavy text-[clamp(2.3rem,6.4vw,4.2rem)] uppercase leading-[0.94] tracking-tight text-[#17151a] animate-fade-up [animation-delay:80ms]">
-          From a sentence
+          From a prompt
           <br />
           to <span className="text-gradient-gold">something real.</span>
         </h1>
-        <p className="mt-5 max-w-md text-balance text-[16px] leading-relaxed text-[#17151a]/60 animate-fade-up [animation-delay:160ms]">
+        <p className="mt-4 max-w-md text-balance text-[16px] leading-relaxed text-[#17151a]/60 animate-fade-up [animation-delay:160ms]">
           Describe the product you're imagining and MUSE creates the entire design for you — ready to refine down to the smallest detail.
         </p>
 
-        <div className="mt-7 animate-fade-up [animation-delay:220ms]">
+        <div className="mt-5 animate-fade-up [animation-delay:220ms]">
           <div className="rounded-3xl border border-[#241f1a]/12 bg-white/70 p-2 shadow-[0_30px_70px_-45px_rgba(36,31,26,0.35)] backdrop-blur">
             <textarea
               value={prompt}
@@ -211,7 +211,7 @@ function SlideHeroIntro() {
           </div>
         </div>
 
-        <div className="mt-8 animate-fade-up [animation-delay:280ms]">
+        <div className="mt-4 animate-fade-up [animation-delay:280ms]">
           <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#17151a]/40">Or start your way</p>
           <div className="mt-3 flex flex-wrap items-center gap-2.5">
             <button
@@ -231,12 +231,6 @@ function SlideHeroIntro() {
               className="inline-flex items-center gap-1.5 rounded-full border border-[#241f1a]/15 bg-white/50 px-4 py-2 text-[12.5px] font-medium text-[#17151a] transition-colors hover:border-[#241f1a]/30"
             >
               <IconType className="h-3.5 w-3.5" /> Manual Design
-            </button>
-            <button
-              onClick={() => navigate("/create", { state: { mode: "gift" } })}
-              className="inline-flex items-center gap-1.5 text-[12.5px] font-medium uppercase tracking-[0.1em] text-[#241f1a] underline decoration-[#d4af70] decoration-2 underline-offset-4 transition-opacity hover:opacity-70"
-            >
-              Design A Gift
             </button>
           </div>
         </div>
@@ -346,7 +340,7 @@ export default function Home() {
       <section className="relative pb-10 pt-10 sm:pt-16">
         <div className="mx-auto max-w-[1400px] px-0 sm:px-4">
           <Carousel
-            className="h-[900px] sm:h-[820px] lg:h-[660px]"
+            className="h-[900px] sm:h-[820px] lg:h-[740px]"
             onIndexChange={setHeroSlide}
             slides={[
               <SlideHeroIntro key="hero" />,
